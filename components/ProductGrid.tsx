@@ -61,7 +61,7 @@ export default function ProductGrid({
           {bannerContent && (
             <div className="min-w-62.5 sm:min-w-70 snap-start">
               <div
-                className={`bg-linear-to-br ${bannerContent.bgColor || "from-primary/20 to-orange/20"} rounded-2xl p-5 flex flex-col justify-between h-full min-h-[380px] shadow-md`}
+                className={`bg-linear-to-br ${bannerContent.bgColor || "from-primary/20 to-orange/20"} rounded-2xl p-5 flex flex-col justify-between h-full min-h-95 shadow-md`}
               >
                 <div>
                   <h3 className="text-2xl font-bold text-primary mb-2">

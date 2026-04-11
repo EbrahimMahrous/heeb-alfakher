@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { products, categories } from "@/lib/data";
 import { useCartStore } from "@/store/cartStore";
-import { Button } from "@/components/ui/button";
+import Button from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCarousel from "@/components/ProductCarousel";
@@ -82,7 +82,7 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        <div className="relative bg-neutral-100 rounded-2xl overflow-hidden h-96 md:h-[500px]">
+        <div className="relative bg-neutral-100 rounded-2xl overflow-hidden h-96 md:h-125">
           <Image
             src={product.image || "/product-img.png"}
             alt={product.name}

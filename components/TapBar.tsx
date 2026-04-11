@@ -55,7 +55,7 @@ export default function TapBar() {
                 className="fixed inset-0 z-99 bg-dark/20"
                 onClick={() => setIsOpen(false)}
               />
-              <ul className="absolute left-0 mt-2 bg-white shadow-lg border border-neutral-300 rounded-lg w-36 z-[100]">
+              <ul className="absolute left-0 mt-2 bg-white shadow-lg border border-neutral-300 rounded-lg w-36 z-100">
                 {emiratesKeys.map((emirate) => (
                   <li
                     key={emirate.key}
