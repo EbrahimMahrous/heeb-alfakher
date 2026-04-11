@@ -1,0 +1,12 @@
+{
+  "title": "إتمام الشراء",
+  "fullName": "الاسم الكامل",
+  "address": "العنوان",
+  "phone": "رقم الهاتف",
+  "paymentMethod": "طريقة الدفع",
+  "cashOnDelivery": "دفع عند الاستلام",
+  "cardOnDelivery": "دفع ببطاقة عند الاستلام",
+  "creditCard": "بطاقة ائتمان / خصم",
+  "total": "المجموع",
+  "confirm": "تأكيد الطلب"
+}

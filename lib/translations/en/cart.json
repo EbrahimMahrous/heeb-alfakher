@@ -1,0 +1,22 @@
+{
+  "title": "Shopping Cart",
+  "empty": "Your cart is empty",
+  "shopNow": "Shop Now",
+  "orderSummary": "Order Summary",
+  "subtotal": "Subtotal",
+  "shipping": "Shipping & Delivery",
+  "total": "Total",
+  "taxInclusive": "Tax inclusive",
+  "freeShippingMessage": "Add {amount} AED more to get free shipping!",
+  "promoCode": "Promo Code",
+  "apply": "Apply",
+  "checkout": "Checkout",
+  "securePayment": "Secure & Protected Payment",
+  "remove": "Remove",
+  "quantity": "Quantity",
+  "youMayAlsoLike": "You May Also Like",
+  "currency": "AED",
+  "updated": "Quantity updated",
+  "removed": "Item removed",
+  "home": "Home"
+}

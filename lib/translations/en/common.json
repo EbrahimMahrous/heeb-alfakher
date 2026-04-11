@@ -1,0 +1,58 @@
+{
+  "home": "Home",
+  "categories": "Categories",
+  "search": "What are you looking for?",
+  "cart": "Cart",
+  "deliveryIn": "Delivery in",
+  "today": "Today",
+  "workingHours": "1 PM - 9 PM",
+
+  "shopByCategory": "Shop by Category",
+  "addToCart": "Add to Cart",
+  "aboutUs": "About Us",
+  "faq": "FAQ",
+  "returns": "Return Policy",
+  "bannerTitle": "Heeb Al Fakher",
+  "bannerSubtitle": "The finest authentic perfumes and incense",
+  "latestProducts": "Latest Products",
+  "quickLinks": "Quick Links",
+  "contactUs": "Contact Us",
+  "phone": "Phone: +971-4-1234567",
+  "email": "Email: info@heebalfakher.ae",
+
+  "deliveryCities": "Delivery in Dubai, Sharjah, Ajman, Abu Dhabi",
+  "deliveryTime": "1 PM - 9 PM",
+
+  "maxDegrees": "Maximum degrees",
+  "freshnessDaily": "Freshness, delivered daily.",
+
+  "companyDescription": "Redefining grocery shopping experience with excellent quality, sustainable sourcing, and seamless delivery to your doorstep.",
+  "contactUsFooter": "Contact Us",
+  "explore": "Explore",
+  "aboutInfo": "About Us",
+  "returnsPolicy": "Return Policy",
+  "careers": "Careers",
+  "support": "Support",
+  "helpCenter": "Help Center",
+  "phoneSupport": "Phone Support",
+  "allDays": "All Days",
+  "timeRange": "7 AM - 10 PM",
+  "deliveryAreas": "Delivery Areas",
+  "faqFooter": "FAQ",
+  "copyright": "All rights reserved",
+
+  "quickOffers": "Quick Offers",
+  "newProducts": "New Products",
+  "bestSellers": "Best Sellers",
+  "browseAll": "Browse All",
+
+  "discount": "Discount",
+  "discountPercent": "{percent}% off",
+  "currency": "AED",
+
+  "newProductsDesc": "Latest added products",
+  "bestSellersDesc": "Most requested by our customers",
+  "shopNow": "Shop Now",
+
+  "whatsappMessage": "Hello! I would like to inquire about your products."
+}

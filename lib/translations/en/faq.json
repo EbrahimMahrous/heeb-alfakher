@@ -1,0 +1,20 @@
+{
+  "home": "Home",
+  "title": "FAQ",
+
+  "q1": "How fast is delivery?",
+  "a1": "We offer same-day delivery for all orders placed before 2 PM. You can also schedule deliveries up to 3 days in advance.",
+
+  "q2": "Are all your products organic?",
+  "a2": "We carefully source high-quality organic products from the best local farms to ensure freshness and quality.",
+
+  "q3": "What if I receive a damaged item?",
+  "a3": "Please contact us within 24 hours with a photo of the product, and we will replace it or refund you immediately.",
+
+  "q4": "Do you charge delivery fees?",
+  "a4": "Delivery fees vary depending on your location and may be free when reaching a certain order amount.",
+
+  "supportTitle": "Still have questions?",
+  "supportDesc": "Our support team is available 24/7 to assist you.",
+  "contact": "Contact Us"
+}

@@ -1,0 +1,15 @@
+{
+  "productNotFound": "المنتج غير موجود",
+  "quantity": "الكمية",
+  "addToCart": "أضف إلى السلة",
+  "addedToCart": "تمت الإضافة إلى السلة",
+  "discount": "تخفيض",
+  "discountPercent": "خصم {percent}%",
+  "priceIncVat": "شامل ضريبة القيمة المضافة",
+  "productDetails": "تفاصيل المنتج",
+  "youMayAlsoLike": "قد يعجبك أيضاً",
+  "origin": "بلد المنشأ",
+  "weight": "الوزن",
+  "currency": "د.إ",
+  "home": "الرئيسية"
+}

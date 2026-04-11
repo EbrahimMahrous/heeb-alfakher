@@ -1,0 +1,15 @@
+{
+  "productNotFound": "Product not found",
+  "quantity": "Quantity",
+  "addToCart": "Add to Cart",
+  "addedToCart": "Added to cart",
+  "discount": "Discount",
+  "discountPercent": "{percent}% off",
+  "priceIncVat": "VAT inclusive",
+  "productDetails": "Product Details",
+  "youMayAlsoLike": "You May Also Like",
+  "origin": "Country of Origin",
+  "weight": "Weight",
+  "currency": "AED",
+  "home": "Home"
+}

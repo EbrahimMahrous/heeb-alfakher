@@ -1,0 +1,61 @@
+{
+  "home": "الرئيسية",
+  "categories": "الفئات",
+  "search": "عما تبحث؟",
+  "cart": "السلة",
+
+  "deliveryIn": "توصيل في",
+  "today": "اليوم",
+  "workingHours": "من 1م إلى 9م",
+
+  "shopByCategory": "تسوق حسب الفئة",
+  "addToCart": "أضف إلى السلة",
+  "aboutUs": "من نحن",
+  "faq": "الأسئلة الشائعة",
+  "returns": "سياسة الاسترجاع",
+  "bannerTitle": "Heeb Al Fakher",
+  "bannerSubtitle": "أفضل العطور والبخور الأصيلة",
+  "latestProducts": "أحدث المنتجات",
+  "quickLinks": "روابط سريعة",
+  "contactUs": "تواصل معنا",
+  "phone": "هاتف: 971-4-1234567+",
+  "email": "بريد: info@heebalfakher.ae",
+
+  "deliveryCities": "التوصيل في دبي، الشارقة، عجمان، أبو ظبي",
+  "deliveryTime": "من 1 م - 9 م",
+
+  "groceryDelivery": "خدمة توصيل البقالة",
+  "maxDegrees": "أقصى درجات",
+  "freshnessDaily": "النضارة، تصلك يومياً.",
+  "shopNow": "تسوق الآن",
+
+  "viewAll": "عرض الكل",
+  "companyDescription": "إعادة تعريف تجربة التسوق للمواد الغذائية مع جودة ممتازة، توريد مستدام، وتوصيل سلس إلى باب منزلك.",
+  "contactUsFooter": "تواصل معنا",
+  "explore": "استكشف",
+  "aboutInfo": "معلومات عنا",
+  "returnsPolicy": "سياسة الاسترجاع",
+  "careers": "الوظائف",
+  "support": "الدعم",
+  "helpCenter": "مركز المساعدة",
+  "phoneSupport": "دعم الهاتف",
+  "allDays": "كل الأيام",
+  "timeRange": "7 صباحاً - 10 مساءً",
+  "deliveryAreas": "مناطق التوصيل",
+  "faqFooter": "الأسئلة الشائعة",
+  "copyright": "جميع الحقوق محفوظة",
+
+  "quickOffers": "عروض سريعة",
+  "newProducts": "منتجات جديدة",
+  "bestSellers": "الأكثر مبيعاً",
+  "browseAll": "تصفح الكل",
+
+  "discount": "تخفيض",
+  "discountPercent": "خصم {percent}%",
+  "currency": "د.إ",
+
+  "newProductsDesc": "أحدث المنتجات المضافة",
+  "bestSellersDesc": "الأكثر طلباً من عملائنا",
+
+  "whatsappMessage": "مرحباً! أرغب في الاستفسار عن منتجاتكم."
+}

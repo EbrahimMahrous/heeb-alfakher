@@ -1,0 +1,12 @@
+{
+  "title": "Checkout",
+  "fullName": "Full Name",
+  "address": "Address",
+  "phone": "Phone Number",
+  "paymentMethod": "Payment Method",
+  "cashOnDelivery": "Cash on Delivery",
+  "cardOnDelivery": "Card on Delivery",
+  "creditCard": "Credit / Debit Card",
+  "total": "Total",
+  "confirm": "Confirm Order"
+}

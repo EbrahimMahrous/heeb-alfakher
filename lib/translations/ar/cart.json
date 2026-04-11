@@ -1,0 +1,22 @@
+{
+  "title": "عربة التسوق",
+  "empty": "سلتك فارغة",
+  "shopNow": "تسوق الآن",
+  "orderSummary": "ملخص الطلب",
+  "subtotal": "المجموع الفرعي",
+  "shipping": "الشحن والتوصيل",
+  "total": "الإجمالي",
+  "taxInclusive": "شامل الضريبة",
+  "freeShippingMessage": "أضف {amount} د.إ إضافية للحصول على توصيل مجاني!",
+  "promoCode": "رمز ترويجي",
+  "apply": "تطبيق",
+  "checkout": "إتمام الطلب",
+  "securePayment": "دفع آمن ومحمي",
+  "remove": "إزالة",
+  "quantity": "الكمية",
+  "youMayAlsoLike": "منتجات قد تعجبك",
+  "currency": "د.إ",
+  "updated": "تم تحديث الكمية",
+  "removed": "تم إزالة المنتج",
+  "home": "الرئيسية"
+}
