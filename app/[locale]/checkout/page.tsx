@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 import { useTranslation } from "@/lib/useTranslation";
-import { Button } from "@/components/ui/button";
+import Button from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
 export default function CheckoutPage() {
