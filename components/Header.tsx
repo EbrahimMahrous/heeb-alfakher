@@ -40,7 +40,7 @@ export default function Header() {
             className="w-full border border-neutral-300 rounded-full py-2 px-4 pr-10 focus:outline-none focus:border-primary"
           />
           <Image
-            src="icons/search.svg"
+            src="/icons/search.svg"
             alt="search"
             width={18}
             height={18}
