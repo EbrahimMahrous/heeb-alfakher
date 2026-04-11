@@ -17,42 +17,21 @@ const storeInfo = {
   },
 };
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string };
-}): Promise<Metadata> {
-  const { locale } = params;
-
-  const isArabic = locale === "ar";
-
-  const title = isArabic
-    ? "حيب الفاخر | متجر الفواكه الموسمية والألبان والأجار"
-    : "Heeb Al Fakher | Seasonal Fruits, Dairy & Pickles Store";
-
-  const description = isArabic
-    ? `تأسس متجر حيب الفاخر في يناير 2022، يقدم أكثر من 50 منتجاً من الفواكه الموسمية، منتجات الألبان، والأجار.`
-    : `Founded in January 2022, Heeb Al Fakher offers 50+ products of seasonal fruits, dairy, and pickles.`;
-
+export async function generateMetadata(): Promise<Metadata> {
   return {
-    title,
-    description,
+    title: storeInfo.name,
+    description:
+      "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
     icons: {
       icon: "/logo-icon.svg",
       shortcut: "/logo-icon.svg",
       apple: "/logo-icon.svg",
     },
-    alternates: {
-      canonical: `/${locale}`,
-      languages: {
-        ar: "/ar",
-        en: "/en",
-      },
-    },
     openGraph: {
-      title,
-      description,
-      url: `/${locale}`,
+      title: storeInfo.name,
+      description:
+        "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
+      url: "/",
       siteName: storeInfo.name,
       images: [
         {
@@ -62,13 +41,13 @@ export async function generateMetadata({
           alt: storeInfo.name,
         },
       ],
-      locale: isArabic ? "ar_AE" : "en_US",
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: storeInfo.name,
+      description:
+        "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
       images: ["/logo-icon.svg"],
     },
     robots: {
@@ -79,34 +58,16 @@ export async function generateMetadata({
         follow: true,
       },
     },
-    other: {
-      "contact:whatsapp": storeInfo.social.whatsapp,
-      "contact:instagram": storeInfo.social.instagram,
-      "contact:tiktok": storeInfo.social.tiktok,
-      "business:founding_date": storeInfo.founded,
-      "product:count": storeInfo.productsCount,
-      "delivery:cost": storeInfo.deliveryFee.toString(),
-      "delivery:method": isArabic
-        ? storeInfo.deliveryInfo
-        : storeInfo.deliveryInfoEn,
-    },
   };
 }
 
 export default function RootLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: { locale: string };
 }) {
-  const locale = params?.locale || "ar";
-
-  const supportedLocales = ["ar", "en"];
-  const safeLocale = supportedLocales.includes(locale) ? locale : "ar";
-
   return (
-    <html lang={safeLocale} dir={safeLocale === "ar" ? "rtl" : "ltr"}>
+    <html lang="ar" dir="rtl">
       <body>{children}</body>
     </html>
   );
