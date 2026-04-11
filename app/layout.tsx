@@ -20,9 +20,10 @@ const storeInfo = {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale } = params;
+
   const isArabic = locale === "ar";
 
   const title = isArabic
@@ -30,8 +31,8 @@ export async function generateMetadata({
     : "Heeb Al Fakher | Seasonal Fruits, Dairy & Pickles Store";
 
   const description = isArabic
-    ? `تأسس متجر حبيب الفاخر في يناير 2022، يقدم أكثر من 50 منتجاً من الفواكه الموسمية التقليدية، منتجات الألبان النادرة عالية الجودة، والأجار. نوفر التوصيل اليومي بمركبات مبردة (تكلفة 35 درهماً). يمكنك الشراء عبر واتساب، إنستغرام، وتيك توك.`
-    : `Founded in January 2022, Heeb Al Fakher offers 50+ products of traditional seasonal fruits, high-quality rare dairy products, and pickles. We provide daily delivery with refrigerated vehicles (35 AED fee). Shop via WhatsApp, Instagram, and TikTok.`;
+    ? `تأسس متجر حيب الفاخر في يناير 2022، يقدم أكثر من 50 منتجاً من الفواكه الموسمية، منتجات الألبان، والأجار.`
+    : `Founded in January 2022, Heeb Al Fakher offers 50+ products of seasonal fruits, dairy, and pickles.`;
 
   return {
     title,
@@ -92,14 +93,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
+  params: { locale: string };
 }) {
-  const { locale } = await params;
+  const locale = params?.locale || "ar";
+
   const supportedLocales = ["ar", "en"];
   const safeLocale = supportedLocales.includes(locale) ? locale : "ar";
 
