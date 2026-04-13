@@ -1,11 +1,20 @@
 {
   "title": "Careers",
   "hero": "Join the Heeb Al Fakher Team",
-  "description": "We are looking for passionate talents to be part of our journey.",
+  "description": "We are looking for passionate talents to be part of our journey. This page is currently under development, but you can still reach us via email.",
   "openings": "Open Positions",
   "position1": "Digital Marketing Manager",
   "position2": "Sales Specialist",
   "position3": "Delivery Associate",
+  "location1": "Dubai - Full Time",
+  "location2": "Sharjah - Full Time",
+  "location3": "Abu Dhabi - Part Time",
   "apply": "Apply Now",
-  "email": "Send your CV to careers@heebalfakher.ae"
+  "sendCVTitle": "Send Your CV",
+  "sendCVDesc": "Don't have an account? You can send your CV directly to our email",
+  "sendCV": "Send CV",
+  "email": "careers@heebalfakher.ae",
+  "underDevelopment": "🚧 Page Under Development",
+  "underDevelopmentDesc": "We're improving the application experience. For now, you can apply by sending your CV via email.",
+  "home": "Home"
 }

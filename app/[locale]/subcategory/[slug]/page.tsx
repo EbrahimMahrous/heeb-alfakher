@@ -4,15 +4,11 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
-import {
-  subcategories,
-  getProductsBySubcategorySlug,
-  categories,
-} from "@/lib/data";
+import { categories, subcategories, products as allProducts } from "@/lib/data";
 import ProductCard from "@/components/ProductCard";
-import { FaSlidersH, FaSortAmountDown } from "react-icons/fa";
+import { SlidersHorizontal, ArrowDownUp } from "lucide-react"; // ← icons from lucide-react
 
-// List of countries for the filter (with key and translated text)
+// List of countries for filter
 const countriesList = [
   { key: "qatar", ar: "قطر", en: "Qatar" },
   { key: "yemen", ar: "اليمن", en: "Yemen" },
@@ -24,106 +20,92 @@ const countriesList = [
   { key: "south-africa", ar: "جنوب أفريقيا", en: "South Africa" },
 ];
 
-// List of tags (temporary, can be fetched from the API later)
-const tagsList = [
-  { id: 1, name: "tag1", nameAr: "علامة 1", nameEn: "Tag 1" },
-  { id: 2, name: "tag2", nameAr: "علامة 2", nameEn: "Tag 2" },
-  { id: 3, name: "tag3", nameAr: "علامة 3", nameEn: "Tag 3" },
-];
-
-// Helper function to extract the country name from the origin text (e.g., "UAE 🇦🇪" -> "Emirates")
-const extractCountryName = (origin: string) => {
-  return origin.split(" ")[0].trim();
-};
-
-export default function SubcategoryPage() {
+export default function ProductsPage() {
   const { t, locale } = useTranslation("subcategory");
   const { slug } = useParams();
   const isRtl = locale === "ar";
-  const subcategory = subcategories.find((s) => s.slug === slug);
+
+  // Get subcategory info from slug (if any)
+  const subcategory = slug ? subcategories.find((s) => s.slug === slug) : null;
+  const mainCategory = subcategory
+    ? categories.find((cat) => cat.id === subcategory.mainCategoryId)
+    : null;
+
   const [productsList, setProductsList] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
 
-  // Filter status
+  // Filter state
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name-asc">(
     "name-asc",
   );
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // When loading products for the subcategory
+  // Load all products
   useEffect(() => {
-    if (!subcategory) return;
-    const prods = getProductsBySubcategorySlug(slug as string);
-    setProductsList(prods);
+    setProductsList(allProducts);
+    // Set max price based on all products
     const maxPrice = Math.max(
-      ...prods.map((p) => p.discountedPrice || p.price),
+      ...allProducts.map((p) => p.discountedPrice || p.price),
       100,
     );
     setPriceRange([0, maxPrice]);
-    // Reset filters when changing subcategory
-    setSelectedCategories([]);
+    // Set initial filter if coming from a subcategory
+    if (mainCategory && !selectedCategories.length) {
+      setSelectedCategories([mainCategory.slug]);
+    } else {
+      setSelectedCategories([]);
+    }
     setSelectedCountries([]);
-    setSelectedTags([]);
-  }, [slug, subcategory]);
+  }, [slug]); // Only when slug changes, reset filters
 
-  // Apply all filters
+  // Apply filters
   useEffect(() => {
     let prods = [...productsList];
 
-    // 1. Price filter
+    // Price filter
     prods = prods.filter(
       (p) =>
         (p.discountedPrice || p.price) >= priceRange[0] &&
         (p.discountedPrice || p.price) <= priceRange[1],
     );
 
-    // 2. Main classification filter (if any classification is selected)
+    // Main category filter
     if (selectedCategories.length > 0) {
-      prods = prods.filter((p) =>
-        selectedCategories.includes(p.mainCategorySlug || p.category),
+      const subCats = subcategories.filter((sub) =>
+        selectedCategories.includes(
+          categories.find((cat) => cat.id === sub.mainCategoryId)?.slug || "",
+        ),
       );
+      const subSlugs = subCats.map((s) => s.slug);
+      prods = prods.filter((p) => subSlugs.includes(p.subcategorySlug));
     }
 
-    // 3. Country filter (matching origin)
+    // Country filter
     if (selectedCountries.length > 0) {
-      prods = prods.filter((p) => {
-        const country = extractCountryName(p.origin);
-        return selectedCountries.includes(country);
-      });
+      prods = prods.filter((p) => selectedCountries.includes(p.countryCode));
     }
 
-    // 4. Tag filter (Products currently have no tags, we are temporarily adding random tags to illustrate the idea)
-    if (selectedTags.length > 0) {
-      // In fact, every product should have a `tags` field (array)
-      // We will assume that products with odd IDs are marked 1, even IDs are marked 2, etc. (for illustration)
-      prods = prods.filter((p) => {
-        // Experience: Mark 1 for products ID 1, 4, 7..., Mark 2 for 2, 5, 8..., Mark 3 for 3, 6, 9...
-        const tagId = (p.id % 3) + 1;
-        return selectedTags.includes(`tag${tagId}`);
-      });
-    }
-
-    // 5. Order
-    if (sortBy === "price-asc")
+    // Sorting
+    if (sortBy === "price-asc") {
       prods.sort(
         (a, b) =>
           (a.discountedPrice || a.price) - (b.discountedPrice || b.price),
       );
-    if (sortBy === "price-desc")
+    } else if (sortBy === "price-desc") {
       prods.sort(
         (a, b) =>
           (b.discountedPrice || b.price) - (a.discountedPrice || a.price),
       );
-    if (sortBy === "name-asc")
+    } else if (sortBy === "name-asc") {
       prods.sort((a, b) =>
         locale === "ar"
           ? a.name.localeCompare(b.name)
           : a.nameEn.localeCompare(b.nameEn),
       );
+    }
 
     setFilteredProducts(prods);
   }, [
@@ -132,20 +114,9 @@ export default function SubcategoryPage() {
     sortBy,
     selectedCategories,
     selectedCountries,
-    selectedTags,
     locale,
   ]);
 
-  if (!subcategory)
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        {t("notFound")}
-      </div>
-    );
-
-  const name = locale === "ar" ? subcategory.name : subcategory.nameEn;
-
-  // Function to switch classification selection
   const toggleCategory = (catSlug: string) => {
     setSelectedCategories((prev) =>
       prev.includes(catSlug)
@@ -154,54 +125,70 @@ export default function SubcategoryPage() {
     );
   };
 
-  // Function to switch country selection
   const toggleCountry = (countryKey: string) => {
-    const countryName =
-      locale === "ar"
-        ? countriesList.find((c) => c.key === countryKey)?.ar
-        : countriesList.find((c) => c.key === countryKey)?.en;
-    if (countryName) {
-      setSelectedCountries((prev) =>
-        prev.includes(countryName)
-          ? prev.filter((c) => c !== countryName)
-          : [...prev, countryName],
-      );
-    }
-  };
-
-  // Function to switch flag selection
-  const toggleTag = (tagKey: string) => {
-    setSelectedTags((prev) =>
-      prev.includes(tagKey)
-        ? prev.filter((t) => t !== tagKey)
-        : [...prev, tagKey],
+    setSelectedCountries((prev) =>
+      prev.includes(countryKey)
+        ? prev.filter((c) => c !== countryKey)
+        : [...prev, countryKey],
     );
   };
 
-  // Reset all filters (except price and sorting)
   const resetFilters = () => {
     setSelectedCategories([]);
     setSelectedCountries([]);
-    setSelectedTags([]);
+    const maxPrice = Math.max(
+      ...productsList.map((p) => p.discountedPrice || p.price),
+      100,
+    );
+    setPriceRange([0, maxPrice]);
+    setSortBy("name-asc");
   };
+
+  // Page title and breadcrumb
+  const pageTitle = subcategory
+    ? locale === "ar"
+      ? subcategory.name
+      : subcategory.nameEn
+    : t("allProducts");
+
+  const breadcrumbItems = [
+    { href: "/", label: t("home") },
+    { href: "/categories", label: t("categories") },
+  ];
+  if (subcategory && mainCategory) {
+    breadcrumbItems.push({
+      href: `/category/${mainCategory.slug}`,
+      label: locale === "ar" ? mainCategory.name : mainCategory.nameEn,
+    });
+  }
+  breadcrumbItems.push({
+    label: pageTitle,
+    href: "",
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
-        <Link href="/" className="hover:text-primary">
-          {t("home")}
-        </Link>
-        <span>/</span>
-        <Link href="/categories" className="hover:text-primary">
-          {t("categories")}
-        </Link>
-        <span>/</span>
-        <span className="text-dark font-medium">{name}</span>
+      <div className="flex items-center gap-1 text-sm text-gray-500 mb-6 flex-wrap">
+        {breadcrumbItems.map((item, idx) => (
+          <span key={idx} className="flex items-center gap-1">
+            {idx > 0 && <span>/</span>}
+            {item.href ? (
+              <Link
+                href={item.href}
+                className="hover:text-primary transition-colors"
+              >
+                {item.label}
+              </Link>
+            ) : (
+              <span className="text-dark font-medium">{item.label}</span>
+            )}
+          </span>
+        ))}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Right column (in RTL it becomes left) - Filters */}
+        {/* Sidebar Filters */}
         <div className="lg:w-1/3 xl:w-1/4">
           <div className="bg-neutral-50 p-5 rounded-2xl sticky top-24 shadow-sm">
             <div className="flex justify-between items-center mb-4">
@@ -210,17 +197,16 @@ export default function SubcategoryPage() {
                 onClick={() => setShowFilters(!showFilters)}
                 className="lg:hidden text-primary"
               >
-                <FaSlidersH />
+                <SlidersHorizontal size={20} />
               </button>
             </div>
             <div
               className={`space-y-8 ${showFilters ? "block" : "hidden lg:block"}`}
             >
-              {/* 1. Filter by category (with circular images) */}
+              {/* Filter by Main Category */}
               <div>
                 <h4 className="font-semibold mb-3">{t("filterByCategory")}</h4>
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                  {/* The "All Products" option (means no category is specified) */}
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -261,14 +247,12 @@ export default function SubcategoryPage() {
                 </div>
               </div>
 
-              {/* 2. Filter by country */}
+              {/* Filter by Country */}
               <div>
                 <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
                 <div className="flex flex-wrap gap-2">
                   {countriesList.map((country) => {
-                    const countryName =
-                      locale === "ar" ? country.ar : country.en;
-                    const isActive = selectedCountries.includes(countryName);
+                    const isActive = selectedCountries.includes(country.key);
                     return (
                       <button
                         key={country.key}
@@ -279,38 +263,14 @@ export default function SubcategoryPage() {
                             : "bg-white border-neutral-300 hover:border-primary"
                         }`}
                       >
-                        {countryName}
+                        {locale === "ar" ? country.ar : country.en}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* 3. Tag Filter*/}
-              <div>
-                <h4 className="font-semibold mb-3">{t("filterByTags")}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {tagsList.map((tag) => {
-                    const tagName = locale === "ar" ? tag.nameAr : tag.nameEn;
-                    const isActive = selectedTags.includes(tag.name);
-                    return (
-                      <button
-                        key={tag.id}
-                        onClick={() => toggleTag(tag.name)}
-                        className={`px-3 py-1 rounded-full text-sm border transition ${
-                          isActive
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white border-neutral-300 hover:border-primary"
-                        }`}
-                      >
-                        {tagName}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Apply and reset buttons (for all filters) */}
+              {/* Reset button */}
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={resetFilters}
@@ -323,14 +283,14 @@ export default function SubcategoryPage() {
           </div>
         </div>
 
-        {/* Left column (products) */}
+        {/* Products Grid */}
         <div className="lg:w-2/3 xl:w-3/4">
           <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
             <h2 className="text-xl font-semibold text-dark">
               {t("allProducts")} ({filteredProducts.length})
             </h2>
             <div className="flex items-center gap-2">
-              <FaSortAmountDown className="text-gray-500" />
+              <ArrowDownUp size={18} className="text-gray-500" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}

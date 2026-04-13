@@ -35,7 +35,7 @@ export default function CategorySection() {
 
   // A function to find the first subcategory of the main category
   const getFirstSubcategorySlug = (categoryId: number) => {
-    const sub = subcategories.find(sub => sub.mainCategoryId === categoryId);
+    const sub = subcategories.find((sub) => sub.mainCategoryId === categoryId);
     return sub ? sub.slug : null;
   };
 
@@ -73,12 +73,9 @@ export default function CategorySection() {
           className="category-swiper"
         >
           {categories.map((cat) => {
-            const firstSubSlug = getFirstSubcategorySlug(cat.id);
-            // If no subcategory exists, we do not display the category.
-            if (!firstSubSlug) return null;
             return (
               <SwiperSlide key={cat.id} className="w-auto!">
-                <Link href={`/subcategory/${firstSubSlug}`}>
+                <Link href={`/category/${cat.slug}`}>
                   <div className="flex flex-col items-center text-center group cursor-pointer">
                     <div className="w-24 h-24 md:w-28 md:h-28 bg-neutral-100 rounded-full flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                       {cat.image ? (

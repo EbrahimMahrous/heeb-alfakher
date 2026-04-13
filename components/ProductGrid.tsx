@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRef } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCard from "./ProductCard";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductGridProps {
   title?: string;
@@ -42,13 +42,13 @@ export default function ProductGrid({
   return (
     <div className="my-8">
       <div className="relative group">
-        {/* Left scroll button (black background - white arrow) */}
+        {/* Left scroll button */}
         <button
           onClick={() => scroll(isRtl ? "right" : "left")}
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-dark text-white rounded-full p-2 shadow-md hover:bg-dark/80 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
-          aria-label="السابق"
+          aria-label={isRtl ? "التالي" : "السابق"}
         >
-          <FaChevronLeft />
+          <ChevronLeft />
         </button>
 
         {/* Horizontal scroll container */}
@@ -92,13 +92,13 @@ export default function ProductGrid({
           ))}
         </div>
 
-        {/* Right scroll button (black background - white arrow) */}
+        {/* Right scroll button */}
         <button
           onClick={() => scroll(isRtl ? "left" : "right")}
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-dark text-white rounded-full p-2 shadow-md hover:bg-dark/80 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
-          aria-label="التالي"
+          aria-label={isRtl ? "السابق" : "التالي"}
         >
-          <FaChevronRight />
+          <ChevronRight />
         </button>
       </div>
     </div>

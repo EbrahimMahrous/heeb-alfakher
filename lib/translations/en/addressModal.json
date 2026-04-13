@@ -1,0 +1,19 @@
+{
+  "title": "Delivery Address",
+  "fullName": "Full Name",
+  "city": "City",
+  "region": "Region",
+  "countryCode": "Country Code",
+  "phone": "Phone Number",
+  "buildingNo": "Apartment / Villa No.",
+  "streetAddress": "Street / Landmark",
+  "isDefault": "Set as default address",
+  "cancel": "Cancel",
+  "save": "Save",
+  "searchPlaceholder": "Search for your area or city",
+  "deliverHere": "Deliver here",
+  "locateMe": "Locate me",
+  "loading": "Loading map...",
+  "error": "Error loading map",
+  "validationRequired": "Please fill in all required fields"
+}

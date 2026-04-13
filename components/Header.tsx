@@ -5,10 +5,32 @@ import { useTranslation } from "@/lib/useTranslation";
 import LanguageSwitcher from "./LanguageSwitcher";
 import CartIcon from "./CartIcon";
 import Image from "next/image";
+import { useState, useEffect } from "react";
+
+// localStorage key for saving search query
+const SEARCH_STORAGE_KEY = "header_search_query";
 
 export default function Header() {
   const { t } = useTranslation("common");
   const pathname = usePathname();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Load saved search query from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedQuery = localStorage.getItem(SEARCH_STORAGE_KEY);
+      if (savedQuery) {
+        setSearchQuery(savedQuery);
+      }
+    }
+  }, []);
+
+  // Save search query to localStorage whenever it changes
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    localStorage.setItem(SEARCH_STORAGE_KEY, value);
+  };
 
   // Checking for "active" on the main page
   const isHomeActive =
@@ -37,6 +59,8 @@ export default function Header() {
           <input
             type="text"
             placeholder={t("search")}
+            value={searchQuery}
+            onChange={handleSearchChange}
             className="w-full border border-neutral-300 rounded-full py-2 px-4 pr-10 focus:outline-none focus:border-primary"
           />
           <Image

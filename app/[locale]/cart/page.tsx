@@ -8,7 +8,32 @@ import { useTranslation } from "@/lib/useTranslation";
 import { toast } from "sonner";
 import ProductCarousel from "@/components/ProductCarousel";
 import { products } from "@/lib/data";
-import { FaTrashAlt } from "react-icons/fa";
+import { Trash2 } from "lucide-react";
+
+// Local storage key for cart persistence
+const CART_STORAGE_KEY = "heeb_cart";
+
+// Helper: Save cart items to localStorage
+const saveCartToLocalStorage = (items: any[]) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }
+};
+
+// Helper: Load cart items from localStorage
+const loadCartFromLocalStorage = () => {
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse cart from localStorage", e);
+      }
+    }
+  }
+  return null;
+};
 
 const ProductMeta = ({ weight }: { weight?: string }) => {
   if (!weight) return null;
@@ -36,21 +61,46 @@ export default function CartPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [promoCode, setPromoCode] = useState("");
 
-  const shippingCost = 15;
-  const freeShippingThreshold = 100;
+  const shippingCost = 35;
+  const freeShippingThreshold = 500;
   const subtotal = totalPrice;
   const total =
     subtotal + (subtotal >= freeShippingThreshold ? 0 : shippingCost);
   const remainingForFree = Math.max(0, freeShippingThreshold - subtotal);
+  const progressPercent = Math.min(
+    100,
+    (subtotal / freeShippingThreshold) * 100,
+  );
 
   const cartProductIds = new Set(items.map((i) => i.id));
   const suggestedProducts = products
     .filter((p) => !cartProductIds.has(p.id))
     .slice(0, 8);
 
+  // Load cart from API, then sync with localStorage
   useEffect(() => {
-    fetchCart().finally(() => setIsLoading(false));
-  }, []);
+    const loadCart = async () => {
+      try {
+        await fetchCart();
+      } catch (error) {
+        console.error("Failed to fetch cart from API", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadCart();
+  }, [fetchCart]);
+
+  // Save cart items to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      if (items.length > 0) {
+        saveCartToLocalStorage(items);
+      } else {
+        localStorage.removeItem(CART_STORAGE_KEY);
+      }
+    }
+  }, [items, isLoading]);
 
   const handleUpdateQuantity = async (id: number, quantity: number) => {
     if (quantity < 1) return;
@@ -94,6 +144,7 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
         <Link href="/" className="hover:text-primary transition">
           {t("home")}
@@ -103,6 +154,7 @@ export default function CartPage() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
+        {/* Product List */}
         <div className="lg:col-span-2 space-y-6">
           <h1 className="text-2xl font-bold text-primary">
             {t("title")} ({items.reduce((sum, i) => sum + i.quantity, 0)})
@@ -182,7 +234,7 @@ export default function CartPage() {
                     className="text-red-500 hover:text-red-700 transition"
                     disabled={isUpdating}
                   >
-                    <FaTrashAlt size={18} />
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>
@@ -190,8 +242,12 @@ export default function CartPage() {
           })}
         </div>
 
-        <div className="bg-neutral-50 p-6 rounded-2xl shadow-sm h-fit sticky top-24">
-          <h2 className="text-xl font-bold mb-4">{t("orderSummary")}</h2>
+        {/* Order Summary */}
+        <div className="bg-white border border-neutral-200 p-6 rounded-2xl shadow-lg h-fit sticky top-24">
+          <h2 className="text-center text-xl font-bold mb-4">
+            {t("orderSummary")}
+          </h2>
+
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span>{t("subtotal")}</span>
@@ -207,49 +263,103 @@ export default function CartPage() {
                   : `${shippingCost} ${t("currency")}`}
               </span>
             </div>
+
+            {/* Total + Incl. Tax */}
+            <div className="pt-2">
+              <div className="flex justify-between text-lg font-bold">
+                <span>{t("total")}</span>
+                <span>
+                  {total} {t("currency")}
+                </span>
+              </div>
+              <div className="flex justify-end text-xs text-neutral-500 mt-0.5">
+                <span>({t("taxInclusive")})</span>
+              </div>
+            </div>
+
+            {/* Progress bar (above the promo code field) */}
             {remainingForFree > 0 && (
-              <div className="bg-green-50 text-green-700 p-2 rounded-lg text-xs text-center">
-                {t("freeShippingMessage", { amount: remainingForFree })}
+              <div
+                className="mt-4 p-3 rounded-xl"
+                style={{ backgroundColor: "#D1FAE5" }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    {t("freeShippingMessage", { amount: remainingForFree })}
+                  </span>
+                </div>
+                <div className="relative w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-[#338A43] h-2.5 rounded-full transition-all duration-300"
+                    style={{ width: `${progressPercent}%` }}
+                  ></div>
+                  {/* Animated icon representing progress */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 transition-all duration-300"
+                    style={{ left: `calc(${progressPercent}% - 8px)` }}
+                  >
+                    <Image
+                      src="/icons/delivery-process.svg"
+                      alt="delivery-truck"
+                      width={16}
+                      height={16}
+                      className="drop-shadow-md"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-neutral-600 mt-1 text-right">
+                  {progressPercent.toFixed(0)}% مكتمل
+                </p>
               </div>
             )}
-            <div className="flex justify-between text-lg font-bold pt-2">
-              <span>{t("total")}</span>
-              <span>
-                {total} {t("currency")}
-              </span>
-            </div>
-            <div className="text-xs text-neutral-500 text-center">
-              {t("taxInclusive")}
-            </div>
+
+            {/* Promotional code field with icon */}
             <div className="pt-4">
               <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder={t("promoCode")}
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  className="flex-1 border border-neutral-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-primary"
-                />
+                <div className="relative flex-1">
+                  <Image
+                    src="/icons/coupon.svg"
+                    alt="coupon"
+                    width={18}
+                    height={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                  />
+                  <input
+                    type="text"
+                    placeholder={t("promoCode")}
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    className="w-full border border-neutral-300 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary"
+                  />
+                </div>
                 <Button
                   onClick={handleApplyPromo}
-                  className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-full text-sm"
+                  className="bg-[#0F172A] hover:bg-[#0F172A]/90 text-white px-4 py-2 rounded-full text-sm"
                 >
                   {t("apply")}
                 </Button>
               </div>
             </div>
+
             <Link href="/checkout" className="block mt-4">
-              <Button className="w-full bg-orange hover:bg-orange/90 text-white py-3 rounded-full text-base font-semibold">
+              <Button className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-base font-semibold">
                 {t("checkout")}
               </Button>
             </Link>
-            <p className="text-center text-xs text-neutral-500 mt-2 flex items-center justify-center gap-1">
-              <span>🔒</span> {t("securePayment")}
+
+            {/* Secure payment with icon */}
+            <p
+              className="text-center text-xs mt-2 flex items-center justify-center gap-1"
+              style={{ color: "#94A3B8" }}
+            >
+              <Image src="/icons/safe.svg" alt="safe" width={16} height={16} />
+              <span>{t("securePayment")}</span>
             </p>
           </div>
         </div>
       </div>
 
+      {/* Suggested Products */}
       {suggestedProducts.length > 0 && (
         <div className="mt-16">
           <ProductCarousel

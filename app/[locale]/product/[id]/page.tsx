@@ -9,7 +9,7 @@ import Button from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCarousel from "@/components/ProductCarousel";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export default function ProductDetailPage() {
   const { t, locale } = useTranslation("product");
@@ -178,7 +178,7 @@ export default function ProductDetailPage() {
               <span className="font-semibold text-lg">
                 {t("productDetails")}
               </span>
-              {isDetailsOpen ? <FaChevronUp /> : <FaChevronDown />}
+              {isDetailsOpen ? <ChevronUp /> : <ChevronDown />}
             </button>
             {isDetailsOpen && (
               <div className="p-4 text-neutral-700 leading-relaxed border-t border-neutral-200">

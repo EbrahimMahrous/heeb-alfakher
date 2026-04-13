@@ -2,10 +2,14 @@
   "title": "Help Center",
   "hero": "How can we help you?",
   "faq": "Frequently Asked Questions",
+  "goToFaq": "Go to FAQ",
   "contact": "Contact Us",
   "email": "Email: help@heebalfakher.ae",
-  "phone": "Phone: 800-1234-567",
+  "phone": "Phone: 0523630501",
   "liveChat": "Live Chat (coming soon)",
   "orderTracking": "Track your order",
-  "returnsHelp": "Return Policy"
+  "returnsHelp": "Return Policy",
+  "viewReturnPolicy": "Return Policy",
+  "comingSoon": "(coming soon)",
+  "home": "Home"
 }

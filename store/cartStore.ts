@@ -1,4 +1,6 @@
-import { create } from 'zustand';
+// store/cartStore.ts
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface CartItem {
   id: number;
@@ -19,106 +21,162 @@ interface CartStore {
   totalItems: number;
   totalPrice: number;
   error: string | null;
+  // Actions
   fetchCart: (userId?: string) => Promise<void>;
   addItem: (item: CartItem, userId?: string) => Promise<void>;
-  updateQuantity: (id: number, quantity: number, userId?: string) => Promise<void>;
+  updateQuantity: (
+    id: number,
+    quantity: number,
+    userId?: string,
+  ) => Promise<void>;
   removeItem: (id: number, userId?: string) => Promise<void>;
   clearCart: (userId?: string) => Promise<void>;
+  // Helper to recalc totals
+  recalcTotals: () => void;
 }
 
-const getUserId = () => 'guest';
+// Helper to calculate totals from items
+const calculateTotals = (items: CartItem[]) => {
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
+  const totalPrice = items.reduce(
+    (sum, i) => sum + (i.discountedPrice ?? i.price) * i.quantity,
+    0,
+  );
+  return { totalItems, totalPrice };
+};
 
-export const useCartStore = create<CartStore>((set, get) => ({
+// Local storage key for cart persistence
+const CART_STORAGE_KEY = "heeb_cart";
+
+// Helper to save cart to localStorage
+const saveCartToLocalStorage = (items: CartItem[]) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  }
+};
+
+// Helper to load cart from localStorage
+const loadCartFromLocalStorage = (): CartItem[] => {
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem(CART_STORAGE_KEY);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch (e) {
+        console.error("Failed to parse cart from localStorage", e);
+      }
+    }
+  }
+  return [];
+};
+
+// Optional: sync with backend API (if available)
+const syncCartToAPI = async (userId: string, items: CartItem[]) => {
+  try {
+    const response = await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, items }),
+    });
+    if (!response.ok) throw new Error("API sync failed");
+    return await response.json();
+  } catch (err) {
+    console.warn("API sync failed, using localStorage only", err);
+    return null;
+  }
+};
+
+export const useCartStore = create<CartStore>()((set, get) => ({
   items: [],
   totalItems: 0,
   totalPrice: 0,
   error: null,
 
-  fetchCart: async (userId = getUserId()) => {
+  // Recalculate totals and save to localStorage
+  recalcTotals: () => {
+    const { items } = get();
+    const { totalItems, totalPrice } = calculateTotals(items);
+    set({ totalItems, totalPrice });
+    saveCartToLocalStorage(items);
+  },
+
+  // Load cart from localStorage (no API call by default)
+  fetchCart: async (userId = "guest") => {
     try {
+      // Try to load from localStorage first
+      const localItems = loadCartFromLocalStorage();
+      if (localItems.length > 0) {
+        const { totalItems, totalPrice } = calculateTotals(localItems);
+        set({ items: localItems, totalItems, totalPrice, error: null });
+      } else {
+        set({ items: [], totalItems: 0, totalPrice: 0 });
+      }
+
+      // Optional: try to sync with backend API (if available)
+      // Uncomment below if you have a working API
+      /*
       const res = await fetch(`/api/cart?userId=${userId}`);
-      if (!res.ok) throw new Error('Failed to fetch cart');
-      const data = await res.json();
-      set({ items: data.items, totalItems: data.totalItems, totalPrice: data.totalPrice });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.items && data.items.length) {
+          set({ items: data.items, totalItems: data.totalItems, totalPrice: data.totalPrice });
+          saveCartToLocalStorage(data.items);
+        }
+      }
+      */
     } catch (err: any) {
+      console.error("Error fetching cart", err);
       set({ error: err.message });
     }
   },
 
-  addItem: async (item, userId = getUserId()) => {
+  addItem: async (item, userId = "guest") => {
     const currentItems = get().items;
-    const existingIndex = currentItems.findIndex(i => i.id === item.id);
+    const existingIndex = currentItems.findIndex((i) => i.id === item.id);
     let newItems;
     if (existingIndex !== -1) {
-      newItems = currentItems.map(i =>
-        i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i
+      newItems = currentItems.map((i) =>
+        i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i,
       );
     } else {
       newItems = [...currentItems, item];
     }
-    const newTotalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
-    const newTotalPrice = newItems.reduce((sum, i) => sum + (i.discountedPrice ?? i.price) * i.quantity, 0);
-    set({ items: newItems, totalItems: newTotalItems, totalPrice: newTotalPrice });
+    const { totalItems, totalPrice } = calculateTotals(newItems);
+    set({ items: newItems, totalItems, totalPrice });
+    saveCartToLocalStorage(newItems);
 
-    try {
-      await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, item }),
-      });
-    } catch (err) {
-      console.error('Error syncing cart, reverting...', err);
-      await get().fetchCart(userId);
-    }
+    // Optional: sync with API (non-blocking)
+    syncCartToAPI(userId, newItems).catch(console.warn);
   },
 
-  updateQuantity: async (id, quantity, userId = getUserId()) => {
-    const newItems = get().items.map(i => i.id === id ? { ...i, quantity } : i);
-    const newTotalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
-    const newTotalPrice = newItems.reduce((sum, i) => sum + (i.discountedPrice ?? i.price) * i.quantity, 0);
-    set({ items: newItems, totalItems: newTotalItems, totalPrice: newTotalPrice });
+  updateQuantity: async (id, quantity, userId = "guest") => {
+    if (quantity < 1) return;
+    const newItems = get().items.map((i) =>
+      i.id === id ? { ...i, quantity } : i,
+    );
+    const { totalItems, totalPrice } = calculateTotals(newItems);
+    set({ items: newItems, totalItems, totalPrice });
+    saveCartToLocalStorage(newItems);
 
-    try {
-      await fetch('/api/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, id, quantity }),
-      });
-    } catch (err) {
-      console.error('Error updating quantity', err);
-      await get().fetchCart(userId);
-    }
+    // Optional: sync with API
+    syncCartToAPI(userId, newItems).catch(console.warn);
   },
 
-  removeItem: async (id, userId = getUserId()) => {
-    const newItems = get().items.filter(i => i.id !== id);
-    const newTotalItems = newItems.reduce((sum, i) => sum + i.quantity, 0);
-    const newTotalPrice = newItems.reduce((sum, i) => sum + (i.discountedPrice ?? i.price) * i.quantity, 0);
-    set({ items: newItems, totalItems: newTotalItems, totalPrice: newTotalPrice });
+  removeItem: async (id, userId = "guest") => {
+    const newItems = get().items.filter((i) => i.id !== id);
+    const { totalItems, totalPrice } = calculateTotals(newItems);
+    set({ items: newItems, totalItems, totalPrice });
+    saveCartToLocalStorage(newItems);
 
-    try {
-      await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, id }),
-      });
-    } catch (err) {
-      console.error('Error removing item', err);
-      await get().fetchCart(userId);
-    }
+    // Optional: sync with API
+    syncCartToAPI(userId, newItems).catch(console.warn);
   },
 
-  clearCart: async (userId = getUserId()) => {
+  clearCart: async (userId = "guest") => {
     set({ items: [], totalItems: 0, totalPrice: 0 });
-    try {
-      await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, clearAll: true }),
-      });
-    } catch (err) {
-      console.error('Error clearing cart', err);
-      await get().fetchCart(userId);
-    }
+    saveCartToLocalStorage([]);
+
+    // Optional: sync with API
+    syncCartToAPI(userId, []).catch(console.warn);
   },
 }));

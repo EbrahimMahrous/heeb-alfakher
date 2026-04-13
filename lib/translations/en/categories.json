@@ -1,11 +1,9 @@
 {
-  "title": "All Categories",
-  "shopByCategory": "Shop by Category",
-  "browseAll": "Browse All",
-  "noProducts": "No products in this category",
+  "title": "Categories",
   "home": "Home",
-
-  "discover": "Discover our collection",
+  "shopByCategory": "Shop by Category",
+  "discover": "Explore our diverse collection",
+  "products": "products",
   "prev": "Previous",
   "next": "Next"
 }

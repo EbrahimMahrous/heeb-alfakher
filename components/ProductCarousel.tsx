@@ -2,7 +2,7 @@
 import { useRef } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCard from "./ProductCard";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductCarouselProps {
   title?: string;
@@ -48,16 +48,16 @@ export default function ProductCarousel({
       )}
 
       <div className="relative group">
-        {/* Left scroll button (black background, white arrow) */}
+        {/* Left scroll button */}
         <button
           onClick={() => scroll(isRtl ? "right" : "left")}
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
           aria-label={t("previous") || "السابق"}
         >
-          <FaChevronLeft className="text-white text-sm" />
+          <ChevronLeft className="text-white w-4 h-4" />
         </button>
 
-        {/* Scroll container (without auto-play) */}
+        {/* Scroll container */}
         <div
           ref={scrollRef}
           className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-hide"
@@ -70,13 +70,13 @@ export default function ProductCarousel({
           ))}
         </div>
 
-        {/* Right scroll button (black background, white arrow) */}
+        {/* Right scroll button */}
         <button
           onClick={() => scroll(isRtl ? "left" : "right")}
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
           aria-label={t("next") || "التالي"}
         >
-          <FaChevronRight className="text-white text-sm" />
+          <ChevronRight className="text-white w-4 h-4" />
         </button>
       </div>
     </div>

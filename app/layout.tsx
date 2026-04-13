@@ -1,6 +1,7 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const storeInfo = {
   name: "حيب الفاخر",
@@ -20,8 +21,7 @@ const storeInfo = {
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: storeInfo.name,
-    description:
-      "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
+    description: "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
     icons: {
       icon: "/logo-icon.svg",
       shortcut: "/logo-icon.svg",
@@ -68,7 +68,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster position="bottom-center" richColors closeButton />
+      </body>
     </html>
   );
 }

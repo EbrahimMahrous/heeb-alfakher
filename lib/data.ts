@@ -61,7 +61,7 @@ export const categories = [
 ];
 
 // ============================================================
-// 2. (Subcategories) 
+// 2. (Subcategories)
 // ============================================================
 export const subcategories = [
   // (mainCategoryId: 1) => Nuts & Almonds
@@ -301,6 +301,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "1 كيلو",
     category: "fruits",
     subcategorySlug: "haib",
@@ -317,6 +318,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "2 كيلو",
     category: "fruits",
     subcategorySlug: "yellow-almonds-fruit",
@@ -333,6 +335,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "2 كيلو",
     category: "fruits",
     subcategorySlug: "almond-beidam",
@@ -349,6 +352,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 جم",
     category: "fruits",
     subcategorySlug: "spicy-sour-almonds",
@@ -365,6 +369,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "1 كيلو",
     category: "fruits",
     subcategorySlug: "red-farsad",
@@ -381,6 +386,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "1 كيلو",
     category: "fruits",
     subcategorySlug: "wild-berries",
@@ -396,6 +402,7 @@ export const products = [
     discountedPrice: 80,
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
+    countryCode: "uae",
     originEn: "UAE 🇦🇪",
     weight: "1 كيلو",
     category: "fruits",
@@ -412,6 +419,7 @@ export const products = [
     discountPercent: 8,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "500 جم",
     category: "dairy",
     subcategorySlug: "ghee",
@@ -427,6 +435,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 جم",
     category: "dairy",
     subcategorySlug: "jami",
@@ -443,6 +452,7 @@ export const products = [
     discountPercent: 14,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "1 لتر",
     category: "dairy",
     subcategorySlug: "cow-milk",
@@ -459,6 +469,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "1 كيلو",
     category: "dairy",
     subcategorySlug: "cow-butter",
@@ -475,6 +486,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 جم",
     category: "fruits",
     subcategorySlug: "yaqut",
@@ -491,6 +503,7 @@ export const products = [
     discountPercent: 14,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "1 لتر",
     category: "dairy",
     subcategorySlug: "milk-fenugreek",
@@ -507,6 +520,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "500 جم",
     category: "dairy",
     subcategorySlug: "cow-butter",
@@ -523,6 +537,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "500 جم",
     category: "pickles",
     subcategorySlug: "lemon-pickle",
@@ -539,6 +554,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "500 جم",
     category: "pickles",
     subcategorySlug: "bamber-pickle",
@@ -554,6 +570,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 جم",
     category: "fruits",
     subcategorySlug: "regular-sour-almonds",
@@ -569,6 +586,7 @@ export const products = [
     discountPercent: 15,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "متنوع",
     category: "gifts",
     subcategorySlug: "special-basket",
@@ -585,6 +603,7 @@ export const products = [
     discountPercent: 13,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "500 جم",
     category: "dairy",
     subcategorySlug: "cow-cheese",
@@ -600,6 +619,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 مل",
     category: "sauces",
     subcategorySlug: "hot-chili",
@@ -616,6 +636,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 مل",
     category: "sauces",
     subcategorySlug: "himba-special-sauce",
@@ -631,6 +652,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 مل",
     category: "sauces",
     subcategorySlug: "himba-regular-sauce",
@@ -647,6 +669,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "200 جم",
     category: "pickles",
     subcategorySlug: "almond-pickle",
@@ -663,6 +686,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "200 جم",
     category: "pickles",
     subcategorySlug: "himba-special",
@@ -678,6 +702,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "200 جم",
     category: "pickles",
     subcategorySlug: "himba-regular",
@@ -694,6 +719,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "200 جم",
     category: "pickles",
     subcategorySlug: "lemon-pickle",
@@ -710,6 +736,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "200 جم",
     category: "pickles",
     subcategorySlug: "himba-sour-sweet",
@@ -726,6 +753,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "متنوع",
     category: "fruits",
     subcategorySlug: "haib-box",
@@ -742,6 +770,7 @@ export const products = [
     discountPercent: 13,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "250 جم",
     category: "fruits",
     subcategorySlug: "sweet-corn",
@@ -758,6 +787,7 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "200 جم",
     category: "jams",
     subcategorySlug: "small-mulberry-jam",
@@ -773,6 +803,7 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
+    countryCode: "uae",
     weight: "500 جم",
     category: "jams",
     subcategorySlug: "large-mulberry-jam",
@@ -791,14 +822,18 @@ export function getProductsBySubcategorySlug(slug: string) {
 // 5. Obtaining products from the main classification (using dependent sub-classifications)
 export function getProductsByMainCategorySlug(slug: string) {
   // 6. Finding the main classification
-  const mainCategory = categories.find(cat => cat.slug === slug);
+  const mainCategory = categories.find((cat) => cat.slug === slug);
   if (!mainCategory) return [];
   // 7. Find all subcategories belonging to this main category
-  const subCats = subcategories.filter(sub => sub.mainCategoryId === mainCategory.id);
+  const subCats = subcategories.filter(
+    (sub) => sub.mainCategoryId === mainCategory.id,
+  );
   // 8. Obtaining the names of the slugs for the subcategories
-  const subSlugs = subCats.map(sub => sub.slug);
+  const subSlugs = subCats.map((sub) => sub.slug);
   // 9. Bring products that fall under any of these subcategories
-  return products.filter(product => subSlugs.includes(product.subcategorySlug));
+  return products.filter((product) =>
+    subSlugs.includes(product.subcategorySlug),
+  );
 }
 
 // ============================================================

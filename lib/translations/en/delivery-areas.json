@@ -1,11 +1,19 @@
 {
   "title": "Delivery Areas",
-  "hero": "We deliver wherever you are",
-  "description": "We deliver to all emirates and many other regions.",
-  "uae": "United Arab Emirates",
-  "riyadh": "Riyadh - Saudi Arabia",
-  "doha": "Doha - Qatar",
-  "manama": "Manama - Bahrain",
-  "muscat": "Muscat - Oman",
-  "note": "If your area is not listed, please contact us."
+  "hero": "We deliver wherever you are in the UAE",
+  "deliveryNote": "We deliver to all seven emirates of the UAE",
+  "allEmirates": "All Emirates",
+  "available": "Delivery available",
+  "note": "If your area is not listed, please contact us and we will arrange delivery.",
+  "contact": "Reach us at info@heebalfakher.ae or WhatsApp",
+  "home": "Home",
+  "emirates": {
+    "abudhabi": "Abu Dhabi",
+    "dubai": "Dubai",
+    "sharjah": "Sharjah",
+    "ajman": "Ajman",
+    "rasalkhaimah": "Ras Al Khaimah",
+    "fujairah": "Fujairah",
+    "ummalquwain": "Umm Al Quwain"
+  }
 }
