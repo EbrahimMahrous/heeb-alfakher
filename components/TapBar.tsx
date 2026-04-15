@@ -35,7 +35,7 @@ export default function TapBar() {
 
   return (
     <>
-      {/* Top bar - transparent white background and text in the middle */}
+      {/* Top bar - dark with white text */}
       <div className="bg-dark text-center py-2 border-b border-neutral-200">
         <div className="container mx-auto px-4 flex justify-center items-center gap-2">
           <Heart size={14} className="text-primary" />
@@ -46,14 +46,14 @@ export default function TapBar() {
         </div>
       </div>
 
-      {/* Bottom strip - same design with components rearranged */}
-      <div className="bg-neutral-100 border-b border-neutral-200 shadow-sm">
+      {/* Bottom bar - completely white background with no gradient */}
+      <div className="bg-white border-b border-neutral-200 shadow-sm">
         <div className="container mx-auto px-4 py-2">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              {/* Delivery component */}
-              <div className="flex items-center gap-2 bg-gradient-to-r from-white to-neutral-50 rounded-full px-4 py-1.5 shadow-md border border-neutral-200">
-                <div className="bg-primary/10 rounded-full p-1">
+              {/* Delivery component - white without gradient */}
+              <div className="flex items-center gap-2 bg-white rounded-full px-4 py-1.5 shadow-md border border-neutral-200">
+                <div className="bg-white rounded-full p-1 shadow-sm">
                   <Truck size={14} className="text-primary" />
                 </div>
                 <span className="text-dark text-xs sm:text-sm font-semibold whitespace-nowrap">
@@ -65,7 +65,7 @@ export default function TapBar() {
                 </span>
               </div>
 
-              {/* Compound Emirates (Dropdown) next to it */}
+              {/* Emirates Locator */}
               <div className="relative">
                 <button
                   onClick={() => setIsOpen(!isOpen)}
@@ -79,14 +79,14 @@ export default function TapBar() {
                 {isOpen && (
                   <>
                     <div
-                      className="fixed inset-0 z-[55] bg-dark/20"
+                      className="fixed inset-0 z-55 bg-dark/20"
                       onClick={() => setIsOpen(false)}
                     />
-                    <ul className="absolute left-0 mt-2 bg-white shadow-lg border border-neutral-200 rounded-xl w-36 z-[60] overflow-hidden">
+                    <ul className="absolute left-0 mt-2 bg-white shadow-lg border border-neutral-200 rounded-xl w-36 z-60 overflow-hidden">
                       {emiratesKeys.map((emirate) => (
                         <li
                           key={emirate.key}
-                          className="px-3 py-2 hover:bg-primary/5 cursor-pointer text-sm text-dark transition-colors"
+                          className="px-3 py-2 hover:bg-neutral-100 cursor-pointer text-sm text-dark transition-colors"
                           onClick={() => handleEmirateChange(emirate)}
                         >
                           {getEmirateName(emirate)}
@@ -98,7 +98,7 @@ export default function TapBar() {
               </div>
             </div>
 
-            {/* Left side of the page: Page links */}
+            {/* Page links */}
             <div className="flex items-center gap-3 text-xs text-dark">
               <Link
                 href="/about"

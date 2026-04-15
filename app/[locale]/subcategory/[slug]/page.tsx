@@ -6,19 +6,7 @@ import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
 import { categories, subcategories, products as allProducts } from "@/lib/data";
 import ProductCard from "@/components/ProductCard";
-import { SlidersHorizontal, ArrowDownUp } from "lucide-react"; // ← icons from lucide-react
-
-// List of countries for filter
-const countriesList = [
-  { key: "qatar", ar: "قطر", en: "Qatar" },
-  { key: "yemen", ar: "اليمن", en: "Yemen" },
-  { key: "saudi", ar: "السعودية", en: "Saudi Arabia" },
-  { key: "sudan", ar: "السودان", en: "Sudan" },
-  { key: "bahrain", ar: "البحرين", en: "Bahrain" },
-  { key: "oman", ar: "عُمان", en: "Oman" },
-  { key: "uae", ar: "الإمارات", en: "UAE" },
-  { key: "south-africa", ar: "جنوب أفريقيا", en: "South Africa" },
-];
+import { SlidersHorizontal, ArrowDownUp } from "lucide-react";
 
 export default function ProductsPage() {
   const { t, locale } = useTranslation("subcategory");
@@ -36,32 +24,30 @@ export default function ProductsPage() {
 
   // Filter state
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
+  const [maxPossiblePrice, setMaxPossiblePrice] = useState(500);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name-asc">(
     "name-asc",
   );
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load all products
+  // Load all products and calculate max price
   useEffect(() => {
     setProductsList(allProducts);
-    // Set max price based on all products
     const maxPrice = Math.max(
       ...allProducts.map((p) => p.discountedPrice || p.price),
       100,
     );
+    setMaxPossiblePrice(maxPrice);
     setPriceRange([0, maxPrice]);
-    // Set initial filter if coming from a subcategory
+
+    // Set initial category filter if coming from a subcategory
     if (mainCategory && !selectedCategories.length) {
       setSelectedCategories([mainCategory.slug]);
-    } else {
-      setSelectedCategories([]);
     }
-    setSelectedCountries([]);
-  }, [slug]); // Only when slug changes, reset filters
+  }, [slug, mainCategory]);
 
-  // Apply filters
+  // Apply filters and sorting
   useEffect(() => {
     let prods = [...productsList];
 
@@ -72,7 +58,7 @@ export default function ProductsPage() {
         (p.discountedPrice || p.price) <= priceRange[1],
     );
 
-    // Main category filter
+    // Category filter
     if (selectedCategories.length > 0) {
       const subCats = subcategories.filter((sub) =>
         selectedCategories.includes(
@@ -81,11 +67,6 @@ export default function ProductsPage() {
       );
       const subSlugs = subCats.map((s) => s.slug);
       prods = prods.filter((p) => subSlugs.includes(p.subcategorySlug));
-    }
-
-    // Country filter
-    if (selectedCountries.length > 0) {
-      prods = prods.filter((p) => selectedCountries.includes(p.countryCode));
     }
 
     // Sorting
@@ -97,7 +78,7 @@ export default function ProductsPage() {
     } else if (sortBy === "price-desc") {
       prods.sort(
         (a, b) =>
-          (b.discountedPrice || b.price) - (a.discountedPrice || a.price),
+          (b.discountedPrice || b.price) - (a.discountedPrice || b.price),
       );
     } else if (sortBy === "name-asc") {
       prods.sort((a, b) =>
@@ -108,15 +89,9 @@ export default function ProductsPage() {
     }
 
     setFilteredProducts(prods);
-  }, [
-    productsList,
-    priceRange,
-    sortBy,
-    selectedCategories,
-    selectedCountries,
-    locale,
-  ]);
+  }, [productsList, priceRange, sortBy, selectedCategories, locale]);
 
+  // Toggle category selection
   const toggleCategory = (catSlug: string) => {
     setSelectedCategories((prev) =>
       prev.includes(catSlug)
@@ -125,23 +100,22 @@ export default function ProductsPage() {
     );
   };
 
-  const toggleCountry = (countryKey: string) => {
-    setSelectedCountries((prev) =>
-      prev.includes(countryKey)
-        ? prev.filter((c) => c !== countryKey)
-        : [...prev, countryKey],
-    );
-  };
-
+  // Reset all filters
   const resetFilters = () => {
     setSelectedCategories([]);
-    setSelectedCountries([]);
-    const maxPrice = Math.max(
-      ...productsList.map((p) => p.discountedPrice || p.price),
-      100,
-    );
-    setPriceRange([0, maxPrice]);
+    setPriceRange([0, maxPossiblePrice]);
     setSortBy("name-asc");
+  };
+
+  // Handle price slider change
+  const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.min(Number(e.target.value), priceRange[1] - 1);
+    setPriceRange([value, priceRange[1]]);
+  };
+
+  const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.max(Number(e.target.value), priceRange[0] + 1);
+    setPriceRange([priceRange[0], value]);
   };
 
   // Page title and breadcrumb
@@ -161,10 +135,7 @@ export default function ProductsPage() {
       label: locale === "ar" ? mainCategory.name : mainCategory.nameEn,
     });
   }
-  breadcrumbItems.push({
-    label: pageTitle,
-    href: "",
-  });
+  breadcrumbItems.push({ label: pageTitle, href: "" });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -200,70 +171,94 @@ export default function ProductsPage() {
                 <SlidersHorizontal size={20} />
               </button>
             </div>
+
             <div
               className={`space-y-8 ${showFilters ? "block" : "hidden lg:block"}`}
             >
-              {/* Filter by Main Category */}
+              {/* Professional Price Filter */}
               <div>
-                <h4 className="font-semibold mb-3">{t("filterByCategory")}</h4>
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                  <label className="flex items-center gap-3 cursor-pointer">
+                <h4 className="font-semibold mb-4">{t("priceRange")}</h4>
+                <div className="px-1">
+                  {/* Dual range slider */}
+                  <div className="relative mb-6">
                     <input
-                      type="checkbox"
-                      checked={selectedCategories.length === 0}
-                      onChange={() => setSelectedCategories([])}
-                      className="w-4 h-4 accent-primary"
+                      type="range"
+                      min={0}
+                      max={maxPossiblePrice}
+                      value={priceRange[0]}
+                      onChange={handleMinPriceChange}
+                      className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-0"
                     />
-                    <span className="text-sm">{t("all")}</span>
-                  </label>
-                  {categories.map((cat) => {
-                    const isChecked = selectedCategories.includes(cat.slug);
-                    return (
-                      <label
-                        key={cat.id}
-                        className="flex items-center gap-3 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleCategory(cat.slug)}
-                          className="w-4 h-4 accent-primary"
-                        />
-                        <div className="w-8 h-8 rounded-full bg-neutral-200 overflow-hidden shrink-0">
-                          <Image
-                            src={cat.image || "/product-img.png"}
-                            alt={locale === "ar" ? cat.name : cat.nameEn}
-                            width={32}
-                            height={32}
-                            className="object-cover w-full h-full"
-                          />
-                        </div>
-                        <span className="text-sm">
-                          {locale === "ar" ? cat.name : cat.nameEn}
-                        </span>
-                      </label>
-                    );
-                  })}
+                    <input
+                      type="range"
+                      min={0}
+                      max={maxPossiblePrice}
+                      value={priceRange[1]}
+                      onChange={handleMaxPriceChange}
+                      className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-0"
+                    />
+                    {/* Track background */}
+                    <div className="h-1 bg-neutral-200 rounded-full" />
+                  </div>
+                  {/* Price display */}
+                  <div className="flex justify-between items-center gap-3">
+                    <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2 flex-1 text-center">
+                      <span className="text-xs text-neutral-500 block">
+                        Min
+                      </span>
+                      <span className="font-semibold text-dark">
+                        {priceRange[0]} {t("currency")}
+                      </span>
+                    </div>
+                    <span className="text-neutral-400">—</span>
+                    <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2 flex-1 text-center">
+                      <span className="text-xs text-neutral-500 block">
+                        Max
+                      </span>
+                      <span className="font-semibold text-dark">
+                        {priceRange[1]} {t("currency")}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Filter by Country */}
+              {/* Category Filter - Professional button grid (no scroll) */}
               <div>
-                <h4 className="font-semibold mb-3">{t("filterByCountry")}</h4>
+                <h4 className="font-semibold mb-3">{t("filterByCategory")}</h4>
                 <div className="flex flex-wrap gap-2">
-                  {countriesList.map((country) => {
-                    const isActive = selectedCountries.includes(country.key);
+                  <button
+                    onClick={() => setSelectedCategories([])}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                      selectedCategories.length === 0
+                        ? "bg-primary text-white border-primary"
+                        : "bg-white border-neutral-300 hover:border-primary text-dark"
+                    }`}
+                  >
+                    {t("all")}
+                  </button>
+                  {categories.map((cat) => {
+                    const isActive = selectedCategories.includes(cat.slug);
                     return (
                       <button
-                        key={country.key}
-                        onClick={() => toggleCountry(country.key)}
-                        className={`px-3 py-1 rounded-full text-sm border transition ${
+                        key={cat.id}
+                        onClick={() => toggleCategory(cat.slug)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition ${
                           isActive
                             ? "bg-primary text-white border-primary"
-                            : "bg-white border-neutral-300 hover:border-primary"
+                            : "bg-white border-neutral-300 hover:border-primary text-dark"
                         }`}
                       >
-                        {locale === "ar" ? country.ar : country.en}
+                        <div className="w-5 h-5 rounded-full overflow-hidden bg-neutral-100">
+                          <Image
+                            src={cat.image || "/product-img.png"}
+                            alt={locale === "ar" ? cat.name : cat.nameEn}
+                            width={20}
+                            height={20}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                        <span>{locale === "ar" ? cat.name : cat.nameEn}</span>
                       </button>
                     );
                   })}
@@ -271,10 +266,10 @@ export default function ProductsPage() {
               </div>
 
               {/* Reset button */}
-              <div className="flex gap-3 pt-2">
+              <div className="pt-2">
                 <button
                   onClick={resetFilters}
-                  className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-100 transition"
+                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded-full hover:bg-neutral-100 transition"
                 >
                   {t("reset")}
                 </button>

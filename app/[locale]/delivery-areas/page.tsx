@@ -50,7 +50,7 @@ export default function DeliveryAreasPage() {
       </div>
 
       {/* Delivery Notice Banner */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-6 mb-12 text-center">
+      <div className="bg-linear-to-r from-primary/10 to-primary/5 rounded-2xl p-6 mb-12 text-center">
         <div className="flex justify-center mb-3">
           <Truck className="w-12 h-12 text-primary/70" />
         </div>
