@@ -6,14 +6,5 @@
   "available": "Delivery available",
   "note": "If your area is not listed, please contact us and we will arrange delivery.",
   "contact": "Reach us at info@heebalfakher.ae or WhatsApp",
-  "home": "Home",
-  "emirates": {
-    "abudhabi": "Abu Dhabi",
-    "dubai": "Dubai",
-    "sharjah": "Sharjah",
-    "ajman": "Ajman",
-    "rasalkhaimah": "Ras Al Khaimah",
-    "fujairah": "Fujairah",
-    "ummalquwain": "Umm Al Quwain"
-  }
+  "home": "Home"
 }

@@ -1,3 +1,4 @@
+// lib/messages.ts
 import arCommon from "./ar/common.json";
 import arCart from "./ar/cart.json";
 import arCheckout from "./ar/checkout.json";

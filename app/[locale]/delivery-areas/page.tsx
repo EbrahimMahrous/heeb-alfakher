@@ -1,52 +1,63 @@
+// app/[locale]/delivery-areas/page.tsx
 "use client";
 import { useTranslation } from "@/lib/useTranslation";
 import Link from "next/link";
-import Image from "next/image";
+import { Truck } from "lucide-react";
 
+// List of emirates with direct names (no translation needed)
 const emirates = [
-  { key: "abudhabi", emoji: "🏛️" },
-  { key: "dubai", emoji: "🏙️" },
-  { key: "sharjah", emoji: "🏛️" },
-  { key: "ajman", emoji: "🏖️" },
-  { key: "rasalkhaimah", emoji: "⛰️" },
-  { key: "fujairah", emoji: "🏝️" },
-  { key: "ummalquwain", emoji: "🌊" },
+  { key: "abudhabi", nameAr: "أبو ظبي", nameEn: "Abu Dhabi", emoji: "🏛️" },
+  { key: "dubai", nameAr: "دبي", nameEn: "Dubai", emoji: "🏙️" },
+  { key: "sharjah", nameAr: "الشارقة", nameEn: "Sharjah", emoji: "🏛️" },
+  { key: "ajman", nameAr: "عجمان", nameEn: "Ajman", emoji: "🏖️" },
+  {
+    key: "rasalkhaimah",
+    nameAr: "رأس الخيمة",
+    nameEn: "Ras Al Khaimah",
+    emoji: "⛰️",
+  },
+  { key: "fujairah", nameAr: "الفجيرة", nameEn: "Fujairah", emoji: "🏝️" },
+  {
+    key: "ummalquwain",
+    nameAr: "أم القيوين",
+    nameEn: "Umm Al Quwain",
+    emoji: "🌊",
+  },
 ];
 
 export default function DeliveryAreasPage() {
-  const { t } = useTranslation("deliveryAreas");
+  const { t, locale } = useTranslation("deliveryAreas");
+  const isArabic = locale === "ar";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
+      {/* Breadcrumb */}
       <div className="mb-6">
-        <Link href="/" className="text-primary hover:underline flex items-center gap-1">
+        <Link
+          href="/"
+          className="text-primary hover:underline flex items-center gap-1"
+        >
           <span>←</span> {t("home")}
         </Link>
       </div>
 
+      {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
           {t("title")}
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          {t("hero")}
-        </p>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">{t("hero")}</p>
       </div>
 
+      {/* Delivery Notice Banner */}
       <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-6 mb-12 text-center">
         <div className="flex justify-center mb-3">
-          <Image
-            src="/icons/delivery-truck.svg"
-            alt="Delivery"
-            width={60}
-            height={60}
-            className="opacity-80"
-            onError={(e) => (e.currentTarget.style.display = "none")}
-          />
+          <Truck className="w-12 h-12 text-primary/70" />
         </div>
         <p className="text-gray-700 font-medium">{t("deliveryNote")}</p>
       </div>
 
+      {/* Emirates Grid */}
       <h2 className="text-2xl font-semibold mb-6 text-center">
         {t("allEmirates")}
       </h2>
@@ -61,7 +72,7 @@ export default function DeliveryAreasPage() {
             </div>
             <div>
               <h3 className="font-semibold text-lg">
-                {t(`emirates.${emirate.key}`, { fallback: emirate.key })}
+                {isArabic ? emirate.nameAr : emirate.nameEn}
               </h3>
               <p className="text-sm text-gray-500">✓ {t("available")}</p>
             </div>
@@ -69,6 +80,7 @@ export default function DeliveryAreasPage() {
         ))}
       </div>
 
+      {/* Footer Note */}
       <div className="bg-neutral-50 rounded-2xl p-6 text-center border border-neutral-200">
         <p className="text-gray-700 mb-2">{t("note")}</p>
         <p className="text-sm text-gray-500">{t("contact")}</p>

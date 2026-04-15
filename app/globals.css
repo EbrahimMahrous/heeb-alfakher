@@ -21,12 +21,18 @@
     transform: translateX(-100%);
   }
 }
-
 .animate-marquee {
-  animation: marquee 15s linear infinite;
+  animation: marquee 20s linear infinite;
   display: inline-block;
   white-space: nowrap;
   padding-left: 100%;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 } */
 
 @layer base {
