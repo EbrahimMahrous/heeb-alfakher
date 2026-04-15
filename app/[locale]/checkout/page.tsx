@@ -7,6 +7,7 @@ import { useTranslation } from "@/lib/useTranslation";
 import Button from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import AddressModal from "@/components/AddressModal";
+import { PhoneCall, DoorOpen, PackageCheck } from "lucide-react";
 
 // Local storage key for checkout data persistence
 const CHECKOUT_STORAGE_KEY = "heeb_checkout_data";
@@ -356,54 +357,89 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 2. Delivery Instructions */}
+                {/* 2. Delivery Instructions */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-4">
                     {t("deliveryInstructions")}
                   </h2>
+
                   <div className="grid grid-cols-3 gap-3 mb-6">
                     {deliveryOptionsGrid.map((opt) => (
                       <button
                         key={opt.id}
                         type="button"
                         onClick={() => handleInstructionSelect(opt.id)}
-                        className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
+                        className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
                           selectedInstruction === opt.id
-                            ? "border-primary bg-primary/5 shadow-md scale-105"
-                            : "border-neutral-200 bg-white hover:border-primary/50 hover:shadow-md hover:scale-105"
+                            ? "border-[#338A43] bg-[#338A43]/5 shadow-md scale-105"
+                            : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"
                         }`}
                       >
+                        {/* Icon */}
                         <div className="w-12 h-12 flex items-center justify-center mb-2">
-                          <Image
-                            src={opt.icon}
-                            alt={opt.id}
-                            width={32}
-                            height={32}
-                            className="object-contain transition-transform duration-200 group-hover:scale-110"
-                          />
+                          {opt.id === "call" && (
+                            <PhoneCall
+                              size={28}
+                              className={`transition-all ${
+                                selectedInstruction === opt.id
+                                  ? "text-[#338A43]"
+                                  : "text-neutral-500 group-hover:text-[#338A43]"
+                              }`}
+                            />
+                          )}
+
+                          {opt.id === "door" && (
+                            <DoorOpen
+                              size={28}
+                              className={`transition-all ${
+                                selectedInstruction === opt.id
+                                  ? "text-[#338A43]"
+                                  : "text-neutral-500 group-hover:text-[#338A43]"
+                              }`}
+                            />
+                          )}
+
+                          {opt.id === "boxes" && (
+                            <PackageCheck
+                              size={28}
+                              className={`transition-all ${
+                                selectedInstruction === opt.id
+                                  ? "text-[#338A43]"
+                                  : "text-neutral-500 group-hover:text-[#338A43]"
+                              }`}
+                            />
+                          )}
                         </div>
+
+                        {/* Label */}
                         <span className="text-sm text-center font-medium">
                           {t(opt.labelKey)}
                         </span>
+
+                        {/* Check */}
                         {selectedInstruction === opt.id && (
-                          <div className="mt-1 text-primary text-xs">✓</div>
+                          <div className="mt-1 text-[#338A43] text-xs font-bold">
+                            ✓
+                          </div>
                         )}
                       </button>
                     ))}
                   </div>
 
-                  {/* Add a gift message*/}
+                  {/* Gift Message */}
                   <div className="border-t pt-4">
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <input
                         type="checkbox"
                         checked={giftMessage !== ""}
                         onChange={handleGiftToggle}
-                        className="w-5 h-5 accent-primary transition-transform group-hover:scale-110"
+                        className="w-5 h-5 accent-[#338A43] transition-transform group-hover:scale-110"
                       />
-                      <span className="text-base font-medium group-hover:text-primary transition-colors">
+                      <span className="text-base font-medium group-hover:text-[#338A43] transition-colors">
                         {t("addGiftMessage")}
                       </span>
                     </label>
+
                     {giftMessage !== "" && (
                       <div className="mt-3 mr-8 animate-fadeIn">
                         <textarea
@@ -411,7 +447,7 @@ export default function CheckoutPage() {
                           value={giftMessage === " " ? "" : giftMessage}
                           onChange={(e) => setGiftMessage(e.target.value)}
                           rows={3}
-                          className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                          className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#338A43] transition-all"
                         />
                       </div>
                     )}
