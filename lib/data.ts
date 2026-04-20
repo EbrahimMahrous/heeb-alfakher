@@ -322,7 +322,7 @@ export const products = [
     weight: "2 كيلو",
     category: "fruits",
     subcategorySlug: "yellow-almonds-fruit",
-    image: "/product-img.png",
+    image: "/products/Yellow-Almonds-(2kg).jpeg",
     description:
       "فاكهة الصيف اللذيذة 😋 حيث يستمتع الصغار والكبار بطعمه ما بين الحلو والحامض 👌🏽",
   },
@@ -356,7 +356,7 @@ export const products = [
     weight: "250 جم",
     category: "fruits",
     subcategorySlug: "spicy-sour-almonds",
-    image: "/product-img.png",
+    image: "/products/Spicy-Sour-Almonds.jpeg",
     description:
       "فاكهة الصيف اللذيذة 😋 جربوها مع الخلطة اللذيذة بالليمون والرمان 🍋‍🟩🌶️",
   },
@@ -456,7 +456,7 @@ export const products = [
     weight: "1 لتر",
     category: "dairy",
     subcategorySlug: "cow-milk",
-    image: "/product-img.png",
+    image: "/products/Cow-Milk.jpeg",
     description:
       "يتميز لبن البقر بطعم حامض وقوام أسمك من الحليب.. سهل الهضم، طبيعي وطازج، من المزرعة للبيت🥛",
   },
@@ -524,7 +524,7 @@ export const products = [
     weight: "500 جم",
     category: "dairy",
     subcategorySlug: "cow-butter",
-    image: "/products/Cow-Butter-haf.jpeg",
+    image: "/products/Cow-Butter-half.jpeg",
     description:
       "اكتشف الطعم الطيب لزبدة البقر المصنوعة من الحليب الطازج النقي.. غنية بالدهون الصحية والفيتامينات والمعادن.. أساسية في كل مطبخ 😉 🧈",
   },
@@ -558,7 +558,7 @@ export const products = [
     weight: "500 جم",
     category: "pickles",
     subcategorySlug: "bamber-pickle",
-    image: "/product-img.png",
+    image: "/products/Bamber-Pickle.jpeg",
     description: "نكهة أصيلة ومتفردة.. مثالي مع الأكلات الشعبية 😉✨",
   },
   {
@@ -607,7 +607,7 @@ export const products = [
     weight: "500 جم",
     category: "dairy",
     subcategorySlug: "cow-cheese",
-    image: "/product-img.png",
+    image: "/products/cow-cheese.jpeg",
     description: "مصنوع من الحليب البقري الطبيعي",
   },
   {
@@ -796,22 +796,6 @@ export const products = [
   },
   {
     id: 31,
-    name: "مربى توت (غرشة كبيرة)",
-    nameEn: "Large Mulberry Jam",
-    price: 55,
-    discountedPrice: 49,
-    discountPercent: 11,
-    origin: "الإمارات 🇦🇪",
-    originEn: "UAE 🇦🇪",
-    countryCode: "uae",
-    weight: "500 جم",
-    category: "jams",
-    subcategorySlug: "large-mulberry-jam",
-    image: "/product-img.png",
-    description: "مربى توت طبيعي بطعم غني ولذيذ 😋 مثالي للفطور والحلويات 👌🏽✨",
-  },
-  {
-    id: 32,
     name: "عصير توت كبير (1.5 لتر)",
     nameEn: "Large Berry Juice (1.5L)",
     price: 45,
@@ -827,7 +811,7 @@ export const products = [
     description: "عصير توت طبيعي ومنعش 🍇😋 حجم عائلي وطعم يبرد القلب 👌🏽❄️✨",
   },
   {
-    id: 33,
+    id: 32,
     name: "همبا حامض (حدال) 4 كيلو",
     nameEn: "Sour Mango (4kg)",
     price: 70,
@@ -844,7 +828,7 @@ export const products = [
       "المانجو أو الامبا الحامض أو الحدال، من الثمار المعروفة بطعمها الحامض 😋 تؤكل مع الليمون والملح والفلفل وتستخدم في عمل الآجار",
   },
   {
-    id: 34,
+    id: 33,
     name: "خل الليمون",
     nameEn: "Lemon Vinegar",
     price: 0,

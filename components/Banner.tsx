@@ -21,10 +21,10 @@ const banners = [
   },
   {
     id: 2,
-    image: "/product-img.png",
+    image: "/banners/banner-2.jpeg",
     titleKey: "groceryDelivery",
     ctaKey: "shopNow",
-    showContent: true, // Keep overlay content for second banner
+    showContent: false, // Overlay content removed for second banner as requested
   },
 ];
 
