@@ -1,9 +1,18 @@
 {
   "home": "الرئيسية",
   "categories": "التصنيفات",
-  "discoverSub": "اختر التصنيف الفرعي المناسب لك",
+  "discoverCategoryProducts": "استعرض جميع منتجات ({category})",
   "products": "منتج",
   "notFound": "التصنيف غير موجود",
-  "noSubcategories": "لا توجد تصنيفات فرعية في هذا القسم حالياً",
-  "footerNote": "جميع المنتجات أصلية 100% من مصادر موثوقة"
+  "allProducts": "جميع المنتجات",
+  "noProducts": "لا توجد منتجات تطابق معايير البحث",
+  "filters": "تصفية النتائج",
+  "priceRange": "نطاق السعر",
+  "filterByCategory": "تصفية حسب التصنيف",
+  "all": "الكل",
+  "reset": "إعادة ضبط",
+  "currency": "د.إ",
+  "nameAsc": "الاسم (أ - ي)",
+  "priceAsc": "السعر (الأقل أولاً)",
+  "priceDesc": "السعر (الأعلى أولاً)"
 }

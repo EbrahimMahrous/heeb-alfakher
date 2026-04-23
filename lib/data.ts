@@ -1,12 +1,12 @@
 // ============================================================
-// 1. (Categories)
+// 1. Categories (Main Categories Only)
 // ============================================================
 export const categories = [
   {
     id: 1,
-    name: "مكسرات ولوز",
-    nameEn: "Nuts & Almonds",
-    slug: "nuts-almonds",
+    name: "اللوز",
+    nameEn: "Almonds",
+    slug: "almonds",
     image: "/product-img.png",
   },
   {
@@ -14,282 +14,54 @@ export const categories = [
     name: "ألبان ومشتقاتها",
     nameEn: "Dairy Products",
     slug: "dairy",
-    image: "/product-img.png",
+    image: "/categories/dairy.jpeg",
   },
   {
     id: 3,
     name: "أجار ومخللات",
     nameEn: "Pickles & Achars",
     slug: "pickles-achar",
-    image: "/product-img.png",
+    image: "/categories/pickles-achar.jpeg",
   },
   {
     id: 4,
     name: "صوصات وتوابل",
     nameEn: "Sauces & Spices",
     slug: "sauces-spices",
-    image: "/product-img.png",
+    image: "/categories/sauces-spices.jpeg",
   },
   {
     id: 5,
     name: "فواكه موسمية",
     nameEn: "Seasonal Fruits",
     slug: "seasonal-fruits",
-    image: "/product-img.png",
+    image: "/categories/seasonal-fruits.jpeg",
   },
   {
     id: 6,
     name: "منتجات تقليدية",
     nameEn: "Traditional Products",
     slug: "traditional",
-    image: "/product-img.png",
+    image: "/categories/traditional.jpeg",
   },
   {
     id: 7,
-    name: "هدايا وباقات",
+    name: "هدايا",
     nameEn: "Gifts & Baskets",
     slug: "gifts-baskets",
-    image: "/product-img.png",
+    image: "/categories/gifts-baskets.jpeg",
   },
   {
     id: 8,
     name: "عصائر ومربيات",
     nameEn: "Juices & Jams",
     slug: "juices-jams",
-    image: "/product-img.png",
+    image: "/categories/juices-jams.jpeg",
   },
 ];
 
 // ============================================================
-// 2. (Subcategories)
-// ============================================================
-export const subcategories = [
-  // (mainCategoryId: 1) => Nuts & Almonds
-  {
-    id: 101,
-    name: "لوز أصفر",
-    nameEn: "Yellow Almonds",
-    slug: "yellow-almonds",
-    mainCategoryId: 1,
-  },
-  {
-    id: 102,
-    name: "لوز بيذام مكس",
-    nameEn: "Almond Beidam Mix",
-    slug: "almond-beidam",
-    mainCategoryId: 1,
-  },
-  {
-    id: 103,
-    name: "لوز مقطع حامض سبايسي",
-    nameEn: "Spicy Sour Almonds",
-    slug: "spicy-sour-almonds",
-    mainCategoryId: 1,
-  },
-  {
-    id: 104,
-    name: "لوز مقطع حامض عادي",
-    nameEn: "Regular Sour Almonds",
-    slug: "regular-sour-almonds",
-    mainCategoryId: 1,
-  },
-  {
-    id: 105,
-    name: "آجار اللوز سبيشال",
-    nameEn: "Almond Pickle Special",
-    slug: "almond-pickle",
-    mainCategoryId: 1,
-  },
-
-  // (mainCategoryId: 2) => Dairy Products
-  {
-    id: 201,
-    name: "لبن بقر",
-    nameEn: "Cow Milk",
-    slug: "cow-milk",
-    mainCategoryId: 2,
-  },
-  {
-    id: 202,
-    name: "لبن بقر بالحلبة",
-    nameEn: "Cow Milk with Fenugreek",
-    slug: "milk-fenugreek",
-    mainCategoryId: 2,
-  },
-  {
-    id: 203,
-    name: "زبدة بقر",
-    nameEn: "Cow Butter",
-    slug: "cow-butter",
-    mainCategoryId: 2,
-  },
-  {
-    id: 204,
-    name: "جبن بقري",
-    nameEn: "Cow Cheese",
-    slug: "cow-cheese",
-    mainCategoryId: 2,
-  },
-  { id: 205, name: "جامي", nameEn: "Jami", slug: "jami", mainCategoryId: 2 },
-  { id: 206, name: "يقط", nameEn: "Yaqut", slug: "yaqut", mainCategoryId: 2 },
-
-  // (mainCategoryId: 3) => Pickles & Achars
-  {
-    id: 301,
-    name: "آجار ليمون",
-    nameEn: "Lemon Pickle",
-    slug: "lemon-pickle",
-    mainCategoryId: 3,
-  },
-  {
-    id: 302,
-    name: "آجار البمبر",
-    nameEn: "Bamber Pickle",
-    slug: "bamber-pickle",
-    mainCategoryId: 3,
-  },
-  {
-    id: 303,
-    name: "آجار همبا سبيشال",
-    nameEn: "Himba Special Pickle",
-    slug: "himba-special",
-    mainCategoryId: 3,
-  },
-  {
-    id: 304,
-    name: "آجار همبا عادي",
-    nameEn: "Himba Regular Pickle",
-    slug: "himba-regular",
-    mainCategoryId: 3,
-  },
-  {
-    id: 305,
-    name: "آجار همبا حامض حلو",
-    nameEn: "Himba Sour-Sweet Pickle",
-    slug: "himba-sour-sweet",
-    mainCategoryId: 3,
-  },
-
-  // (mainCategoryId: 4) => Sauces & Spices
-  {
-    id: 401,
-    name: "شطة حارة",
-    nameEn: "Hot Chili Sauce",
-    slug: "hot-chili",
-    mainCategoryId: 4,
-  },
-  {
-    id: 402,
-    name: "صوص همبا سبيشال",
-    nameEn: "Himba Special Sauce",
-    slug: "himba-special-sauce",
-    mainCategoryId: 4,
-  },
-  {
-    id: 403,
-    name: "صوص همبا عادي",
-    nameEn: "Himba Regular Sauce",
-    slug: "himba-regular-sauce",
-    mainCategoryId: 4,
-  },
-
-  // (mainCategoryId: 5) => Seasonal Fruits
-  { id: 501, name: "حيب", nameEn: "Haib", slug: "haib", mainCategoryId: 5 },
-  {
-    id: 502,
-    name: "لوز أصفر",
-    nameEn: "Yellow Almonds",
-    slug: "yellow-almonds-fruit",
-    mainCategoryId: 5,
-  },
-  {
-    id: 503,
-    name: "فرصاد أحمر",
-    nameEn: "Red Farsad",
-    slug: "red-farsad",
-    mainCategoryId: 5,
-  },
-  {
-    id: 504,
-    name: "توت بري",
-    nameEn: "Wild Berries",
-    slug: "wild-berries",
-    mainCategoryId: 5,
-  },
-  {
-    id: 505,
-    name: "توت سكري",
-    nameEn: "Sweet Berries",
-    slug: "sweet-berries",
-    mainCategoryId: 5,
-  },
-  {
-    id: 506,
-    name: "ذرة حلوة",
-    nameEn: "Sweet Corn",
-    slug: "sweet-corn",
-    mainCategoryId: 5,
-  },
-
-  // (mainCategoryId: 6) => Traditional Products
-  { id: 601, name: "سمن", nameEn: "Ghee", slug: "ghee", mainCategoryId: 6 },
-  {
-    id: 602,
-    name: "جامي",
-    nameEn: "Jami",
-    slug: "jami-traditional",
-    mainCategoryId: 6,
-  },
-  {
-    id: 603,
-    name: "لبن بقر",
-    nameEn: "Cow Milk",
-    slug: "cow-milk-traditional",
-    mainCategoryId: 6,
-  },
-  {
-    id: 604,
-    name: "يقط",
-    nameEn: "Yaqut",
-    slug: "yaqut-traditional",
-    mainCategoryId: 6,
-  },
-
-  // (mainCategoryId: 7) => Gifts & Baskets
-  {
-    id: 701,
-    name: "باقة السلة المميزة",
-    nameEn: "Special Basket",
-    slug: "special-basket",
-    mainCategoryId: 7,
-  },
-  {
-    id: 702,
-    name: "بوكس الحيب",
-    nameEn: "Haib Box",
-    slug: "haib-box",
-    mainCategoryId: 7,
-  },
-
-  // (mainCategoryId: 8) => Juices & Jams
-  {
-    id: 801,
-    name: "مربى توت صغير",
-    nameEn: "Small Mulberry Jam",
-    slug: "small-mulberry-jam",
-    mainCategoryId: 8,
-  },
-  {
-    id: 802,
-    name: "مربى توت كبير",
-    nameEn: "Large Mulberry Jam",
-    slug: "large-mulberry-jam",
-    mainCategoryId: 8,
-  },
-];
-
-// ============================================================
-// 3. (Products) => subcategorySlug
+// 2. Products (Linked directly to main category via categorySlug)
 // ============================================================
 export const products = [
   {
@@ -303,9 +75,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 كيلو",
-    category: "fruits",
-    subcategorySlug: "haib",
-    image: "/product-img.png",
+    categorySlug: "seasonal-fruits", // Direct link to main category slug
+    image: "/products/haib-fruit.jpeg",
     description:
       "هو قلب النخلة 🤍🌴 ويسمى الجمار أو الجذبة في دول أخرى.. فاكهة شتوية ذات قيمة غذائية عالية جدًا وطعم لذيذ وحلو . . بالمختصر شيء فاخر 👌🏽",
   },
@@ -320,8 +91,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "2 كيلو",
-    category: "fruits",
-    subcategorySlug: "yellow-almonds-fruit",
+    categorySlug: "seasonal-fruits",
     image: "/products/Yellow-Almonds-(2kg).jpeg",
     description:
       "فاكهة الصيف اللذيذة 😋 حيث يستمتع الصغار والكبار بطعمه ما بين الحلو والحامض 👌🏽",
@@ -337,8 +107,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "2 كيلو",
-    category: "fruits",
-    subcategorySlug: "almond-beidam",
+    categorySlug: "almonds",
     image: "/products/Almond-Beidam-Mix.jpeg",
     description:
       "بلونيه الأحمر والأصفر حائز على لقب فاكهة الصيف اللذيذة 😋 حيث يستمتع الصغار والكبار بطعمه ما بين الحلو والحامض 👌🏽",
@@ -354,8 +123,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 جم",
-    category: "fruits",
-    subcategorySlug: "spicy-sour-almonds",
+    categorySlug: "almonds",
     image: "/products/Spicy-Sour-Almonds.jpeg",
     description:
       "فاكهة الصيف اللذيذة 😋 جربوها مع الخلطة اللذيذة بالليمون والرمان 🍋‍🟩🌶️",
@@ -371,8 +139,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 كيلو",
-    category: "fruits",
-    subcategorySlug: "red-farsad",
+    categorySlug: "seasonal-fruits",
     image: "/products/Red-Farsad-(1kg).jpeg",
     description:
       "ضيف موسمي محبوب عند الجميع يحمل معه عبق الماضي ونكهة الطبيعة وبشائر الصيف ❣️☀️",
@@ -388,8 +155,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 كيلو",
-    category: "fruits",
-    subcategorySlug: "wild-berries",
+    categorySlug: "seasonal-fruits",
     image: "/products/Wild-Berries.jpeg",
     description:
       "التوت البني أو الباكستاني طعم وحلاوة وقوام متين، من أجود وأشهر أنوع التوت والأكثر طلب في موسمه ✨",
@@ -405,8 +171,7 @@ export const products = [
     countryCode: "uae",
     originEn: "UAE 🇦🇪",
     weight: "1 كيلو",
-    category: "fruits",
-    subcategorySlug: "sweet-berries",
+    categorySlug: "seasonal-fruits",
     image: "/products/Green-Sweet-Berries-(1kg).jpeg",
     description: "يتميز بلونه الأخضر وطعم حلو المذاق كالعسل 🍯",
   },
@@ -421,9 +186,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "500 جم",
-    category: "dairy",
-    subcategorySlug: "ghee",
-    image: "/product-img.png",
+    categorySlug: "traditional",
+    image: "/products/Ghee.jpeg",
     description: "نكهة مميزة وطعم أصيل وقيمة راسخة في مطبخنا العربي 💫",
   },
   {
@@ -437,8 +201,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 جم",
-    category: "dairy",
-    subcategorySlug: "jami",
+    categorySlug: "traditional",
     image: "/products/Jami.jpeg",
     description:
       "الجامي من الاكلات التراثية الشعبية يستخلص من لبن البقر ويؤكل مع التمر ويضاف له السمن ويتميز بطعمه الطيب👌🏽",
@@ -454,8 +217,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 لتر",
-    category: "dairy",
-    subcategorySlug: "cow-milk",
+    categorySlug: "dairy",
     image: "/products/Cow-Milk.jpeg",
     description:
       "يتميز لبن البقر بطعم حامض وقوام أسمك من الحليب.. سهل الهضم، طبيعي وطازج، من المزرعة للبيت🥛",
@@ -471,8 +233,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 كيلو",
-    category: "dairy",
-    subcategorySlug: "cow-butter",
+    categorySlug: "dairy",
     image: "/products/Cow-Butter-1kg.jpeg",
     description:
       "اكتشف الطعم الطيب لزبدة البقر المصنوعة من الحليب الطازج النقي.. غنية بالدهون الصحية والفيتامينات والمعادن.. أساسية في كل مطبخ 😉 🧈",
@@ -488,8 +249,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 جم",
-    category: "fruits",
-    subcategorySlug: "yaqut",
+    categorySlug: "traditional",
     image: "/products/Yaqut.jpeg",
     description:
       "جزء من تراثنا الشعبي يحمل ذكريات الطفولة 🤍 عبارة عن كرات مجففة من اللبن المحمض الطازج",
@@ -505,8 +265,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 لتر",
-    category: "dairy",
-    subcategorySlug: "milk-fenugreek",
+    categorySlug: "dairy",
     image: "/products/Cow-Milk-Fenugreek.jpeg",
     description:
       "استمتع بنكهة الحلبة اللذيذة المضافة إلى لبن البقر الحامض🐄 .. غنية بالقيمة الغذائية والطعم فاخر من الآخر😋",
@@ -522,8 +281,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "500 جم",
-    category: "dairy",
-    subcategorySlug: "cow-butter",
+    categorySlug: "dairy",
     image: "/products/Cow-Butter-half.jpeg",
     description:
       "اكتشف الطعم الطيب لزبدة البقر المصنوعة من الحليب الطازج النقي.. غنية بالدهون الصحية والفيتامينات والمعادن.. أساسية في كل مطبخ 😉 🧈",
@@ -539,8 +297,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1 كيلو",
-    category: "fruits",
-    subcategorySlug: "cactus-fruit-1kg",
+    categorySlug: "seasonal-fruits",
     image: "/products/cactus.jpeg",
     description:
       "من فواكه الصيف ذات الشعبية الكبيرة، له مسميات أخرى مثل التين الشوكي. يتميز بمذاقه المميز ✨",
@@ -556,8 +313,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "500 جم",
-    category: "pickles",
-    subcategorySlug: "bamber-pickle",
+    categorySlug: "pickles-achar",
     image: "/products/Bamber-Pickle.jpeg",
     description: "نكهة أصيلة ومتفردة.. مثالي مع الأكلات الشعبية 😉✨",
   },
@@ -572,9 +328,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 جم",
-    category: "fruits",
-    subcategorySlug: "regular-sour-almonds",
-    image: "/product-img.png",
+    categorySlug: "almonds",
+    image: "/products/Regular-Sour-Almonds.jpeg",
     description: "غير حار",
   },
   {
@@ -588,8 +343,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "متنوع",
-    category: "gifts",
-    subcategorySlug: "special-basket",
+    categorySlug: "gifts-baskets",
     image: "/products/Special-Basket.jpeg",
     description:
       "سلة الأصالة 💐 … هي أكثر من هدية، هي لحظات نعيشها مع تراثنا، وطعم ماينسى من أيام الطيبين ⌛️🎁",
@@ -605,8 +359,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "500 جم",
-    category: "dairy",
-    subcategorySlug: "cow-cheese",
+    categorySlug: "dairy",
     image: "/products/cow-cheese.jpeg",
     description: "مصنوع من الحليب البقري الطبيعي",
   },
@@ -621,8 +374,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 مل",
-    category: "sauces",
-    subcategorySlug: "hot-chili",
+    categorySlug: "sauces-spices",
     image: "/products/Hot-Chili-Sauce.jpeg",
     description:
       "أضف النكهة القوية واللمسة النارية لأطباقك مع صلصة الشطة الحارة",
@@ -638,9 +390,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 مل",
-    category: "sauces",
-    subcategorySlug: "himba-special-sauce",
-    image: "/product-img.png",
+    categorySlug: "sauces-spices",
+    image: "/products/Himba-Special-Sauce.jpeg",
     description: "مزيج لذيذ يجمع بين حلاوة المانجو ولمسة من التوابل الخاصة",
   },
   {
@@ -654,9 +405,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 مل",
-    category: "sauces",
-    subcategorySlug: "himba-regular-sauce",
-    image: "/product-img.png",
+    categorySlug: "sauces-spices",
+    image: "/products/Himba-Regular-Sauce.jpeg",
     description:
       "بلونه الأصفر الذهبي وقوامه الناعم، يجمع بين حلاوة المانجو الطبيعية ولمسة خفيفة من الحموضة",
   },
@@ -671,9 +421,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "200 جم",
-    category: "pickles",
-    subcategorySlug: "almond-pickle",
-    image: "/product-img.png",
+    categorySlug: "pickles-achar",
+    image: "/products/Almond-Pickle-Special-(Small).jpeg",
     description:
       "هذا الآجار المميز الذي لا يمكن تفويته .. مذاق اللوز الاصلي مع البهارات",
   },
@@ -688,8 +437,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "200 جم",
-    category: "pickles",
-    subcategorySlug: "himba-special",
+    categorySlug: "pickles-achar",
     image: "/products/Himba-Special-Pickle-Small.jpeg",
     description: "ننتقي أجود أنواع الهمبا لنصنع لكم هذا الآجار المميز",
   },
@@ -704,8 +452,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "200 جم",
-    category: "pickles",
-    subcategorySlug: "himba-regular",
+    categorySlug: "pickles-achar",
     image: "/products/Himba-Regular-Pickle-Small.jpeg",
     description:
       "مخلل المانجو التقليدي الذي يأسر الحواس ويضفي لمسة خاصة على موائدكم",
@@ -721,8 +468,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "200 جم",
-    category: "pickles",
-    subcategorySlug: "lemon-pickle",
+    categorySlug: "pickles-achar",
     image: "/products/Lemon-Pickle-(small).jpeg",
     description:
       "أضف الحموضة المنعشة لأطباقك مع آجار الليمون ذو النكهة الخلابة",
@@ -738,9 +484,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "200 جم",
-    category: "pickles",
-    subcategorySlug: "himba-sour-sweet",
-    image: "/product-img.png",
+    categorySlug: "pickles-achar",
+    image: "/products/Himba-Sour-Sweet-Pickle (Small).jpeg",
     description:
       "استمتع بتجربة فريدة مع الآجار الذي يجمع بين الحموضة المنعشة والحلاوة الخفيفة",
   },
@@ -755,8 +500,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "متنوع",
-    category: "fruits",
-    subcategorySlug: "haib-box",
+    categorySlug: "gifts-baskets",
     image: "/products/Haib-Box.jpeg",
     description:
       "قلب النخلة 🤍🌴 ويسمى الجمار أو الجذبة في دول أخرى.. فاكهة شتوية ذات قيمة غذائية عالية جدًا وطعم لذيذ وحلو . . بالمختصر شيء فاخر 👌🏽",
@@ -772,8 +516,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "250 جم",
-    category: "fruits",
-    subcategorySlug: "sweet-corn",
+    categorySlug: "seasonal-fruits",
     image: "/products/Sweet-RAK-Corn.jpeg",
     description:
       "من خير بلادنا 🌽 يحبها الصغير و الكبير 🥰 لذيذة و فوائدها عظيمة 😍",
@@ -789,9 +532,8 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "200 جم",
-    category: "jams",
-    subcategorySlug: "small-mulberry-jam",
-    image: "/product-img.png",
+    categorySlug: "juices-jams",
+    image: "/products/Small-Mulberry-Jam.jpeg",
     description: "مربى توت طبيعي بطعم غني ولذيذ 😋 مثالي للفطور والحلويات 👌🏽✨",
   },
   {
@@ -805,8 +547,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "1.5 لتر",
-    category: "juices",
-    subcategorySlug: "large-berry-juice",
+    categorySlug: "juices-jams",
     image: "/products/Berry-Juice-large.jpeg",
     description: "عصير توت طبيعي ومنعش 🍇😋 حجم عائلي وطعم يبرد القلب 👌🏽❄️✨",
   },
@@ -821,8 +562,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "4 كيلو",
-    category: "fruits",
-    subcategorySlug: "sour-mango-4kg",
+    categorySlug: "seasonal-fruits",
     image: "/products/Sour-Mango-(4kg).jpeg",
     description:
       "المانجو أو الامبا الحامض أو الحدال، من الثمار المعروفة بطعمها الحامض 😋 تؤكل مع الليمون والملح والفلفل وتستخدم في عمل الآجار",
@@ -838,8 +578,7 @@ export const products = [
     originEn: "UAE 🇦🇪",
     countryCode: "uae",
     weight: "—",
-    category: "vinegar",
-    subcategorySlug: "lemon-vinegar",
+    categorySlug: "sauces-spices",
     image: "/products/Lemon-Vinegar.jpeg",
     description:
       "خل ليمون طبيعي بطعم منعش 🍋 مثالي للسلطات والتتبيلات ويضيف نكهة مميزة للأطعمة 👌✨",
@@ -847,31 +586,25 @@ export const products = [
 ];
 
 // ============================================================
-// 4. Help function for obtaining subcategory products
+// 3. Helper Functions (Simplified)
 // ============================================================
+export function getProductsByCategorySlug(slug: string) {
+  return products.filter((p) => p.categorySlug === slug);
+}
+
+// For backward compatibility (if any code still uses subcategorySlug)
 export function getProductsBySubcategorySlug(slug: string) {
-  return products.filter((p) => p.subcategorySlug === slug);
+  // If you still need this for some reason, you could map but it's better to remove dependency
+  return [];
 }
 
-// 5. Obtaining products from the main classification (using dependent sub-classifications)
-export function getProductsByMainCategorySlug(slug: string) {
-  // 6. Finding the main classification
-  const mainCategory = categories.find((cat) => cat.slug === slug);
-  if (!mainCategory) return [];
-  // 7. Find all subcategories belonging to this main category
-  const subCats = subcategories.filter(
-    (sub) => sub.mainCategoryId === mainCategory.id,
-  );
-  // 8. Obtaining the names of the slugs for the subcategories
-  const subSlugs = subCats.map((sub) => sub.slug);
-  // 9. Bring products that fall under any of these subcategories
-  return products.filter((product) =>
-    subSlugs.includes(product.subcategorySlug),
-  );
+// Get main category by slug
+export function getCategoryBySlug(slug: string) {
+  return categories.find((cat) => cat.slug === slug);
 }
 
 // ============================================================
-// 10. UAE list (for TapBar)
+// 4. UAE list (for TapBar)
 // ============================================================
 export const emirates = [
   { ar: "دبي", en: "Dubai" },

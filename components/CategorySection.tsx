@@ -5,7 +5,7 @@ import { useRef, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper/modules";
 import { useTranslation } from "@/lib/useTranslation";
-import { categories, subcategories } from "@/lib/data";
+import { categories } from "@/lib/data";
 
 // @ts-ignore
 import "swiper/css";
@@ -31,12 +31,6 @@ export default function CategorySection() {
 
   const getCategoryName = (cat: (typeof categories)[0]) => {
     return locale === "ar" ? cat.name : cat.nameEn;
-  };
-
-  // A function to find the first subcategory of the main category
-  const getFirstSubcategorySlug = (categoryId: number) => {
-    const sub = subcategories.find((sub) => sub.mainCategoryId === categoryId);
-    return sub ? sub.slug : null;
   };
 
   return (
@@ -75,7 +69,7 @@ export default function CategorySection() {
           {categories.map((cat) => {
             return (
               <SwiperSlide key={cat.id} className="w-auto!">
-                <Link href={`/category/${cat.slug}`}>
+                <Link href={`/subcategory/${cat.slug}`}>
                   <div className="flex flex-col items-center text-center group cursor-pointer">
                     <div className="w-24 h-24 md:w-28 md:h-28 bg-neutral-100 rounded-full flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                       {cat.image ? (
@@ -100,7 +94,7 @@ export default function CategorySection() {
           })}
         </Swiper>
 
-        {/* Left scroll button (in Arabic it becomes "Next") */}
+        {/* Left scroll button */}
         <div
           ref={prevRef}
           className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition-all duration-200"
@@ -130,7 +124,7 @@ export default function CategorySection() {
           </svg>
         </div>
 
-        {/* Right scroll button (in Arabic it becomes "Previous") */}
+        {/* Right scroll button */}
         <div
           ref={nextRef}
           className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition-all duration-200"

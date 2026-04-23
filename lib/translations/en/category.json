@@ -1,9 +1,18 @@
 {
   "home": "Home",
   "categories": "Categories",
-  "discoverSub": "Choose the right subcategory for you",
+  "discoverCategoryProducts": "Browse all ({category}) products",
   "products": "products",
   "notFound": "Category not found",
-  "noSubcategories": "No subcategories in this section yet",
-  "footerNote": "All products are 100% authentic from trusted sources"
+  "allProducts": "All Products",
+  "noProducts": "No products match your criteria",
+  "filters": "Filters",
+  "priceRange": "Price Range",
+  "filterByCategory": "Filter by Category",
+  "all": "All",
+  "reset": "Reset",
+  "currency": "AED",
+  "nameAsc": "Name (A - Z)",
+  "priceAsc": "Price (Low to High)",
+  "priceDesc": "Price (High to Low)"
 }

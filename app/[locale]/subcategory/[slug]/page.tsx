@@ -1,26 +1,37 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
-import { categories, subcategories, products as allProducts } from "@/lib/data";
+import {
+  categories,
+  products as allProducts,
+  getProductsByCategorySlug,
+} from "@/lib/data";
 import ProductCard from "@/components/ProductCard";
 import { SlidersHorizontal, ArrowDownUp } from "lucide-react";
+
+type Category = (typeof categories)[0];
+type Product = (typeof allProducts)[0];
+
+type PageContext = { type: "category"; data: Category } | { type: "none" };
 
 export default function ProductsPage() {
   const { t, locale } = useTranslation("subcategory");
   const { slug } = useParams();
   const isRtl = locale === "ar";
 
-  // Get subcategory info from slug (if any)
-  const subcategory = slug ? subcategories.find((s) => s.slug === slug) : null;
-  const mainCategory = subcategory
-    ? categories.find((cat) => cat.id === subcategory.mainCategoryId)
+  const mainCategoryFromSlug = slug
+    ? categories.find((cat) => cat.slug === slug)
     : null;
 
-  const [productsList, setProductsList] = useState<any[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  let pageContext: PageContext;
+  if (mainCategoryFromSlug) {
+    pageContext = { type: "category", data: mainCategoryFromSlug };
+  } else {
+    pageContext = { type: "none" };
+  }
 
   // Filter state
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
@@ -31,45 +42,51 @@ export default function ProductsPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Load all products and calculate max price
+  // Initialize selected categories based on slug (only once)
   useEffect(() => {
-    setProductsList(allProducts);
+    if (pageContext.type === "category") {
+      setSelectedCategories([pageContext.data.slug]);
+    } else {
+      setSelectedCategories([]);
+    }
+  }, [
+    pageContext.type,
+    pageContext.type === "category" ? pageContext.data.slug : null,
+  ]);
+
+  // Compute the list of products based on selected categories
+  const categoryFilteredProducts = useMemo(() => {
+    if (selectedCategories.length === 0) {
+      return allProducts;
+    }
+    // Get products that belong to any of the selected categories
+    return allProducts.filter((p) =>
+      selectedCategories.includes(p.categorySlug),
+    );
+  }, [selectedCategories]);
+
+  // Calculate max price from filtered products (by category)
+  useEffect(() => {
     const maxPrice = Math.max(
-      ...allProducts.map((p) => p.discountedPrice || p.price),
+      ...categoryFilteredProducts.map((p) => p.discountedPrice || p.price),
       100,
     );
     setMaxPossiblePrice(maxPrice);
-    setPriceRange([0, maxPrice]);
+    // Adjust price range if current max exceeds new max
+    setPriceRange((prev) => [
+      Math.min(prev[0], maxPrice),
+      Math.min(prev[1], maxPrice),
+    ]);
+  }, [categoryFilteredProducts]);
 
-    // Set initial category filter if coming from a subcategory
-    if (mainCategory && !selectedCategories.length) {
-      setSelectedCategories([mainCategory.slug]);
-    }
-  }, [slug, mainCategory]);
-
-  // Apply filters and sorting
-  useEffect(() => {
-    let prods = [...productsList];
-
-    // Price filter
-    prods = prods.filter(
+  // Apply price filter and sorting to get final displayed products
+  const filteredProducts = useMemo(() => {
+    let prods = categoryFilteredProducts.filter(
       (p) =>
         (p.discountedPrice || p.price) >= priceRange[0] &&
         (p.discountedPrice || p.price) <= priceRange[1],
     );
 
-    // Category filter
-    if (selectedCategories.length > 0) {
-      const subCats = subcategories.filter((sub) =>
-        selectedCategories.includes(
-          categories.find((cat) => cat.id === sub.mainCategoryId)?.slug || "",
-        ),
-      );
-      const subSlugs = subCats.map((s) => s.slug);
-      prods = prods.filter((p) => subSlugs.includes(p.subcategorySlug));
-    }
-
-    // Sorting
     if (sortBy === "price-asc") {
       prods.sort(
         (a, b) =>
@@ -80,18 +97,16 @@ export default function ProductsPage() {
         (a, b) =>
           (b.discountedPrice || b.price) - (a.discountedPrice || b.price),
       );
-    } else if (sortBy === "name-asc") {
+    } else {
       prods.sort((a, b) =>
         locale === "ar"
           ? a.name.localeCompare(b.name)
           : a.nameEn.localeCompare(b.nameEn),
       );
     }
+    return prods;
+  }, [categoryFilteredProducts, priceRange, sortBy, locale]);
 
-    setFilteredProducts(prods);
-  }, [productsList, priceRange, sortBy, selectedCategories, locale]);
-
-  // Toggle category selection
   const toggleCategory = (catSlug: string) => {
     setSelectedCategories((prev) =>
       prev.includes(catSlug)
@@ -100,14 +115,12 @@ export default function ProductsPage() {
     );
   };
 
-  // Reset all filters
   const resetFilters = () => {
     setSelectedCategories([]);
     setPriceRange([0, maxPossiblePrice]);
     setSortBy("name-asc");
   };
 
-  // Handle price slider change
   const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.min(Number(e.target.value), priceRange[1] - 1);
     setPriceRange([value, priceRange[1]]);
@@ -119,23 +132,27 @@ export default function ProductsPage() {
   };
 
   // Page title and breadcrumb
-  const pageTitle = subcategory
-    ? locale === "ar"
-      ? subcategory.name
-      : subcategory.nameEn
-    : t("allProducts");
-
+  let pageTitle = t("allProducts");
   const breadcrumbItems = [
     { href: "/", label: t("home") },
     { href: "/categories", label: t("categories") },
   ];
-  if (subcategory && mainCategory) {
-    breadcrumbItems.push({
-      href: `/category/${mainCategory.slug}`,
-      label: locale === "ar" ? mainCategory.name : mainCategory.nameEn,
-    });
+
+  if (pageContext.type === "category") {
+    const cat = pageContext.data;
+    pageTitle = locale === "ar" ? cat.name : cat.nameEn;
+    breadcrumbItems.push({ label: pageTitle, href: "" });
+  } else {
+    breadcrumbItems.push({ label: t("allProducts"), href: "" });
   }
-  breadcrumbItems.push({ label: pageTitle, href: "" });
+
+  if (slug && pageContext.type === "none") {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        {t("notFound")}
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -175,11 +192,10 @@ export default function ProductsPage() {
             <div
               className={`space-y-8 ${showFilters ? "block" : "hidden lg:block"}`}
             >
-              {/* Professional Price Filter */}
+              {/* Price Filter */}
               <div>
                 <h4 className="font-semibold mb-4">{t("priceRange")}</h4>
                 <div className="px-1">
-                  {/* Dual range slider */}
                   <div className="relative mb-6">
                     <input
                       type="range"
@@ -187,7 +203,7 @@ export default function ProductsPage() {
                       max={maxPossiblePrice}
                       value={priceRange[0]}
                       onChange={handleMinPriceChange}
-                      className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-0"
+                      className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none"
                     />
                     <input
                       type="range"
@@ -195,12 +211,10 @@ export default function ProductsPage() {
                       max={maxPossiblePrice}
                       value={priceRange[1]}
                       onChange={handleMaxPriceChange}
-                      className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:border-0"
+                      className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none"
                     />
-                    {/* Track background */}
                     <div className="h-1 bg-neutral-200 rounded-full" />
                   </div>
-                  {/* Price display */}
                   <div className="flex justify-between items-center gap-3">
                     <div className="bg-white border border-neutral-200 rounded-lg px-3 py-2 flex-1 text-center">
                       <span className="text-xs text-neutral-500 block">
@@ -223,7 +237,7 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              {/* Category Filter - Professional button grid (no scroll) */}
+              {/* Category Filter */}
               <div>
                 <h4 className="font-semibold mb-3">{t("filterByCategory")}</h4>
                 <div className="flex flex-wrap gap-2">
