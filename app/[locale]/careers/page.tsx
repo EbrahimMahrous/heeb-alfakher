@@ -1,15 +1,12 @@
-// app/[locale]/careers/page.tsx
 "use client";
 import { useTranslation } from "@/lib/useTranslation";
 import Link from "next/link";
-import Image from "next/image";
-import { Mail } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CareersPage() {
   const { t, locale } = useTranslation("careers");
 
-  // Handle apply button click (show toast for now)
   const handleApply = (position: string) => {
     toast.info(
       locale === "ar"
@@ -110,18 +107,37 @@ export default function CareersPage() {
         </div>
       </div>
 
-      {/* CV Submission Section */}
+      {/* CV Submission Section with WhatsApp */}
       <div className="bg-gray-50 rounded-2xl p-6 md:p-8 text-center border border-gray-100">
         <h3 className="text-xl font-semibold mb-3">{t("sendCVTitle")}</h3>
         <p className="text-gray-600 mb-4">{t("sendCVDesc")}</p>
-        <a
-          href="mailto:careers@heebalfakher.ae?subject=Job%20Application%20-%20CV&body=Dear%20Hiring%20Team%2C%0A%0APlease%20find%20attached%20my%20CV%20for%20the%20position%20I%20am%20applying%20for.%0A%0ABest%20regards%2C"
-          className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-medium hover:bg-primary/90 transition-all shadow-md"
-        >
-          <Mail className="w-5 h-5" />
-          {t("sendCV")}
-        </a>
-        <p className="text-xs text-gray-500 mt-4">{t("email")}</p>
+
+        <div className="flex flex-wrap justify-center gap-4 mb-4">
+          {/* Email Button */}
+          <a
+            href="mailto:Heebshoop@gmail.com?subject=Job%20Application%20-%20CV&body=Dear%20Hiring%20Team%2C%0A%0APlease%20find%20attached%20my%20CV%20for%20the%20position%20I%20am%20applying%20for.%0A%0ABest%20regards%2C"
+            className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-full font-medium hover:bg-primary/90 transition-all shadow-md"
+          >
+            <Mail className="w-5 h-5" />
+            {t("sendCV")}
+          </a>
+
+          {/* WhatsApp Button */}
+          <a
+            href="https://wa.me/971503284883?text=مرحبًا، لدي استفسار بخصوص التوظيف"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-green-500 text-white px-6 py-3 rounded-full font-medium hover:bg-green-600 transition-all shadow-md"
+          >
+            <Phone className="w-5 h-5" />
+            {t("whatsappRecruitment")}
+          </a>
+        </div>
+
+        <p className="text-xs text-gray-500">
+          {t("emailLabel")}: Heebshoop@gmail.com &nbsp;|&nbsp; {t("phone")}:
+          0503284883
+        </p>
       </div>
     </div>
   );

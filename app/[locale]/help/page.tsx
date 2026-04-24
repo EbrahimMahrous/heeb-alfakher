@@ -28,11 +28,23 @@ export default function HelpPage() {
           </Link>
         </div>
 
-        {/* Contact card with updated phone number */}
+        {/* Contact card with interactive email and WhatsApp */}
         <div className="bg-neutral-100 p-6 rounded-2xl">
           <h2 className="text-2xl font-semibold mb-2">{t("contact")}</h2>
-          <p>{t("email")}</p>
-          <p>{t("phone")}</p>
+          <a
+            href="mailto:Heebshoop@gmail.com"
+            className="text-primary hover:underline block"
+          >
+            {t("email")}
+          </a>
+          <a
+            href="https://wa.me/971523630501?text=مرحبًا، أحتاج إلى مساعدة."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline block"
+          >
+            {t("phone")}
+          </a>
         </div>
 
         {/* Order tracking card */}

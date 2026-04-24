@@ -40,7 +40,7 @@ const ProductMeta = ({ weight }: { weight?: string }) => {
   return (
     <div className="inline-flex items-center gap-1 bg-neutral-100 border border-neutral-200 rounded-full px-2 py-0.5 w-fit">
       <Image
-        src="/UAE.svg"
+        src="/uae.svg"
         alt="UAE"
         width={16}
         height={16}

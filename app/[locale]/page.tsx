@@ -12,17 +12,52 @@ export default function HomePage() {
   const row2Products = products.slice(4, 12);
   const row3Products = products.slice(8, 16);
 
-  const banner1 = { title: t("quickOffers"), description: t("quickOffersDesc"), linkText: t("browseAll"), linkHref: "/categories", bgColor: "from-primary/10 to-orange/10" };
-  const banner2 = { title: t("newProducts"), description: t("newProductsDesc"), linkText: t("shopNow"), linkHref: "/categories", bgColor: "from-blue-100 to-green-100" };
-  const banner3 = { title: t("bestSellers"), description: t("bestSellersDesc"), linkText: t("browseAll"), linkHref: "/categories", bgColor: "from-yellow-100 to-red-100" };
+  const banner1 = {
+    title: t("quickOffers"),
+    description: t("quickOffersDesc"),
+    linkText: t("browseAll"),
+    linkHref: "/categories",
+    bgColor: "from-primary/10 to-orange/10",
+    bannerImage: "/banners/quick-offers.jpeg",
+  };
+
+  const banner2 = {
+    title: t("newProducts"),
+    description: t("newProductsDesc"),
+    linkText: t("shopNow"),
+    linkHref: "/categories",
+    bgColor: "from-blue-100 to-green-100",
+    bannerImage: "/banners/new-arrivals.jpeg",
+  };
+
+  const banner3 = {
+    title: t("bestSellers"),
+    description: t("bestSellersDesc"),
+    linkText: t("browseAll"),
+    linkHref: "/categories",
+    bgColor: "from-yellow-100 to-red-100",
+    bannerImage: "/banners/best-seller.jpeg",
+  };
 
   return (
     <main className="container mx-auto px-4">
       <Banner />
       <CategorySection />
-      <ProductGrid title={t("quickOffers")} products={row1Products} bannerContent={banner1} />
-      <ProductGrid title={t("newProducts")} products={row2Products} bannerContent={banner2} />
-      <ProductGrid title={t("bestSellers")} products={row3Products} bannerContent={banner3} />
+      <ProductGrid
+        title={t("quickOffers")}
+        products={row1Products}
+        bannerContent={banner1}
+      />
+      <ProductGrid
+        title={t("newProducts")}
+        products={row2Products}
+        bannerContent={banner2}
+      />
+      <ProductGrid
+        title={t("bestSellers")}
+        products={row3Products}
+        bannerContent={banner3}
+      />
     </main>
   );
 }

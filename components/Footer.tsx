@@ -26,12 +26,14 @@ export default function Footer() {
             <p className="text-sm text-white/90 leading-relaxed mb-4">
               {t("companyDescription")}
             </p>
-            {/* Social media icons using local SVG files */}
+            {/* Social media icons */}
             <div>
               <p className="font-semibold mb-2">{t("contactUsFooter")}</p>
               <div className="flex gap-3">
                 <a
-                  href="#"
+                  href="https://wa.me/971523630501"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:opacity-80 transition w-8 h-8 flex items-center justify-center bg-white/10 rounded-full"
                 >
                   <Image
@@ -42,18 +44,22 @@ export default function Footer() {
                   />
                 </a>
                 <a
-                  href="#"
+                  href="www.tiktok.com/@heeb_alfakher"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:opacity-80 transition w-8 h-8 flex items-center justify-center bg-white/10 rounded-full"
                 >
                   <Image
-                    src="/icons/youtube.svg"
+                    src="/icons/tiktok.svg"
                     alt="YouTube"
                     width={18}
                     height={18}
                   />
                 </a>
                 <a
-                  href="#"
+                  href="https://www.instagram.com/heeb_alfakher?igsh=cmM0MzI2a28wNWsw"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:opacity-80 transition w-8 h-8 flex items-center justify-center bg-white/10 rounded-full"
                 >
                   <Image
@@ -64,7 +70,9 @@ export default function Footer() {
                   />
                 </a>
                 <a
-                  href="#"
+                  href="https://www.facebook.com/share/1H2WYbHM9L/?mibextid=LQQJ4d"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:opacity-80 transition w-8 h-8 flex items-center justify-center bg-white/10 rounded-full"
                 >
                   <Image
@@ -125,7 +133,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Help Center, Phone Support, Working Times - Three rectangles stacked or side by side on desktop */}
+          {/* Column 4: Help Center, Phone Support, Working Times */}
           <div className="flex flex-col gap-4">
             {/* Rectangle 1: Help Center / Email */}
             <div className="flex items-center gap-3 bg-green-500/20 rounded-xl p-3">
@@ -140,15 +148,15 @@ export default function Footer() {
               <div>
                 <h4 className="font-semibold text-md">{t("helpCenter")}</h4>
                 <a
-                  href="mailto:info@mail.ae"
+                  href="mailto:Heebshoop@gmail.com"
                   className="hover:underline text-sm block"
                 >
-                  info@mail.ae
+                  Heebshoop@gmail.com
                 </a>
               </div>
             </div>
 
-            {/* Rectangle 2: Phone Support */}
+            {/* Rectangle 2: Phone Support (WhatsApp) */}
             <div className="flex items-center gap-3 bg-green-500/20 rounded-xl p-3">
               <div className="flex items-center justify-center w-10 h-10 bg-green-500/20 rounded-full shrink-0">
                 <Image
@@ -161,7 +169,9 @@ export default function Footer() {
               <div>
                 <h4 className="font-semibold text-md">{t("phoneSupport")}</h4>
                 <a
-                  href="tel:0523630501"
+                  href="https://wa.me/971523630501?text=مرحبًا، أحتاج إلى مساعدة."
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="hover:underline text-sm block"
                 >
                   0523630501

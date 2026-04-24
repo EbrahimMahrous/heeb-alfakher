@@ -103,18 +103,16 @@ export default function CheckoutPage() {
   );
   const [giftMessage, setGiftMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [expiry, setExpiry] = useState("");
+  // 🔥 Removed card details state (cardNumber, cvv, expiry) - no longer needed
 
   const [deliveryDays, setDeliveryDays] = useState(getDeliveryDays());
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // Prevent overwriting saved data on first render
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [loading, setLoading] = useState(false); // 🚀 Loading state for submission
 
   // Load saved checkout data from localStorage on mount
   useEffect(() => {
     const savedData = loadCheckoutFromLocalStorage();
     if (savedData) {
-      // Restore all fields if they exist
       if (savedData.selectedAddress)
         setSelectedAddress(savedData.selectedAddress);
       if (savedData.selectedDate) setSelectedDate(savedData.selectedDate);
@@ -125,11 +123,9 @@ export default function CheckoutPage() {
       if (savedData.giftMessage !== undefined)
         setGiftMessage(savedData.giftMessage);
       if (savedData.paymentMethod) setPaymentMethod(savedData.paymentMethod);
-      if (savedData.cardNumber) setCardNumber(savedData.cardNumber);
-      if (savedData.cvv) setCvv(savedData.cvv);
-      if (savedData.expiry) setExpiry(savedData.expiry);
+      // Card details are not restored because we no longer use them
     } else {
-      // Default dummy address for testing purposes only - can be removed later
+      // Default dummy address for testing purposes only
       const dummyAddress: Address = {
         id: "dummy_1",
         fullName: "أحمد محمد",
@@ -152,9 +148,7 @@ export default function CheckoutPage() {
       selectedInstruction,
       giftMessage,
       paymentMethod,
-      cardNumber,
-      cvv,
-      expiry,
+      // We no longer save card details
     };
     saveCheckoutToLocalStorage(checkoutData);
   }, [
@@ -164,9 +158,6 @@ export default function CheckoutPage() {
     selectedInstruction,
     giftMessage,
     paymentMethod,
-    cardNumber,
-    cvv,
-    expiry,
     isInitialLoad,
   ]);
 
@@ -176,27 +167,22 @@ export default function CheckoutPage() {
   const shipping = subtotal >= freeShippingThreshold ? 0 : shippingCost;
   const total = subtotal + shipping;
 
-  // Choose only one of the delivery instructions
   const handleInstructionSelect = (id: string) => {
-    if (selectedInstruction === id) {
-      setSelectedInstruction(null);
-    } else {
-      setSelectedInstruction(id);
-    }
+    setSelectedInstruction((prev) => (prev === id ? null : id));
   };
 
   const handleGiftToggle = () => {
-    if (giftMessage === "") setGiftMessage(" ");
-    else setGiftMessage("");
+    setGiftMessage((prev) => (prev === "" ? " " : ""));
   };
 
   const handleSaveAddress = (address: Address) => {
     setSelectedAddress(address);
-    // The useEffect will automatically save to localStorage
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 🔥 New async handleSubmit with API call
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!selectedAddress) {
       alert("الرجاء إضافة عنوان التسليم أولاً");
       return;
@@ -205,25 +191,43 @@ export default function CheckoutPage() {
       alert("الرجاء اختيار يوم ووقت التسليم");
       return;
     }
-    if (paymentMethod === "credit_card" && (!cardNumber || !cvv || !expiry)) {
-      alert("الرجاء إدخال بيانات البطاقة كاملة");
-      return;
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items,
+          total,
+          address: selectedAddress,
+          deliveryDate: selectedDate,
+          timeSlot: selectedTimeSlot,
+          instruction: selectedInstruction,
+          giftMessage: giftMessage.trim() === "" ? null : giftMessage,
+          paymentMethod, // we still send the chosen method (cash/card) to backend
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.payment_url) {
+        // حذف بيانات checkout من التخزين المحلي
+        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+        clearCart();
+        // التوجيه إلى صفحة الدفع
+        window.location.href = data.payment_url;
+      } else {
+        throw new Error("No payment URL returned");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("حصل خطأ أثناء إنشاء الدفع");
+    } finally {
+      setLoading(false);
     }
-    console.log({
-      address: selectedAddress,
-      deliveryDate: selectedDate,
-      timeSlot: selectedTimeSlot,
-      instruction: selectedInstruction,
-      giftMessage: giftMessage.trim() === "" ? null : giftMessage,
-      paymentMethod,
-      cardDetails:
-        paymentMethod === "credit_card" ? { cardNumber, cvv, expiry } : null,
-    });
-    alert(`تم إتمام الطلب بنجاح`);
-    // Clear checkout data from localStorage after successful order
-    localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-    clearCart();
-    router.push("/");
   };
 
   return (
@@ -246,10 +250,10 @@ export default function CheckoutPage() {
       </h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Right column: The model*/}
+        {/* Right column: The form */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Delivery address*/}
+            {/* Delivery address */}
             <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
@@ -258,10 +262,7 @@ export default function CheckoutPage() {
                 {selectedAddress && selectedAddress.id === "dummy_1" && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedAddress(null);
-                      // No need to manually remove localStorage here - useEffect will handle saving null
-                    }}
+                    onClick={() => setSelectedAddress(null)}
                     className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     إزالة التجريبي
@@ -275,9 +276,7 @@ export default function CheckoutPage() {
                   <p className="text-neutral-600">{selectedAddress.phone}</p>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedAddress(null);
-                    }}
+                    onClick={() => setSelectedAddress(null)}
                     className="text-sm text-red-500 hover:text-red-700 transition-colors"
                   >
                     {t("changeAddress")}
@@ -296,7 +295,6 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* The remaining sections (delivery time, delivery instructions, payment) remain unchanged.*/}
             {selectedAddress && (
               <>
                 {/* 1. Book a delivery time */}
@@ -357,12 +355,10 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* 2. Delivery Instructions */}
-                {/* 2. Delivery Instructions */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-4">
                     {t("deliveryInstructions")}
                   </h2>
-
                   <div className="grid grid-cols-3 gap-3 mb-6">
                     {deliveryOptionsGrid.map((opt) => (
                       <button
@@ -375,7 +371,6 @@ export default function CheckoutPage() {
                             : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"
                         }`}
                       >
-                        {/* Icon */}
                         <div className="w-12 h-12 flex items-center justify-center mb-2">
                           {opt.id === "call" && (
                             <PhoneCall
@@ -387,7 +382,6 @@ export default function CheckoutPage() {
                               }`}
                             />
                           )}
-
                           {opt.id === "door" && (
                             <DoorOpen
                               size={28}
@@ -398,7 +392,6 @@ export default function CheckoutPage() {
                               }`}
                             />
                           )}
-
                           {opt.id === "boxes" && (
                             <PackageCheck
                               size={28}
@@ -410,13 +403,9 @@ export default function CheckoutPage() {
                             />
                           )}
                         </div>
-
-                        {/* Label */}
                         <span className="text-sm text-center font-medium">
                           {t(opt.labelKey)}
                         </span>
-
-                        {/* Check */}
                         {selectedInstruction === opt.id && (
                           <div className="mt-1 text-[#338A43] text-xs font-bold">
                             ✓
@@ -439,7 +428,6 @@ export default function CheckoutPage() {
                         {t("addGiftMessage")}
                       </span>
                     </label>
-
                     {giftMessage !== "" && (
                       <div className="mt-3 mr-8 animate-fadeIn">
                         <textarea
@@ -502,53 +490,24 @@ export default function CheckoutPage() {
                       ))}
                     </div>
 
+                    {/* ✅ Instead of card inputs, show a message when credit_card is selected */}
                     {paymentMethod === "credit_card" && (
-                      <div className="mt-4 p-4 bg-neutral-50 rounded-xl space-y-3 animate-fadeIn">
-                        <div className="relative">
-                          <Image
-                            src="/icons/cash-visa.svg"
-                            alt="card"
-                            width={20}
-                            height={20}
-                            className="absolute left-3 top-1/2 -translate-y-1/2"
-                          />
-                          <input
-                            type="text"
-                            placeholder={t("cardNumber")}
-                            value={cardNumber}
-                            onChange={(e) => setCardNumber(e.target.value)}
-                            className="w-full border border-neutral-300 rounded-lg py-2 pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-                            required={paymentMethod === "credit_card"}
-                          />
-                        </div>
-                        <div className="flex gap-3">
-                          <input
-                            type="text"
-                            placeholder="CVV"
-                            value={cvv}
-                            onChange={(e) => setCvv(e.target.value)}
-                            className="flex-1 border border-neutral-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-                            required={paymentMethod === "credit_card"}
-                          />
-                          <input
-                            type="text"
-                            placeholder="MM/YY"
-                            value={expiry}
-                            onChange={(e) => setExpiry(e.target.value)}
-                            className="flex-1 border border-neutral-300 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-                            required={paymentMethod === "credit_card"}
-                          />
-                        </div>
+                      <div className="mt-4 p-4 bg-neutral-50 rounded-xl animate-fadeIn">
+                        <p className="text-sm text-gray-500 text-center">
+                          سيتم تحويلك إلى صفحة دفع آمنة لإتمام العملية
+                        </p>
                       </div>
                     )}
                   </div>
                 </div>
 
+                {/* 🚀 Confirm button with loading state */}
                 <Button
                   type="submit"
-                  className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-lg font-semibold transition-all hover:shadow-lg transform hover:scale-[1.02] active:scale-100"
+                  disabled={loading}
+                  className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-lg font-semibold transition-all hover:shadow-lg transform hover:scale-[1.02] active:scale-100 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {t("confirmOrder")}
+                  {loading ? "جاري تحويلك..." : t("confirmOrder")}
                 </Button>
               </>
             )}
@@ -625,7 +584,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Adding the model */}
+      {/* Address modal */}
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}

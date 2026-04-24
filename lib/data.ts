@@ -1,13 +1,11 @@
-// ============================================================
-// 1. Categories (Main Categories Only)
-// ============================================================
+// ** categories
 export const categories = [
   {
     id: 1,
-    name: "اللوز",
-    nameEn: "Almonds",
-    slug: "almonds",
-    image: "/product-img.png",
+    name: "فواكه موسمية",
+    nameEn: "Seasonal Fruits",
+    slug: "seasonal-fruits",
+    image: "/categories/seasonal-fruits.jpeg",
   },
   {
     id: 2,
@@ -18,51 +16,21 @@ export const categories = [
   },
   {
     id: 3,
-    name: "أجار ومخللات",
-    nameEn: "Pickles & Achars",
-    slug: "pickles-achar",
-    image: "/categories/pickles-achar.jpeg",
+    name: "أجارات وصوصات",
+    nameEn: "Pickles & Sauces",
+    slug: "pickles-sauces",
+    image: "/categories/pickles-sauces.jpeg",
   },
   {
     id: 4,
-    name: "صوصات وتوابل",
-    nameEn: "Sauces & Spices",
-    slug: "sauces-spices",
-    image: "/categories/sauces-spices.jpeg",
-  },
-  {
-    id: 5,
-    name: "فواكه موسمية",
-    nameEn: "Seasonal Fruits",
-    slug: "seasonal-fruits",
-    image: "/categories/seasonal-fruits.jpeg",
-  },
-  {
-    id: 6,
-    name: "منتجات تقليدية",
-    nameEn: "Traditional Products",
-    slug: "traditional",
-    image: "/categories/traditional.jpeg",
-  },
-  {
-    id: 7,
-    name: "هدايا",
-    nameEn: "Gifts & Baskets",
-    slug: "gifts-baskets",
-    image: "/categories/gifts-baskets.jpeg",
-  },
-  {
-    id: 8,
-    name: "عصائر ومربيات",
-    nameEn: "Juices & Jams",
-    slug: "juices-jams",
-    image: "/categories/juices-jams.jpeg",
+    name: "عصائر",
+    nameEn: "Juices",
+    slug: "juices",
+    image: "/categories/juices.jpeg",
   },
 ];
 
-// ============================================================
-// 2. Products (Linked directly to main category via categorySlug)
-// ============================================================
+// ** products
 export const products = [
   {
     id: 1,
@@ -73,10 +41,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 كيلو",
     categorySlug: "seasonal-fruits", // Direct link to main category slug
-    image: "/products/haib-fruit.jpeg",
+    image: "/products/seasonal-fruits/haib-fruit.jpeg",
     description:
       "هو قلب النخلة 🤍🌴 ويسمى الجمار أو الجذبة في دول أخرى.. فاكهة شتوية ذات قيمة غذائية عالية جدًا وطعم لذيذ وحلو . . بالمختصر شيء فاخر 👌🏽",
   },
@@ -89,10 +56,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "2 كيلو",
     categorySlug: "seasonal-fruits",
-    image: "/products/Yellow-Almonds-(2kg).jpeg",
+    image: "/products/seasonal-fruits/Yellow-Almonds-(2kg).jpeg",
     description:
       "فاكهة الصيف اللذيذة 😋 حيث يستمتع الصغار والكبار بطعمه ما بين الحلو والحامض 👌🏽",
   },
@@ -105,10 +71,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "2 كيلو",
-    categorySlug: "almonds",
-    image: "/products/Almond-Beidam-Mix.jpeg",
+    categorySlug: "seasonal-fruits",
+    image: "/products/seasonal-fruits/Almond-Beidam-Mix.jpeg",
     description:
       "بلونيه الأحمر والأصفر حائز على لقب فاكهة الصيف اللذيذة 😋 حيث يستمتع الصغار والكبار بطعمه ما بين الحلو والحامض 👌🏽",
   },
@@ -121,10 +86,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 جم",
-    categorySlug: "almonds",
-    image: "/products/Spicy-Sour-Almonds.jpeg",
+    categorySlug: "seasonal-fruits",
+    image: "/products/seasonal-fruits/Spicy-Sour-Almonds.jpeg",
     description:
       "فاكهة الصيف اللذيذة 😋 جربوها مع الخلطة اللذيذة بالليمون والرمان 🍋‍🟩🌶️",
   },
@@ -137,10 +101,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 كيلو",
     categorySlug: "seasonal-fruits",
-    image: "/products/Red-Farsad-(1kg).jpeg",
+    image: "/products/seasonal-fruits/Red-Farsad-(1kg).jpeg",
     description:
       "ضيف موسمي محبوب عند الجميع يحمل معه عبق الماضي ونكهة الطبيعة وبشائر الصيف ❣️☀️",
   },
@@ -153,10 +116,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 كيلو",
     categorySlug: "seasonal-fruits",
-    image: "/products/Wild-Berries.jpeg",
+    image: "/products/seasonal-fruits/Wild-Berries.jpeg",
     description:
       "التوت البني أو الباكستاني طعم وحلاوة وقوام متين، من أجود وأشهر أنوع التوت والأكثر طلب في موسمه ✨",
   },
@@ -168,26 +130,24 @@ export const products = [
     discountedPrice: 80,
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
-    countryCode: "uae",
     originEn: "UAE 🇦🇪",
     weight: "1 كيلو",
     categorySlug: "seasonal-fruits",
-    image: "/products/Green-Sweet-Berries-(1kg).jpeg",
+    image: "/products/seasonal-fruits/Green-Sweet-Berries-(1kg).jpeg",
     description: "يتميز بلونه الأخضر وطعم حلو المذاق كالعسل 🍯",
   },
   {
     id: 8,
-    name: "سمــــن",
+    name: "سمن",
     nameEn: "Ghee",
     price: 75,
     discountedPrice: 69,
     discountPercent: 8,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "500 جم",
-    categorySlug: "traditional",
-    image: "/products/Ghee.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Ghee.jpeg",
     description: "نكهة مميزة وطعم أصيل وقيمة راسخة في مطبخنا العربي 💫",
   },
   {
@@ -199,10 +159,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 جم",
-    categorySlug: "traditional",
-    image: "/products/Jami.jpeg",
+    categorySlug: "seasonal-fruits",
+    image: "/products/seasonal-fruits/Jami.jpeg",
     description:
       "الجامي من الاكلات التراثية الشعبية يستخلص من لبن البقر ويؤكل مع التمر ويضاف له السمن ويتميز بطعمه الطيب👌🏽",
   },
@@ -215,10 +174,9 @@ export const products = [
     discountPercent: 14,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 لتر",
     categorySlug: "dairy",
-    image: "/products/Cow-Milk.jpeg",
+    image: "/products/dairy/Cow-Milk.jpeg",
     description:
       "يتميز لبن البقر بطعم حامض وقوام أسمك من الحليب.. سهل الهضم، طبيعي وطازج، من المزرعة للبيت🥛",
   },
@@ -231,10 +189,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 كيلو",
     categorySlug: "dairy",
-    image: "/products/Cow-Butter-1kg.jpeg",
+    image: "/products/dairy/Cow-Butter-1kg.jpeg",
     description:
       "اكتشف الطعم الطيب لزبدة البقر المصنوعة من الحليب الطازج النقي.. غنية بالدهون الصحية والفيتامينات والمعادن.. أساسية في كل مطبخ 😉 🧈",
   },
@@ -247,10 +204,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 جم",
-    categorySlug: "traditional",
-    image: "/products/Yaqut.jpeg",
+    categorySlug: "seasonal-fruits",
+    image: "/products/seasonal-fruits/Yaqut.jpeg",
     description:
       "جزء من تراثنا الشعبي يحمل ذكريات الطفولة 🤍 عبارة عن كرات مجففة من اللبن المحمض الطازج",
   },
@@ -263,10 +219,9 @@ export const products = [
     discountPercent: 14,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 لتر",
     categorySlug: "dairy",
-    image: "/products/Cow-Milk-Fenugreek.jpeg",
+    image: "/products/dairy/Cow-Milk-Fenugreek.jpeg",
     description:
       "استمتع بنكهة الحلبة اللذيذة المضافة إلى لبن البقر الحامض🐄 .. غنية بالقيمة الغذائية والطعم فاخر من الآخر😋",
   },
@@ -279,10 +234,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "500 جم",
     categorySlug: "dairy",
-    image: "/products/Cow-Butter-half.jpeg",
+    image: "/products/dairy/Cow-Butter-half.jpeg",
     description:
       "اكتشف الطعم الطيب لزبدة البقر المصنوعة من الحليب الطازج النقي.. غنية بالدهون الصحية والفيتامينات والمعادن.. أساسية في كل مطبخ 😉 🧈",
   },
@@ -295,10 +249,9 @@ export const products = [
     discountPercent: 0,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1 كيلو",
     categorySlug: "seasonal-fruits",
-    image: "/products/cactus.jpeg",
+    image: "/products/seasonal-fruits/cactus.jpeg",
     description:
       "من فواكه الصيف ذات الشعبية الكبيرة، له مسميات أخرى مثل التين الشوكي. يتميز بمذاقه المميز ✨",
   },
@@ -311,10 +264,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "500 جم",
-    categorySlug: "pickles-achar",
-    image: "/products/Bamber-Pickle.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Bamber-Pickle.jpeg",
     description: "نكهة أصيلة ومتفردة.. مثالي مع الأكلات الشعبية 😉✨",
   },
   {
@@ -326,10 +278,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 جم",
-    categorySlug: "almonds",
-    image: "/products/Regular-Sour-Almonds.jpeg",
+    categorySlug: "seasonal-fruits",
+    image: "/products/seasonal-fruits/Regular-Sour-Almonds.jpeg",
     description: "غير حار",
   },
   {
@@ -341,10 +292,9 @@ export const products = [
     discountPercent: 15,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "متنوع",
-    categorySlug: "gifts-baskets",
-    image: "/products/Special-Basket.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Special-Basket.jpeg",
     description:
       "سلة الأصالة 💐 … هي أكثر من هدية، هي لحظات نعيشها مع تراثنا، وطعم ماينسى من أيام الطيبين ⌛️🎁",
   },
@@ -357,10 +307,9 @@ export const products = [
     discountPercent: 13,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "500 جم",
     categorySlug: "dairy",
-    image: "/products/cow-cheese.jpeg",
+    image: "/products/dairy/cow-cheese.jpeg",
     description: "مصنوع من الحليب البقري الطبيعي",
   },
   {
@@ -372,10 +321,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 مل",
-    categorySlug: "sauces-spices",
-    image: "/products/Hot-Chili-Sauce.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Hot-Chili-Sauce.jpeg",
     description:
       "أضف النكهة القوية واللمسة النارية لأطباقك مع صلصة الشطة الحارة",
   },
@@ -388,10 +336,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 مل",
-    categorySlug: "sauces-spices",
-    image: "/products/Himba-Special-Sauce.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Himba-Special-Sauce.jpeg",
     description: "مزيج لذيذ يجمع بين حلاوة المانجو ولمسة من التوابل الخاصة",
   },
   {
@@ -403,10 +350,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 مل",
-    categorySlug: "sauces-spices",
-    image: "/products/Himba-Regular-Sauce.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Himba-Regular-Sauce.jpeg",
     description:
       "بلونه الأصفر الذهبي وقوامه الناعم، يجمع بين حلاوة المانجو الطبيعية ولمسة خفيفة من الحموضة",
   },
@@ -419,10 +365,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "200 جم",
-    categorySlug: "pickles-achar",
-    image: "/products/Almond-Pickle-Special-(Small).jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Almond-Pickle-Special-(Small).jpeg",
     description:
       "هذا الآجار المميز الذي لا يمكن تفويته .. مذاق اللوز الاصلي مع البهارات",
   },
@@ -435,10 +380,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "200 جم",
-    categorySlug: "pickles-achar",
-    image: "/products/Himba-Special-Pickle-Small.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Himba-Special-Pickle-Small.jpeg",
     description: "ننتقي أجود أنواع الهمبا لنصنع لكم هذا الآجار المميز",
   },
   {
@@ -450,10 +394,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "200 جم",
-    categorySlug: "pickles-achar",
-    image: "/products/Himba-Regular-Pickle-Small.jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Himba-Regular-Pickle-Small.jpeg",
     description:
       "مخلل المانجو التقليدي الذي يأسر الحواس ويضفي لمسة خاصة على موائدكم",
   },
@@ -466,10 +409,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "200 جم",
-    categorySlug: "pickles-achar",
-    image: "/products/Lemon-Pickle-(small).jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Lemon-Pickle-(small).jpeg",
     description:
       "أضف الحموضة المنعشة لأطباقك مع آجار الليمون ذو النكهة الخلابة",
   },
@@ -482,10 +424,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "200 جم",
-    categorySlug: "pickles-achar",
-    image: "/products/Himba-Sour-Sweet-Pickle (Small).jpeg",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Himba-Sour-Sweet-Pickle (Small).jpeg",
     description:
       "استمتع بتجربة فريدة مع الآجار الذي يجمع بين الحموضة المنعشة والحلاوة الخفيفة",
   },
@@ -498,10 +439,9 @@ export const products = [
     discountPercent: 11,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "متنوع",
-    categorySlug: "gifts-baskets",
-    image: "/products/Haib-Box.jpeg",
+    categorySlug: "seasonal-fruits",
+    image: "/products/seasonal-fruits/Haib-Box.jpeg",
     description:
       "قلب النخلة 🤍🌴 ويسمى الجمار أو الجذبة في دول أخرى.. فاكهة شتوية ذات قيمة غذائية عالية جدًا وطعم لذيذ وحلو . . بالمختصر شيء فاخر 👌🏽",
   },
@@ -514,10 +454,9 @@ export const products = [
     discountPercent: 13,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "250 جم",
     categorySlug: "seasonal-fruits",
-    image: "/products/Sweet-RAK-Corn.jpeg",
+    image: "/products/seasonal-fruits/Sweet-RAK-Corn.jpeg",
     description:
       "من خير بلادنا 🌽 يحبها الصغير و الكبير 🥰 لذيذة و فوائدها عظيمة 😍",
   },
@@ -530,10 +469,9 @@ export const products = [
     discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "200 جم",
-    categorySlug: "juices-jams",
-    image: "/products/Small-Mulberry-Jam.jpeg",
+    categorySlug: "juices",
+    image: "/products/seasonal-fruits/Small-Mulberry-Jam.jpeg",
     description: "مربى توت طبيعي بطعم غني ولذيذ 😋 مثالي للفطور والحلويات 👌🏽✨",
   },
   {
@@ -545,25 +483,23 @@ export const products = [
     discountPercent: 0,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "1.5 لتر",
-    categorySlug: "juices-jams",
-    image: "/products/Berry-Juice-large.jpeg",
+    categorySlug: "juices",
+    image: "/products/juices/Berry-Juice-large.jpeg",
     description: "عصير توت طبيعي ومنعش 🍇😋 حجم عائلي وطعم يبرد القلب 👌🏽❄️✨",
   },
   {
     id: 32,
     name: "همبا حامض (حدال) 4 كيلو",
     nameEn: "Sour Mango (4kg)",
-    price: 70,
+    price: 90,
     discountedPrice: 70,
-    discountPercent: 0,
+    discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
     weight: "4 كيلو",
     categorySlug: "seasonal-fruits",
-    image: "/products/Sour-Mango-(4kg).jpeg",
+    image: "/products/seasonal-fruits/Sour-Mango-(4kg).jpeg",
     description:
       "المانجو أو الامبا الحامض أو الحدال، من الثمار المعروفة بطعمها الحامض 😋 تؤكل مع الليمون والملح والفلفل وتستخدم في عمل الآجار",
   },
@@ -571,47 +507,23 @@ export const products = [
     id: 33,
     name: "خل الليمون",
     nameEn: "Lemon Vinegar",
-    price: 0,
-    discountedPrice: 0,
-    discountPercent: 0,
+    price: 80,
+    discountedPrice: 60,
+    discountPercent: 17,
     origin: "الإمارات 🇦🇪",
     originEn: "UAE 🇦🇪",
-    countryCode: "uae",
-    weight: "—",
-    categorySlug: "sauces-spices",
-    image: "/products/Lemon-Vinegar.jpeg",
+    weight: "1.5 لتر",
+    categorySlug: "pickles-sauces",
+    image: "/products/pickles-sauces/Lemon-Vinegar.jpeg",
     description:
       "خل ليمون طبيعي بطعم منعش 🍋 مثالي للسلطات والتتبيلات ويضيف نكهة مميزة للأطعمة 👌✨",
   },
 ];
 
-// ============================================================
-// 3. Helper Functions (Simplified)
-// ============================================================
+// ** Helper Functions
 export function getProductsByCategorySlug(slug: string) {
   return products.filter((p) => p.categorySlug === slug);
 }
-
-// For backward compatibility (if any code still uses subcategorySlug)
-export function getProductsBySubcategorySlug(slug: string) {
-  // If you still need this for some reason, you could map but it's better to remove dependency
-  return [];
-}
-
-// Get main category by slug
 export function getCategoryBySlug(slug: string) {
   return categories.find((cat) => cat.slug === slug);
 }
-
-// ============================================================
-// 4. UAE list (for TapBar)
-// ============================================================
-export const emirates = [
-  { ar: "دبي", en: "Dubai" },
-  { ar: "أبو ظبي", en: "Abu Dhabi" },
-  { ar: "الشارقة", en: "Sharjah" },
-  { ar: "عجمان", en: "Ajman" },
-  { ar: "رأس الخيمة", en: "Ras Al Khaimah" },
-  { ar: "الفجيرة", en: "Fujairah" },
-  { ar: "أم القيوين", en: "Umm Al Quwain" },
-];

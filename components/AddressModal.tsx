@@ -433,7 +433,7 @@ export default function AddressModal({
           </div>
 
           <div className="flex gap-2">
-            <div className="w-24 flex-shrink-0">
+            <div className="w-24 shrink-0">
               <label className="block text-sm font-medium mb-1">
                 {t("countryCode")}
               </label>

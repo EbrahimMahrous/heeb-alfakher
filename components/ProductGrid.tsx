@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useRef } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCard from "./ProductCard";
@@ -14,6 +15,7 @@ interface ProductGridProps {
     linkText?: string;
     linkHref?: string;
     bgColor?: string;
+    bannerImage?: string; // optional background image
   };
 }
 
@@ -57,29 +59,46 @@ export default function ProductGrid({
           className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {/* Vertical banner (first element) */}
+          {/* Banner Card - vertical layout matching product card width */}
           {bannerContent && (
             <div className="min-w-62.5 sm:min-w-70 snap-start">
-              <div
-                className={`bg-linear-to-br ${bannerContent.bgColor || "from-primary/20 to-orange/20"} rounded-2xl p-5 flex flex-col justify-between h-full min-h-95 shadow-md`}
-              >
-                <div>
-                  <h3 className="text-2xl font-bold text-primary mb-2">
-                    {bannerContent.title}
-                  </h3>
-                  {bannerContent.description && (
-                    <p className="text-gray-600 text-sm mt-2">
-                      {bannerContent.description}
-                    </p>
-                  )}
+              <div className="relative rounded-2xl overflow-hidden shadow-md h-86 flex flex-col">
+                {/* Background image (if provided) */}
+                {bannerContent.bannerImage ? (
+                  <Image
+                    src={bannerContent.bannerImage}
+                    alt={bannerContent.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 300px"
+                  />
+                ) : (
+                  <div
+                    className={`absolute inset-0 bg-linear-to-br ${bannerContent.bgColor || "from-primary/20 to-orange/20"}`}
+                  />
+                )}
+                {/* Dark overlay for text legibility */}
+                <div className="absolute inset-0 bg-black/20" />
+                {/* Content */}
+                <div className="relative z-10 p-5 flex flex-col justify-between h-full">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-2 drop-shadow-md">
+                      {bannerContent.title}
+                    </h3>
+                    {bannerContent.description && (
+                      <p className="text-white/90 text-sm mt-2 drop-shadow">
+                        {bannerContent.description}
+                      </p>
+                    )}
+                  </div>
+                  <Link
+                    href={bannerContent.linkHref || "/categories"}
+                    className="mt-4 text-orange font-semibold hover:underline inline-flex items-center gap-1 drop-shadow"
+                  >
+                    {bannerContent.linkText || t("browseAll")}
+                    <span>→</span>
+                  </Link>
                 </div>
-                <Link
-                  href={bannerContent.linkHref || "/categories"}
-                  className="mt-4 text-orange font-semibold hover:underline inline-flex items-center gap-1"
-                >
-                  {bannerContent.linkText || t("browseAll")}
-                  <span>→</span>
-                </Link>
               </div>
             </div>
           )}
