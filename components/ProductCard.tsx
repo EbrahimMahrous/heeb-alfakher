@@ -38,8 +38,11 @@ export default function ProductCard({
   const addItem = useCartStore((state) => state.addItem);
   const [isAdding, setIsAdding] = useState(false);
 
+  // حماية من undefined
+  if (!product) return null;
+
   const handleAddToCart = async () => {
-    if (isAdding) return;
+    if (isAdding || !product.inStock) return;
     setIsAdding(true);
     try {
       await addItem({
@@ -68,24 +71,24 @@ export default function ProductCard({
     ? `/product/${product.id}?category=${categorySlug}`
     : `/product/${product.id}`;
 
+  // Default image if no image exists
+  const imageSrc = product.image || "/default-product.jpeg";
+
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:shadow-lg transition flex flex-col h-full">
       <Link href={productLink} className="block relative h-48 bg-neutral-100">
-        {product.image ? (
-          <Image
-            src={product.image}
-            alt={productName}
-            fill
-            className="object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-5xl text-neutral-400">
-            🛍️
-          </div>
-        )}
+        <Image src={imageSrc} alt={productName} fill className="object-cover" />
         {product.discountPercent && (
           <div className="absolute top-2 right-2 bg-orange text-white text-xs font-bold px-2 py-1 rounded-full">
             {t("discount")}
+          </div>
+        )}
+        {/* Tag unavailable when stock runs out */}
+        {!product.inStock && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <span className="bg-white text-red-600 font-bold px-4 py-1 rounded-full text-sm shadow">
+              {t("outOfStock")}
+            </span>
           </div>
         )}
       </Link>
@@ -119,17 +122,27 @@ export default function ProductCard({
         </div>
         <Button
           onClick={handleAddToCart}
-          disabled={isAdding}
-          className="mt-3 bg-primary hover:bg-primary/90 text-white rounded-full py-2 px-4 flex items-center justify-center gap-2 w-full"
+          disabled={isAdding || !product.inStock}
+          className={`mt-3 rounded-full py-2 px-4 flex items-center justify-center gap-2 w-full ${
+            product.inStock
+              ? "bg-primary hover:bg-primary/90 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
-          <Image
-            src="/icons/plus.svg"
-            alt="plus"
-            width={16}
-            height={16}
-            className="invert brightness-0"
-          />
-          <span>{isAdding ? "جاري الإضافة..." : t("addToCart")}</span>
+          {!product.inStock ? (
+            t("outOfStock")
+          ) : (
+            <>
+              <Image
+                src="/icons/plus.svg"
+                alt="plus"
+                width={16}
+                height={16}
+                className="invert brightness-0"
+              />
+              <span>{isAdding ? "جاري الإضافة..." : t("addToCart")}</span>
+            </>
+          )}
         </Button>
       </div>
     </div>

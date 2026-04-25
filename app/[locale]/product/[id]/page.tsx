@@ -22,6 +22,7 @@ export default function ProductDetailPage() {
   const [isAdding, setIsAdding] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
+  // Product not available
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
@@ -30,15 +31,25 @@ export default function ProductDetailPage() {
     );
   }
 
+  // Product hidden (status = 'off')
+  if (product.status === "off") {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center text-gray-500">
+        {t("productHidden") || "المنتج غير متاح حالياً"}
+      </div>
+    );
+  }
+
   const category = categorySlug
     ? categories.find((c) => c.slug === categorySlug)
     : null;
+
   const suggestedProducts = products
-    .filter((p) => p.id !== product.id)
+    .filter((p) => p.id !== product.id && p.status !== "off")
     .slice(0, 8);
 
   const handleAddToCart = async () => {
-    if (isAdding) return;
+    if (isAdding || !product.inStock) return;
     setIsAdding(true);
     try {
       await addItem({
@@ -58,6 +69,8 @@ export default function ProductDetailPage() {
 
   const originText = locale === "ar" ? product.origin : product.originEn;
   const currency = t("currency");
+  // default image
+  const imageSrc = product.image || "/default-product.jpeg";
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -84,7 +97,7 @@ export default function ProductDetailPage() {
       <div className="grid md:grid-cols-2 gap-8">
         <div className="relative bg-neutral-100 rounded-2xl overflow-hidden h-96 md:h-125">
           <Image
-            src={product.image || "/product-img.png"}
+            src={imageSrc}
             alt={product.name}
             fill
             className="object-cover"
@@ -93,6 +106,14 @@ export default function ProductDetailPage() {
           {product.discountPercent && (
             <div className="absolute top-4 right-4 bg-orange text-white text-sm font-bold px-3 py-1 rounded-full z-10">
               {t("discount")}
+            </div>
+          )}
+          {/* Tag unavailable when stock runs out */}
+          {!product.inStock && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span className="bg-white text-red-600 font-bold px-6 py-2 rounded-full text-lg shadow">
+                {t("outOfStock")}
+              </span>
             </div>
           )}
         </div>
@@ -148,6 +169,7 @@ export default function ProductDetailPage() {
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 className="px-4 py-2 text-lg font-medium hover:bg-neutral-100 transition"
+                disabled={!product.inStock}
               >
                 -
               </button>
@@ -157,16 +179,25 @@ export default function ProductDetailPage() {
               <button
                 onClick={() => setQuantity((q) => q + 1)}
                 className="px-4 py-2 text-lg font-medium hover:bg-neutral-100 transition"
+                disabled={!product.inStock}
               >
                 +
               </button>
             </div>
             <Button
               onClick={handleAddToCart}
-              disabled={isAdding}
-              className="bg-primary hover:bg-primary/90 text-white px-8 py-2 rounded-full flex-1 disabled:opacity-50"
+              disabled={isAdding || !product.inStock}
+              className={`px-8 py-2 rounded-full flex-1 ${
+                product.inStock
+                  ? "bg-primary hover:bg-primary/90 text-white"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
+              }`}
             >
-              {isAdding ? "جاري..." : t("addToCart")}
+              {!product.inStock
+                ? t("outOfStock")
+                : isAdding
+                  ? "جاري..."
+                  : t("addToCart")}
             </Button>
           </div>
 

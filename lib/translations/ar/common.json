@@ -3,29 +3,17 @@
   "categories": "الفئات",
   "search": "عما تبحث؟",
   "cart": "السلة",
-
-  "deliveryIn": "توصيل في",
-  "today": "الآن",
-  "workingHours": "من 1م إلى 9م",
-
   "shopByCategory": "تسوق حسب الفئة",
   "addToCart": "أضف إلى السلة",
   "aboutUs": "من نحن",
   "faq": "الأسئلة الشائعة",
   "returns": "سياسة الاسترجاع",
-  "bannerTitle": "Heeb Al Fakher",
-  "bannerSubtitle": "أفضل العطور والبخور الأصيلة",
-  "latestProducts": "أحدث المنتجات",
-  "quickLinks": "روابط سريعة",
-  "contactUs": "تواصل معنا",
-  "phone": "هاتف: 971-4-1234567+",
-  "email": "بريد: info@heebalfakher.ae",
-  "groceryDelivery": "خدمة توصيل البقالة",
-  "maxDegrees": "أقصى درجات",
-  "freshnessDaily": "النضارة، تصلك يومياً.",
-  "shopNow": "تسوق الآن",
-
   "viewAll": "عرض الكل",
+  
+  "outOfStock": "غير متوفر",
+  "productHidden": "المنتج غير متاح حالياً",
+  "productNotFound": "المنتج غير موجود",
+
   "companyDescription": "إعادة تعريف تجربة التسوق للمواد الغذائية مع جودة ممتازة، توريد مستدام، وتوصيل سلس إلى باب منزلك.",
   "contactUsFooter": "تواصل معنا",
   "explore": "استكشف",
@@ -40,19 +28,15 @@
   "deliveryAreas": "مناطق التوصيل",
   "faqFooter": "الأسئلة الشائعة",
   "copyright": "جميع الحقوق محفوظة",
-
   "quickOffers": "عروض سريعة",
   "quickOffersDesc": "اكتشف أفضل العروض المتاحة الآن لفترة محدودة",
   "newProducts": "منتجاتنا جديدة",
   "bestSellers": "الأكثر مبيعاً",
   "browseAll": "تصفح الكل",
-
   "discount": "تخفيض",
   "discountPercent": "خصم {percent}%",
   "currency": "د.إ",
-
   "newProductsDesc": "أحدث المنتجات المضافة",
   "bestSellersDesc": "الأكثر طلباً من عملائنا",
-
   "whatsappMessage": "مرحباً! أرغب في الاستفسار عن منتجاتكم."
 }

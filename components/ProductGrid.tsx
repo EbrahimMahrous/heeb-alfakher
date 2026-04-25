@@ -15,7 +15,7 @@ interface ProductGridProps {
     linkText?: string;
     linkHref?: string;
     bgColor?: string;
-    bannerImage?: string; // optional background image
+    bannerImage?: string;
   };
 }
 
@@ -37,7 +37,11 @@ export default function ProductGrid({
     }
   };
 
-  if (!products || products.length === 0) {
+  const visibleProducts = (products || [])
+    .filter((p) => p != null)
+    .filter((p) => p.status !== "off");
+
+  if (!visibleProducts || visibleProducts.length === 0) {
     return null;
   }
 
@@ -63,7 +67,6 @@ export default function ProductGrid({
           {bannerContent && (
             <div className="min-w-62.5 sm:min-w-70 snap-start">
               <div className="relative rounded-2xl overflow-hidden shadow-md h-86 flex flex-col">
-                {/* Background image (if provided) */}
                 {bannerContent.bannerImage ? (
                   <Image
                     src={bannerContent.bannerImage}
@@ -77,9 +80,7 @@ export default function ProductGrid({
                     className={`absolute inset-0 bg-linear-to-br ${bannerContent.bgColor || "from-primary/20 to-orange/20"}`}
                   />
                 )}
-                {/* Dark overlay for text legibility */}
                 <div className="absolute inset-0 bg-black/20" />
-                {/* Content */}
                 <div className="relative z-10 p-5 flex flex-col justify-between h-full">
                   <div>
                     <h3 className="text-2xl font-bold text-white mb-2 drop-shadow-md">
@@ -103,8 +104,8 @@ export default function ProductGrid({
             </div>
           )}
 
-          {/* Products */}
-          {products.map((product) => (
+          {/* Products (visible only) */}
+          {visibleProducts.map((product) => (
             <div key={product.id} className="min-w-62.5 sm:min-w-70 snap-start">
               <ProductCard product={product} />
             </div>

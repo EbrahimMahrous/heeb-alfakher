@@ -27,8 +27,11 @@ export default function ProductCarousel({
       scrollRef.current.scrollTo({ left: to, behavior: "smooth" });
     }
   };
+  const visibleProducts = (products || [])
+    .filter((p) => p != null)
+    .filter((p) => p.status !== "off");
 
-  if (!products || products.length === 0) {
+  if (!visibleProducts || visibleProducts.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         {t("noProducts") || "لا توجد منتجات"}
@@ -63,7 +66,7 @@ export default function ProductCarousel({
           className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {products.map((product) => (
+          {visibleProducts.map((product) => (
             <div key={product.id} className="min-w-62.5 sm:min-w-70 snap-start">
               <ProductCard product={product} />
             </div>
