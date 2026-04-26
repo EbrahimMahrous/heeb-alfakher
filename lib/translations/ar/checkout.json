@@ -30,5 +30,10 @@
   "cashOnDelivery": "الدفع نقداً عند الاستلام",
   "cardOnDelivery": "الدفع بالبطاقة عند الاستلام",
   "creditCard": "الدفع ببطاقة الائتمان / الخصم",
-  "cardNumber": "رقم البطاقة"
+  "securePaymentRedirect": "سيتم توجيهك إلى بوابة دفع آمنة",
+  "redirecting": "جارٍ التوجيه...",
+  "noAddressAlert": "الرجاء إضافة عنوان التسليم أولاً",
+  "noDeliveryTimeAlert": "الرجاء اختيار يوم ووقت التسليم",
+  "paymentError": "حدث خطأ أثناء الدفع",
+  "noPaymentUrl": "لم يتم استلام رابط الدفع"
 }

@@ -44,7 +44,7 @@ const ProductMeta = ({ weight }: { weight?: string }) => {
         alt="UAE"
         width={16}
         height={16}
-        className="rounded-full"
+        className="h-4 w-4"
       />
       <span className="text-xs text-neutral-700">UAE</span>
       <span className="text-neutral-400 text-xs">•</span>

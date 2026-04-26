@@ -12,14 +12,12 @@ import { PhoneCall, DoorOpen, PackageCheck } from "lucide-react";
 // Local storage key for checkout data persistence
 const CHECKOUT_STORAGE_KEY = "heeb_checkout_data";
 
-// Helper: Save checkout data to localStorage
 const saveCheckoutToLocalStorage = (data: any) => {
   if (typeof window !== "undefined") {
     localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(data));
   }
 };
 
-// Helper: Load checkout data from localStorage
 const loadCheckoutFromLocalStorage = () => {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem(CHECKOUT_STORAGE_KEY);
@@ -42,7 +40,6 @@ interface Address {
   city?: string;
 }
 
-// A function to dynamically generate delivery days with day and date display.
 const getDeliveryDays = () => {
   const days = [];
   const today = new Date();
@@ -70,10 +67,10 @@ const getDeliveryDays = () => {
     else label = `${dayName} ${dayNum} ${monthName}`;
 
     days.push({
-      label: label,
+      label,
       date: `${dayNum} ${monthName}`,
       fullDate: date.toISOString(),
-      dayName: dayName,
+      dayName,
     });
   }
   return days;
@@ -81,7 +78,6 @@ const getDeliveryDays = () => {
 
 const timeSlots = ["01:00 PM - 06:00 PM", "06:00 PM - 09:00 PM"];
 
-// Delivery options - three horizontal squares (only one choice)
 const deliveryOptionsGrid = [
   { id: "call", labelKey: "callBeforeDelivery", icon: "/icons/call-ring.svg" },
   { id: "door", labelKey: "leaveAtDoor", icon: "/icons/door.svg" },
@@ -89,12 +85,11 @@ const deliveryOptionsGrid = [
 ];
 
 export default function CheckoutPage() {
-  const { t } = useTranslation("checkout");
+  const { t, locale } = useTranslation("checkout");
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const { items, totalPrice, clearCart } = useCartStore();
+  const { items, totalPrice } = useCartStore(); // clearCart removed from here
   const router = useRouter();
 
-  // State for checkout form
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
@@ -103,13 +98,13 @@ export default function CheckoutPage() {
   );
   const [giftMessage, setGiftMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
-  // 🔥 Removed card details state (cardNumber, cvv, expiry) - no longer needed
 
-  const [deliveryDays, setDeliveryDays] = useState(getDeliveryDays());
+  const [deliveryDays] = useState(getDeliveryDays());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [loading, setLoading] = useState(false); // 🚀 Loading state for submission
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Load saved checkout data from localStorage on mount
+  // Load saved checkout data on mount
   useEffect(() => {
     const savedData = loadCheckoutFromLocalStorage();
     if (savedData) {
@@ -123,9 +118,8 @@ export default function CheckoutPage() {
       if (savedData.giftMessage !== undefined)
         setGiftMessage(savedData.giftMessage);
       if (savedData.paymentMethod) setPaymentMethod(savedData.paymentMethod);
-      // Card details are not restored because we no longer use them
     } else {
-      // Default dummy address for testing purposes only
+      // Default dummy address
       const dummyAddress: Address = {
         id: "dummy_1",
         fullName: "أحمد محمد",
@@ -138,7 +132,7 @@ export default function CheckoutPage() {
     setIsInitialLoad(false);
   }, []);
 
-  // Save checkout data to localStorage whenever any relevant state changes (after initial load)
+  // Persist checkout data
   useEffect(() => {
     if (isInitialLoad) return;
     const checkoutData = {
@@ -148,7 +142,6 @@ export default function CheckoutPage() {
       selectedInstruction,
       giftMessage,
       paymentMethod,
-      // We no longer save card details
     };
     saveCheckoutToLocalStorage(checkoutData);
   }, [
@@ -179,16 +172,24 @@ export default function CheckoutPage() {
     setSelectedAddress(address);
   };
 
-  // 🔥 New async handleSubmit with API call
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
 
     if (!selectedAddress) {
-      alert("الرجاء إضافة عنوان التسليم أولاً");
+      setErrorMessage(
+        t("noAddressAlert", {
+          defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
+        }),
+      );
       return;
     }
     if (!selectedDate || !selectedTimeSlot) {
-      alert("الرجاء اختيار يوم ووقت التسليم");
+      setErrorMessage(
+        t("noDeliveryTimeAlert", {
+          defaultValue: "الرجاء اختيار يوم ووقت التسليم",
+        }),
+      );
       return;
     }
 
@@ -207,24 +208,28 @@ export default function CheckoutPage() {
           timeSlot: selectedTimeSlot,
           instruction: selectedInstruction,
           giftMessage: giftMessage.trim() === "" ? null : giftMessage,
-          paymentMethod, // we still send the chosen method (cash/card) to backend
+          paymentMethod,
+          locale,
         }),
       });
 
       const data = await res.json();
 
+      if (!res.ok) {
+        throw new Error(data.error || t("paymentError"));
+      }
+
       if (data.payment_url) {
-        // حذف بيانات checkout من التخزين المحلي
+        // ⚠️ We no longer empty the basket here – we will only empty it upon a successful order.
+        // We only delete temporary checkout data.
         localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-        clearCart();
-        // التوجيه إلى صفحة الدفع
         window.location.href = data.payment_url;
       } else {
-        throw new Error("No payment URL returned");
+        throw new Error(t("noPaymentUrl"));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("حصل خطأ أثناء إنشاء الدفع");
+      setErrorMessage(err.message);
     } finally {
       setLoading(false);
     }
@@ -249,8 +254,34 @@ export default function CheckoutPage() {
         {t("billingInfo")}
       </h1>
 
+      {/* Display error banner if any */}
+      {errorMessage && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
+          <svg
+            className="w-5 h-5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span className="text-sm">{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage("")}
+            className="ml-auto text-red-500 hover:text-red-700"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Right column: The form */}
+        {/* Form column */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Delivery address */}
@@ -297,7 +328,7 @@ export default function CheckoutPage() {
 
             {selectedAddress && (
               <>
-                {/* 1. Book a delivery time */}
+                {/* Schedule delivery */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-4">
                     {t("scheduleDelivery")}
@@ -354,7 +385,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* 2. Delivery Instructions */}
+                {/* Delivery Instructions */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-4">
                     {t("deliveryInstructions")}
@@ -442,7 +473,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* 3. Payment */}
+                {/* Payment */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-4">{t("payment")}</h2>
                   <div className="space-y-4">
@@ -490,31 +521,30 @@ export default function CheckoutPage() {
                       ))}
                     </div>
 
-                    {/* ✅ Instead of card inputs, show a message when credit_card is selected */}
                     {paymentMethod === "credit_card" && (
                       <div className="mt-4 p-4 bg-neutral-50 rounded-xl animate-fadeIn">
                         <p className="text-sm text-gray-500 text-center">
-                          سيتم تحويلك إلى صفحة دفع آمنة لإتمام العملية
+                          {t("securePaymentRedirect")}
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* 🚀 Confirm button with loading state */}
+                {/* Confirm button */}
                 <Button
                   type="submit"
                   disabled={loading}
                   className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-lg font-semibold transition-all hover:shadow-lg transform hover:scale-[1.02] active:scale-100 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {loading ? "جاري تحويلك..." : t("confirmOrder")}
+                  {loading ? t("redirecting") : t("confirmOrder")}
                 </Button>
               </>
             )}
           </form>
         </div>
 
-        {/* Left column: Order summary */}
+        {/* Order summary column */}
         <div className="lg:col-span-1 order-1 lg:order-2">
           <div className="bg-white border border-neutral-200 p-6 rounded-2xl shadow-lg sticky top-24 hover:shadow-xl transition-shadow">
             <h2 className="text-xl font-bold mb-4">{t("orderSummary")}</h2>

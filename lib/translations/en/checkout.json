@@ -30,5 +30,11 @@
   "cashOnDelivery": "Cash on delivery",
   "cardOnDelivery": "Card on delivery",
   "creditCard": "Credit / Debit card",
-  "cardNumber": "Card number"
+  "cardNumber": "Card number",
+  "securePaymentRedirect": "You will be redirected to a secure payment gateway",
+  "redirecting": "Redirecting...",
+  "noAddressAlert": "Please add a delivery address first",
+  "noDeliveryTimeAlert": "Please select a delivery day and time slot",
+  "paymentError": "Payment error occurred",
+  "noPaymentUrl": "No payment URL received"
 }
