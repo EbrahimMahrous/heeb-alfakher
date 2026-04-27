@@ -15,5 +15,13 @@
   "locateMe": "تحديد الموقع",
   "loading": "جاري تحميل الخريطة...",
   "error": "حدث خطأ في تحميل الخريطة",
-  "validationRequired": "الرجاء تعبئة جميع الحقول المطلوبة"
+  "validationRequired": "الرجاء تعبئة جميع الحقول المطلوبة",
+  "mapsApiMissing": "مفتاح الخرائط غير موجود",
+  "mapsLoadError": "تعذر تحميل الخرائط. تأكد من تعطيل أدوات الحظر (Adblock) أو أعد المحاولة.",
+  "mapsErrorGeneral": "حدث خطأ في تحميل الخريطة",
+  "geolocationDenied": "تم تعطيل تحديد الموقع. يمكنك البحث عن عنوانك يدويًا.",
+  "geolocationFailed": "فشل تحديد الموقع",
+  "geolocationNotSupported": "المتصفح لا يدعم تحديد الموقع",
+  "ok": "حسنًا",
+  "addressSaved": "تم حفظ العنوان بنجاح"
 }

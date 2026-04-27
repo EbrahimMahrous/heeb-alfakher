@@ -8,8 +8,8 @@ import Button from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import AddressModal from "@/components/AddressModal";
 import { PhoneCall, DoorOpen, PackageCheck } from "lucide-react";
+import { toast } from "sonner"; // ✅ مكتبة sonner
 
-// Local storage key for checkout data persistence
 const CHECKOUT_STORAGE_KEY = "heeb_checkout_data";
 
 const saveCheckoutToLocalStorage = (data: any) => {
@@ -87,7 +87,7 @@ const deliveryOptionsGrid = [
 export default function CheckoutPage() {
   const { t, locale } = useTranslation("checkout");
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const { items, totalPrice } = useCartStore(); // clearCart removed from here
+  const { items, totalPrice } = useCartStore();
   const router = useRouter();
 
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
@@ -104,7 +104,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Load saved checkout data on mount
+  // Load saved checkout data on mount - NO dummy address anymore
   useEffect(() => {
     const savedData = loadCheckoutFromLocalStorage();
     if (savedData) {
@@ -118,17 +118,8 @@ export default function CheckoutPage() {
       if (savedData.giftMessage !== undefined)
         setGiftMessage(savedData.giftMessage);
       if (savedData.paymentMethod) setPaymentMethod(savedData.paymentMethod);
-    } else {
-      // Default dummy address
-      const dummyAddress: Address = {
-        id: "dummy_1",
-        fullName: "أحمد محمد",
-        address: "شارع الجميرا، فيلا 3، دبي",
-        phone: "0501234567",
-        city: "دبي",
-      };
-      setSelectedAddress(dummyAddress);
     }
+    // تم حذف العنوان التجريبي بالكامل
     setIsInitialLoad(false);
   }, []);
 
@@ -170,6 +161,7 @@ export default function CheckoutPage() {
 
   const handleSaveAddress = (address: Address) => {
     setSelectedAddress(address);
+    toast.success(t("addressSaved", { defaultValue: "تم حفظ العنوان بنجاح" }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -177,19 +169,19 @@ export default function CheckoutPage() {
     setErrorMessage("");
 
     if (!selectedAddress) {
-      setErrorMessage(
-        t("noAddressAlert", {
-          defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
-        }),
-      );
+      const msg = t("noAddressAlert", {
+        defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
+      });
+      setErrorMessage(msg);
+      toast.error(msg);
       return;
     }
     if (!selectedDate || !selectedTimeSlot) {
-      setErrorMessage(
-        t("noDeliveryTimeAlert", {
-          defaultValue: "الرجاء اختيار يوم ووقت التسليم",
-        }),
-      );
+      const msg = t("noDeliveryTimeAlert", {
+        defaultValue: "الرجاء اختيار يوم ووقت التسليم",
+      });
+      setErrorMessage(msg);
+      toast.error(msg);
       return;
     }
 
@@ -216,20 +208,24 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || t("paymentError"));
+        const errMsg = data.error || t("paymentError");
+        console.error("Payment API Error:", errMsg);
+        throw new Error(errMsg);
       }
 
       if (data.payment_url) {
-        // ⚠️ We no longer empty the basket here – we will only empty it upon a successful order.
-        // We only delete temporary checkout data.
         localStorage.removeItem(CHECKOUT_STORAGE_KEY);
         window.location.href = data.payment_url;
       } else {
-        throw new Error(t("noPaymentUrl"));
+        const errMsg = t("noPaymentUrl");
+        console.error(errMsg);
+        throw new Error(errMsg);
       }
     } catch (err: any) {
-      console.error(err);
-      setErrorMessage(err.message);
+      console.error("Checkout Error:", err);
+      const message = err.message || t("paymentError");
+      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -254,7 +250,7 @@ export default function CheckoutPage() {
         {t("billingInfo")}
       </h1>
 
-      {/* Display error banner if any */}
+      {/* Display error banner if any (also sonner toast will show) */}
       {errorMessage && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
           <svg
@@ -290,15 +286,7 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-semibold">
                   {t("deliveryAddress")}
                 </h2>
-                {selectedAddress && selectedAddress.id === "dummy_1" && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAddress(null)}
-                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    إزالة التجريبي
-                  </button>
-                )}
+                {/* Removed dummy address removal button */}
               </div>
               {selectedAddress ? (
                 <div className="bg-neutral-50 p-4 rounded-xl space-y-2">
@@ -317,6 +305,7 @@ export default function CheckoutPage() {
                 <div className="text-center py-8 bg-neutral-50 rounded-xl">
                   <p className="text-neutral-500 mb-3">{t("noAddressAdded")}</p>
                   <button
+                    type="button"
                     onClick={() => setIsAddressModalOpen(true)}
                     className="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm hover:bg-primary/90 transition-all hover:shadow-md"
                   >

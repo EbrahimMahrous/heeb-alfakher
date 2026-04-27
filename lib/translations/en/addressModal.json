@@ -15,5 +15,13 @@
   "locateMe": "Locate me",
   "loading": "Loading map...",
   "error": "Error loading map",
-  "validationRequired": "Please fill in all required fields"
+  "validationRequired": "Please fill in all required fields",
+  "mapsApiMissing": "Maps API key is missing",
+  "mapsLoadError": "Failed to load maps. Please disable ad blockers or try again.",
+  "mapsErrorGeneral": "An error occurred while loading the map",
+  "geolocationDenied": "Location access denied. You can search for your address manually.",
+  "geolocationFailed": "Failed to get location",
+  "geolocationNotSupported": "Geolocation is not supported by this browser",
+  "ok": "OK",
+  "addressSaved": "Address saved successfully"
 }

@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
+import { toast } from "sonner"; // ✅ sonner
 
 interface Address {
   id: string;
@@ -28,7 +29,6 @@ declare global {
   }
 }
 
-// Local storage key for address form persistence
 const ADDRESS_FORM_STORAGE_KEY = "address_modal_form_data";
 
 export default function AddressModal({
@@ -36,7 +36,7 @@ export default function AddressModal({
   onClose,
   onSave,
 }: AddressModalProps) {
-  const { t } = useTranslation("addressModal"); // Translation namespace
+  const { t } = useTranslation("addressModal");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -61,7 +61,7 @@ export default function AddressModal({
   const autocompleteRef = useRef<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load saved form data from localStorage when modal opens
+  // Load saved form data when modal opens
   useEffect(() => {
     if (!isOpen) return;
     if (typeof window !== "undefined") {
@@ -78,13 +78,12 @@ export default function AddressModal({
     setIsInitialLoad(false);
   }, [isOpen]);
 
-  // Save form data to localStorage whenever it changes (after initial load)
+  // Persist form data
   useEffect(() => {
     if (!isOpen || isInitialLoad) return;
     localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(formData));
   }, [formData, isOpen, isInitialLoad]);
 
-  // Clear saved data when modal closes and form is submitted successfully
   const clearSavedFormData = () => {
     localStorage.removeItem(ADDRESS_FORM_STORAGE_KEY);
   };
@@ -98,6 +97,7 @@ export default function AddressModal({
       return;
     }
 
+    // Avoid multiple callbacks
     window.initGoogleMapsCallback = () => {
       setIsLoaded(true);
     };
@@ -106,6 +106,9 @@ export default function AddressModal({
     if (!apiKey) {
       console.error("Google Maps API key is missing");
       setLoadError(true);
+      toast.error(
+        t("mapsApiMissing", { defaultValue: "مفتاح الخرائط غير موجود" }),
+      );
       return;
     }
 
@@ -113,9 +116,19 @@ export default function AddressModal({
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback&loading=async`;
     script.async = true;
     script.defer = true;
+    script.onerror = () => {
+      console.error(
+        "Failed to load Google Maps script. Blocked by client or network error.",
+      );
+      setLoadError(true);
+      toast.error(
+        t("mapsLoadError", {
+          defaultValue:
+            "تعذر تحميل الخرائط. تأكد من تعطيل أدوات الحظر (Adblock) أو أعد المحاولة.",
+        }),
+      );
+    };
     document.head.appendChild(script);
-
-    script.onerror = () => setLoadError(true);
 
     return () => {
       if (document.head.contains(script)) document.head.removeChild(script);
@@ -123,12 +136,11 @@ export default function AddressModal({
     };
   }, [isOpen]);
 
-  // Map initialization and Autocomplete after API loading
+  // Map initialization after API loaded
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
 
-    // Default center: UAE
-    const defaultCenter = { lat: 24.4539, lng: 54.3773 };
+    const defaultCenter = { lat: 24.4539, lng: 54.3773 }; // UAE
 
     const map = new window.google.maps.Map(mapRef.current, {
       center: defaultCenter,
@@ -139,7 +151,7 @@ export default function AddressModal({
     });
     mapInstanceRef.current = map;
 
-    // Add draggable marker
+    // Marker (using deprecated Marker but still functional)
     const marker = new window.google.maps.Marker({
       position: defaultCenter,
       map: map,
@@ -147,14 +159,12 @@ export default function AddressModal({
     });
     markerRef.current = marker;
 
-    // Update coordinates when marker is dragged
     marker.addListener("dragend", () => {
       const position = marker.getPosition();
       setSelectedLocation({ lat: position.lat(), lng: position.lng() });
       reverseGeocode(position.lat(), position.lng());
     });
 
-    // Handle click on map
     map.addListener("click", (e: any) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
@@ -163,46 +173,49 @@ export default function AddressModal({
       reverseGeocode(lat, lng);
     });
 
-    // Setup Autocomplete for search input
-    const autocomplete = new window.google.maps.places.Autocomplete(
-      searchInputRef.current!,
-      {
-        componentRestrictions: { country: "ae" },
-        fields: ["address_components", "formatted_address", "geometry"],
-      },
-    );
-    autocompleteRef.current = autocomplete;
+    // Autocomplete (using deprecated Autocomplete but still functional)
+    try {
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        searchInputRef.current!,
+        {
+          componentRestrictions: { country: "ae" },
+          fields: ["address_components", "formatted_address", "geometry"],
+        },
+      );
+      autocompleteRef.current = autocomplete;
 
-    autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (place.geometry) {
-        const location = place.geometry.location;
-        map.setCenter(location);
-        marker.setPosition(location);
-        setSelectedLocation({ lat: location.lat(), lng: location.lng() });
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+          const location = place.geometry.location;
+          map.setCenter(location);
+          marker.setPosition(location);
+          setSelectedLocation({ lat: location.lat(), lng: location.lng() });
 
-        // Extract address components
-        let city = "",
-          region = "",
-          street = "";
-        if (place.address_components) {
-          for (const comp of place.address_components) {
-            if (comp.types.includes("locality")) city = comp.long_name;
-            if (comp.types.includes("administrative_area_level_1"))
-              region = comp.long_name;
-            if (comp.types.includes("route")) street = comp.long_name;
+          let city = "",
+            region = "",
+            street = "";
+          if (place.address_components) {
+            for (const comp of place.address_components) {
+              if (comp.types.includes("locality")) city = comp.long_name;
+              if (comp.types.includes("administrative_area_level_1"))
+                region = comp.long_name;
+              if (comp.types.includes("route")) street = comp.long_name;
+            }
           }
+          setFormData((prev) => ({
+            ...prev,
+            city: city || prev.city,
+            region: region || prev.region,
+            streetAddress: street || prev.streetAddress,
+          }));
         }
-        setFormData((prev) => ({
-          ...prev,
-          city: city || prev.city,
-          region: region || prev.region,
-          streetAddress: street || prev.streetAddress,
-        }));
-      }
-    });
+      });
+    } catch (err) {
+      console.error("Error initializing Autocomplete:", err);
+    }
 
-    // Try to get user's current location
+    // Try geolocate
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -215,12 +228,19 @@ export default function AddressModal({
           setSelectedLocation(userLoc);
           reverseGeocode(userLoc.lat, userLoc.lng);
         },
-        () => console.log("Geolocation denied"),
+        (err) => {
+          console.log("Geolocation denied or unavailable:", err);
+          toast.info(
+            t("geolocationDenied", {
+              defaultValue:
+                "تم تعطيل تحديد الموقع. يمكنك البحث عن عنوانك يدويًا.",
+            }),
+          );
+        },
       );
     }
   }, [isLoaded]);
 
-  // Reverse geocode coordinates to get address
   const reverseGeocode = (lat: number, lng: number) => {
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode(
@@ -241,6 +261,8 @@ export default function AddressModal({
             city: city || prev.city,
             region: region || prev.region,
           }));
+        } else {
+          console.error("Reverse geocoding failed:", status);
         }
       },
     );
@@ -262,7 +284,10 @@ export default function AddressModal({
       !formData.city ||
       !formData.streetAddress
     ) {
-      alert(t("validationRequired")); // Use translation
+      const msg = t("validationRequired", {
+        defaultValue: "يرجى ملء جميع الحقول المطلوبة",
+      });
+      toast.error(msg);
       return;
     }
 
@@ -279,7 +304,6 @@ export default function AddressModal({
       isDefault: formData.isDefault,
     };
     onSave(newAddress);
-    // Clear stored form data after successful save
     clearSavedFormData();
     onClose();
     // Reset form
@@ -297,13 +321,24 @@ export default function AddressModal({
   if (!isOpen) return null;
   if (loadError)
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/50">
-        <div className="bg-white p-6 rounded-xl">{t("error")}</div>
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+        <div className="bg-white p-6 rounded-xl max-w-sm text-center">
+          <p className="text-red-600 mb-4">{t("mapsErrorGeneral")}</p>
+          <button
+            onClick={() => {
+              setLoadError(false);
+              onClose();
+            }}
+            className="px-4 py-2 bg-primary text-white rounded-full"
+          >
+            {t("ok", { defaultValue: "حسنًا" })}
+          </button>
+        </div>
       </div>
     );
   if (!isLoaded)
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
         <div className="bg-white p-6 rounded-xl">{t("loading")}</div>
       </div>
     );
@@ -323,7 +358,7 @@ export default function AddressModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Google Map with internal search field and buttons */}
+          {/* Map Section */}
           <div className="relative">
             <div className="absolute top-2 left-2 right-2 z-10 flex gap-2">
               <div className="flex-1 relative">
@@ -363,16 +398,31 @@ export default function AddressModal({
                 type="button"
                 onClick={() => {
                   if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((pos) => {
-                      const loc = {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
-                      };
-                      mapInstanceRef.current?.setCenter(loc);
-                      markerRef.current?.setPosition(loc);
-                      setSelectedLocation(loc);
-                      reverseGeocode(loc.lat, loc.lng);
-                    });
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        const loc = {
+                          lat: pos.coords.latitude,
+                          lng: pos.coords.longitude,
+                        };
+                        mapInstanceRef.current?.setCenter(loc);
+                        markerRef.current?.setPosition(loc);
+                        setSelectedLocation(loc);
+                        reverseGeocode(loc.lat, loc.lng);
+                      },
+                      (err) => {
+                        toast.error(
+                          t("geolocationFailed", {
+                            defaultValue: "فشل تحديد الموقع",
+                          }),
+                        );
+                      },
+                    );
+                  } else {
+                    toast.error(
+                      t("geolocationNotSupported", {
+                        defaultValue: "المتصفح لا يدعم تحديد الموقع",
+                      }),
+                    );
                   }
                 }}
                 className="flex-1 bg-white text-gray-800 py-1.5 rounded-full text-sm shadow-md flex items-center justify-center gap-1 hover:bg-gray-100"
@@ -388,7 +438,7 @@ export default function AddressModal({
             </div>
           </div>
 
-          {/* Form fields */}
+          {/* Form Fields - بدون تغيير في التصميم */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
