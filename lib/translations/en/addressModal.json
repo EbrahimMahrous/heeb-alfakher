@@ -23,5 +23,11 @@
   "geolocationFailed": "Failed to get location",
   "geolocationNotSupported": "Geolocation is not supported by this browser",
   "ok": "OK",
-  "addressSaved": "Address saved successfully"
+  "addressSaved": "Address saved successfully",
+  "area": "Area",
+  "selectArea": "Select area",
+  "selectCityFirst": "Please select a city first",
+  "pinLocation": "Location URL",
+  "emirate": "Emirate",
+  "selectEmirate": "Select emirate"
 }

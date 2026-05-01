@@ -66,11 +66,16 @@ export default function ProductCard({
   };
 
   const productName = locale === "ar" ? product.name : product.nameEn;
-  const productLink = categorySlug
-    ? `/product/${product.id}?category=${categorySlug}`
+  const effectiveCategorySlug = categorySlug || product.categorySlug;
+  const productLink = effectiveCategorySlug
+    ? `/product/${product.id}?category=${effectiveCategorySlug}`
     : `/product/${product.id}`;
 
   const imageSrc = product.image || "/default-product.jpeg";
+  // ✅ Use unoptimized external images to avoid 500 errors
+  const isExternal =
+    typeof imageSrc === "string" &&
+    imageSrc.startsWith("https://app.heebshop.ae");
 
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:shadow-lg transition flex flex-col h-full">
@@ -83,6 +88,7 @@ export default function ProductCard({
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           className="object-cover"
           priority={false}
+          unoptimized={isExternal}
         />
 
         {product.discountPercent && (

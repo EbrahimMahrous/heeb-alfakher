@@ -3,26 +3,57 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { products, categories } from "@/lib/data";
+import { useTranslation } from "@/lib/useTranslation";
+import { fetchProductById, fetchAllProducts } from "@/lib/api/products";
+import { fetchAllCategories } from "@/lib/api/categories";
 import { useCartStore } from "@/store/cartStore";
 import Button from "@/components/ui/button";
 import { toast } from "sonner";
-import { useTranslation } from "@/lib/useTranslation";
 import ProductCarousel from "@/components/ProductCarousel";
+import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 export default function ProductDetailPage() {
   const { t, locale } = useTranslation("product");
   const { id } = useParams();
   const searchParams = useSearchParams();
-  const categorySlug = searchParams.get("category");
-  const product = products.find((p) => p.id === Number(id));
+  const categorySlugFromUrl = searchParams.get("category");
+
+  const [product, setProduct] = useState<any>(null);
+  const [suggested, setSuggested] = useState<any[]>([]);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [loadingProduct, setLoadingProduct] = useState(true);
+  const [loadingSuggested, setLoadingSuggested] = useState(true);
+
   const [quantity, setQuantity] = useState(1);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
 
-  // Product not available
+  useEffect(() => {
+    setLoadingProduct(true);
+    setLoadingSuggested(true);
+    fetchProductById(Number(id))
+      .then((p) => setProduct(p))
+      .catch(console.error)
+      .finally(() => setLoadingProduct(false));
+
+    fetchAllCategories().then(setAllCategories).catch(console.error);
+
+    fetchAllProducts()
+      .then((all) =>
+        setSuggested(all.filter((p: any) => p.id !== Number(id)).slice(0, 8)),
+      )
+      .catch(console.error)
+      .finally(() => setLoadingSuggested(false));
+  }, [id]);
+
+  // ✅ Display during loading: Page structure
+  if (loadingProduct) {
+    return <ProductDetailSkeleton />;
+  }
+
+  // Product not found (after downloading)
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
@@ -31,7 +62,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  // Product hidden (status = 'off')
+  // The product is hidden
   if (product.status === "off") {
     return (
       <div className="container mx-auto px-4 py-8 text-center text-gray-500">
@@ -40,13 +71,10 @@ export default function ProductDetailPage() {
     );
   }
 
-  const category = categorySlug
-    ? categories.find((c) => c.slug === categorySlug)
+  const currentCategorySlug = categorySlugFromUrl || product.categorySlug;
+  const category = currentCategorySlug
+    ? allCategories.find((c: any) => c.slug === currentCategorySlug)
     : null;
-
-  const suggestedProducts = products
-    .filter((p) => p.id !== product.id && p.status !== "off")
-    .slice(0, 8);
 
   const handleAddToCart = async () => {
     if (isAdding || !product.inStock) return;
@@ -69,7 +97,6 @@ export default function ProductDetailPage() {
 
   const originText = locale === "ar" ? product.origin : product.originEn;
   const currency = t("currency");
-  // default image
   const imageSrc = product.image || "/default-product.jpeg";
 
   return (
@@ -102,13 +129,15 @@ export default function ProductDetailPage() {
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
+            unoptimized={
+              typeof imageSrc === "string" && imageSrc.startsWith("https://")
+            }
           />
           {product.discountPercent && (
             <div className="absolute top-4 right-4 bg-orange text-white text-sm font-bold px-3 py-1 rounded-full z-10">
               {t("discount")}
             </div>
           )}
-          {/* Tag unavailable when stock runs out */}
           {!product.inStock && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <span className="bg-white text-red-600 font-bold px-6 py-2 rounded-full text-lg shadow">
@@ -220,12 +249,9 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {suggestedProducts.length > 0 && (
+      {suggested.length > 0 && (
         <div className="mt-16">
-          <ProductCarousel
-            title={t("youMayAlsoLike")}
-            products={suggestedProducts}
-          />
+          <ProductCarousel title={t("youMayAlsoLike")} products={suggested} />
         </div>
       )}
     </div>

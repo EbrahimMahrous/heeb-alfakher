@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCard from "./ProductCard";
+import ProductSkeleton from "./ui/ProductSkeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductGridProps {
@@ -17,12 +18,14 @@ interface ProductGridProps {
     bgColor?: string;
     bannerImage?: string;
   };
+  loading?: boolean;
 }
 
 export default function ProductGrid({
   title,
   products,
   bannerContent,
+  loading,
 }: ProductGridProps) {
   const { t, locale } = useTranslation("common");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,6 +40,26 @@ export default function ProductGrid({
     }
   };
 
+  if (loading) {
+    return (
+      <div className="my-8">
+        {title && (
+          <div className="flex justify-between items-center mb-4 px-4">
+            <h2 className="text-2xl font-bold text-primary">{title}</h2>
+          </div>
+        )}
+        <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-hide">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="min-w-62.5 sm:min-w-70 snap-start">
+              <ProductSkeleton />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Actual products (without download)
   const visibleProducts = (products || [])
     .filter((p) => p != null)
     .filter((p) => p.status !== "off");
@@ -63,7 +86,7 @@ export default function ProductGrid({
           className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {/* Banner Card - vertical layout matching product card width */}
+          {/* Banner Card */}
           {bannerContent && (
             <div className="min-w-62.5 sm:min-w-70 snap-start">
               <div className="relative rounded-2xl overflow-hidden shadow-md h-86 flex flex-col">
@@ -104,7 +127,7 @@ export default function ProductGrid({
             </div>
           )}
 
-          {/* Products (visible only) */}
+          {/* Products */}
           {visibleProducts.map((product) => (
             <div key={product.id} className="min-w-62.5 sm:min-w-70 snap-start">
               <ProductCard product={product} />

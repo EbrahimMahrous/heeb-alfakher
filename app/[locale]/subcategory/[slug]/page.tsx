@@ -4,89 +4,92 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
-import {
-  categories,
-  products as allProducts,
-  getProductsByCategorySlug,
-} from "@/lib/data";
+import { fetchAllCategories } from "@/lib/api/categories";
+import { fetchAllProductsWithCategorySlug } from "@/lib/api/products";
 import ProductCard from "@/components/ProductCard";
+import ProductSkeleton from "@/components/ui/ProductSkeleton";
 import { SlidersHorizontal, ArrowDownUp } from "lucide-react";
-
-type Category = (typeof categories)[0];
-type Product = (typeof allProducts)[0];
-
-type PageContext = { type: "category"; data: Category } | { type: "none" };
 
 export default function ProductsPage() {
   const { t, locale } = useTranslation("subcategory");
   const { slug } = useParams();
-  const isRtl = locale === "ar";
 
-  const mainCategoryFromSlug = slug
-    ? categories.find((cat) => cat.slug === slug)
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // --- Fetch categories & products (with guaranteed categorySlug) ---
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [cats, prods] = await Promise.all([
+          fetchAllCategories(),
+          fetchAllProductsWithCategorySlug(),
+        ]);
+        setAllCategories(cats);
+        setAllProducts(prods);
+      } catch (err) {
+        console.error("Failed to load data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  // --- Identify current category from URL slug ---
+  const mainCategory = slug
+    ? (allCategories.find((cat) => cat.slug === slug) ?? null)
     : null;
 
-  let pageContext: PageContext;
-  if (mainCategoryFromSlug) {
-    pageContext = { type: "category", data: mainCategoryFromSlug };
-  } else {
-    pageContext = { type: "none" };
-  }
-
-  // Filter state
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
-  const [maxPossiblePrice, setMaxPossiblePrice] = useState(500);
+  // --- Filter states ---
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [maxPossiblePrice, setMaxPossiblePrice] = useState(1000);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name-asc">(
     "name-asc",
   );
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategorySlugs, setSelectedCategorySlugs] = useState<string[]>(
+    [],
+  );
   const [showFilters, setShowFilters] = useState(false);
 
-  // Initialize selected categories based on slug (only once)
+  // Initialize selected categories based on URL slug
   useEffect(() => {
-    if (pageContext.type === "category") {
-      setSelectedCategories([pageContext.data.slug]);
+    if (mainCategory) {
+      setSelectedCategorySlugs([mainCategory.slug]);
     } else {
-      setSelectedCategories([]);
+      setSelectedCategorySlugs([]);
     }
-  }, [
-    pageContext.type,
-    pageContext.type === "category" ? pageContext.data.slug : null,
-  ]);
+  }, [mainCategory]);
 
-  // Compute the list of products based on selected categories
+  // --- Filter products by selected categories ---
   const categoryFilteredProducts = useMemo(() => {
-    if (selectedCategories.length === 0) {
-      return allProducts;
-    }
-    // Get products that belong to any of the selected categories
+    if (selectedCategorySlugs.length === 0) return allProducts;
     return allProducts.filter((p) =>
-      selectedCategories.includes(p.categorySlug),
+      selectedCategorySlugs.includes(p.categorySlug),
     );
-  }, [selectedCategories]);
+  }, [allProducts, selectedCategorySlugs]);
 
-  // Calculate max price from filtered products (by category)
+  // --- Calculate max price from filtered products ---
   useEffect(() => {
     const maxPrice = Math.max(
       ...categoryFilteredProducts.map((p) => p.discountedPrice || p.price),
       100,
     );
     setMaxPossiblePrice(maxPrice);
-    // Adjust price range if current max exceeds new max
     setPriceRange((prev) => [
       Math.min(prev[0], maxPrice),
       Math.min(prev[1], maxPrice),
     ]);
   }, [categoryFilteredProducts]);
 
-  // Apply price filter and sorting to get final displayed products
+  // --- Final filtering & sorting ---
   const filteredProducts = useMemo(() => {
     let prods = categoryFilteredProducts.filter(
       (p) =>
         (p.discountedPrice || p.price) >= priceRange[0] &&
         (p.discountedPrice || p.price) <= priceRange[1],
     );
-
     if (sortBy === "price-asc") {
       prods.sort(
         (a, b) =>
@@ -107,8 +110,9 @@ export default function ProductsPage() {
     return prods;
   }, [categoryFilteredProducts, priceRange, sortBy, locale]);
 
+  // Toggle a category filter (no URL change – just filtering)
   const toggleCategory = (catSlug: string) => {
-    setSelectedCategories((prev) =>
+    setSelectedCategorySlugs((prev) =>
       prev.includes(catSlug)
         ? prev.filter((c) => c !== catSlug)
         : [...prev, catSlug],
@@ -116,7 +120,7 @@ export default function ProductsPage() {
   };
 
   const resetFilters = () => {
-    setSelectedCategories([]);
+    setSelectedCategorySlugs([]);
     setPriceRange([0, maxPossiblePrice]);
     setSortBy("name-asc");
   };
@@ -125,28 +129,26 @@ export default function ProductsPage() {
     const value = Math.min(Number(e.target.value), priceRange[1] - 1);
     setPriceRange([value, priceRange[1]]);
   };
-
   const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.max(Number(e.target.value), priceRange[0] + 1);
     setPriceRange([priceRange[0], value]);
   };
 
-  // Page title and breadcrumb
+  // --- Breadcrumb & page title ---
   let pageTitle = t("allProducts");
   const breadcrumbItems = [
     { href: "/", label: t("home") },
     { href: "/categories", label: t("categories") },
   ];
-
-  if (pageContext.type === "category") {
-    const cat = pageContext.data;
-    pageTitle = locale === "ar" ? cat.name : cat.nameEn;
+  if (mainCategory) {
+    pageTitle = locale === "ar" ? mainCategory.name : mainCategory.nameEn;
     breadcrumbItems.push({ label: pageTitle, href: "" });
   } else {
     breadcrumbItems.push({ label: t("allProducts"), href: "" });
   }
 
-  if (slug && pageContext.type === "none") {
+  // If slug is provided but category not found (after loading)
+  if (!loading && slug && !mainCategory) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
         {t("notFound")}
@@ -242,17 +244,17 @@ export default function ProductsPage() {
                 <h4 className="font-semibold mb-3">{t("filterByCategory")}</h4>
                 <div className="flex flex-wrap gap-2">
                   <button
-                    onClick={() => setSelectedCategories([])}
+                    onClick={() => setSelectedCategorySlugs([])}
                     className={`px-3 py-1.5 rounded-full text-sm border transition ${
-                      selectedCategories.length === 0
+                      selectedCategorySlugs.length === 0
                         ? "bg-primary text-white border-primary"
                         : "bg-white border-neutral-300 hover:border-primary text-dark"
                     }`}
                   >
                     {t("all")}
                   </button>
-                  {categories.map((cat) => {
-                    const isActive = selectedCategories.includes(cat.slug);
+                  {allCategories.map((cat) => {
+                    const isActive = selectedCategorySlugs.includes(cat.slug);
                     return (
                       <button
                         key={cat.id}
@@ -264,13 +266,17 @@ export default function ProductsPage() {
                         }`}
                       >
                         <div className="w-5 h-5 rounded-full overflow-hidden bg-neutral-100">
-                          <Image
-                            src={cat.image || "/product-img.png"}
-                            alt={locale === "ar" ? cat.name : cat.nameEn}
-                            width={20}
-                            height={20}
-                            className="object-cover w-full h-full"
-                          />
+                          {cat.image ? (
+                            <Image
+                              src={cat.image}
+                              alt={locale === "ar" ? cat.name : cat.nameEn}
+                              width={20}
+                              height={20}
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <span className="text-xs">🪔</span>
+                          )}
                         </div>
                         <span>{locale === "ar" ? cat.name : cat.nameEn}</span>
                       </button>
@@ -296,7 +302,7 @@ export default function ProductsPage() {
         <div className="lg:w-2/3 xl:w-3/4">
           <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
             <h2 className="text-xl font-semibold text-dark">
-              {t("allProducts")} ({filteredProducts.length})
+              {t("allProducts")} ({loading ? "..." : filteredProducts.length})
             </h2>
             <div className="flex items-center gap-2">
               <ArrowDownUp size={18} className="text-gray-500" />
@@ -312,7 +318,14 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            /* Display skeleton loading cards */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <ProductSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="text-center py-16 text-gray-500">
               {t("noProducts")}
             </div>

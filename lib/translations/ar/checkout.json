@@ -35,5 +35,7 @@
   "noAddressAlert": "الرجاء إضافة عنوان التسليم أولاً",
   "noDeliveryTimeAlert": "الرجاء اختيار يوم ووقت التسليم",
   "paymentError": "حدث خطأ أثناء الدفع",
-  "noPaymentUrl": "لم يتم استلام رابط الدفع"
+  "noPaymentUrl": "لم يتم استلام رابط الدفع",
+  "areaRequired": "الرجاء إدخال اسم المنطقة (مثل: جميرا، ديرة، إلخ)",
+  "orderPlacedSuccessfully": "تم تقديم الطلب بنجاح!"
 }

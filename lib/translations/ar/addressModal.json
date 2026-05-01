@@ -23,5 +23,11 @@
   "geolocationFailed": "فشل تحديد الموقع",
   "geolocationNotSupported": "المتصفح لا يدعم تحديد الموقع",
   "ok": "حسنًا",
-  "addressSaved": "تم حفظ العنوان بنجاح"
+  "addressSaved": "تم حفظ العنوان بنجاح",
+  "area": "المنطقة الفرعية",
+  "selectArea": "اختر المنطقة الفرعية",
+  "selectCityFirst": "اختر المدينة أولاً",
+  "pinLocation": "رابط الموقع",
+  "emirate": "الإمارة",
+  "selectEmirate": "اختر الإمارة"
 }

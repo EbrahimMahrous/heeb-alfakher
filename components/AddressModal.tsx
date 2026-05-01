@@ -2,24 +2,37 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
-import { toast } from "sonner"; // ✅ sonner
+import { toast } from "sonner";
 
-interface Address {
+// ---------- Supported emirates ----------
+const EMIRATES = [
+  "Dubai",
+  "Abu Dhabi",
+  "Sharjah",
+  "Ajman",
+  "Umm Al Quwain",
+  "Ras Al Khaimah",
+  "Fujairah",
+];
+
+export interface Address {
   id: string;
   fullName: string;
   address: string;
-  phone: string;
-  city?: string;
-  region?: string;
+  phone: string; // stored as "+971XXXXXXXXX"
+  city?: string; // emirate (auto‑filled)
+  area?: string; // well‑known sub‑area (auto‑filled, editable)
   buildingNo?: string;
   streetAddress?: string;
   isDefault?: boolean;
+  pinLocation?: string; // Google Maps sharing link
 }
 
 interface AddressModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (address: Address) => void;
+  existingAddress?: Address | null; // ✅ for editing an existing address
 }
 
 declare global {
@@ -31,10 +44,51 @@ declare global {
 
 const ADDRESS_FORM_STORAGE_KEY = "address_modal_form_data";
 
+// ---------- Helper: match an address component to our emirates list ----------
+const findEmirate = (cityName: string): string => {
+  return (
+    EMIRATES.find((e) => e.toLowerCase() === cityName?.toLowerCase()) || ""
+  );
+};
+
+// ---------- Helper: extract a well‑known sub‑area name ----------
+const extractArea = (components: any[]): string => {
+  for (const comp of components) {
+    if (comp.types.includes("sublocality_level_1")) return comp.long_name;
+  }
+  for (const comp of components) {
+    if (comp.types.includes("sublocality")) return comp.long_name;
+  }
+  for (const comp of components) {
+    if (comp.types.includes("neighborhood")) return comp.long_name;
+  }
+  for (const comp of components) {
+    if (comp.types.includes("administrative_area_level_2"))
+      return comp.long_name;
+  }
+  return "";
+};
+
+// ---------- Phone number sanitizer ----------
+const sanitizePhoneNumber = (rawPhone: string): string => {
+  let digits = rawPhone.replace(/\D/g, "");
+  if (digits.length >= 7 && digits.startsWith("0")) {
+    digits = digits.substring(1);
+  }
+  if (!digits.startsWith("971")) {
+    digits = "971" + digits;
+  }
+  if (digits.length < 10 || digits.length > 12) {
+    return "";
+  }
+  return digits;
+};
+
 export default function AddressModal({
   isOpen,
   onClose,
   onSave,
+  existingAddress,
 }: AddressModalProps) {
   const { t } = useTranslation("addressModal");
 
@@ -42,9 +96,10 @@ export default function AddressModal({
     fullName: "",
     phone: "",
     city: "",
-    region: "",
+    area: "",
     buildingNo: "",
     streetAddress: "",
+    pinLocation: "",
     isDefault: false,
   });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -58,68 +113,73 @@ export default function AddressModal({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
-  const autocompleteRef = useRef<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load saved form data when modal opens
+  // ✅ Pre‑fill form when editing an existing address
   useEffect(() => {
     if (!isOpen) return;
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(ADDRESS_FORM_STORAGE_KEY);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setFormData((prev) => ({ ...prev, ...parsed }));
-        } catch (e) {
-          console.error("Failed to parse saved address form data", e);
-        }
+    if (existingAddress) {
+      // Show local number without +971 prefix for editing
+      const localPhone = existingAddress.phone.startsWith("+971")
+        ? existingAddress.phone.substring(4)
+        : existingAddress.phone;
+      setFormData({
+        fullName: existingAddress.fullName || "",
+        phone: localPhone,
+        city: existingAddress.city || "",
+        area: existingAddress.area || "",
+        buildingNo: existingAddress.buildingNo || "",
+        streetAddress: existingAddress.streetAddress || "",
+        pinLocation: existingAddress.pinLocation || "",
+        isDefault: existingAddress.isDefault || false,
+      });
+      return;
+    }
+
+    // Load previously saved form data for a *new* address
+    const saved = localStorage.getItem(ADDRESS_FORM_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData((prev) => ({ ...prev, ...parsed }));
+      } catch (e) {
+        console.error("Failed to parse saved address form data", e);
       }
     }
     setIsInitialLoad(false);
-  }, [isOpen]);
+  }, [isOpen, existingAddress]);
 
-  // Persist form data
+  // Persist form data to localStorage only when creating a new address (not editing)
   useEffect(() => {
-    if (!isOpen || isInitialLoad) return;
+    if (!isOpen || isInitialLoad || existingAddress) return;
     localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(formData));
-  }, [formData, isOpen, isInitialLoad]);
+  }, [formData, isOpen, isInitialLoad, existingAddress]);
 
   const clearSavedFormData = () => {
     localStorage.removeItem(ADDRESS_FORM_STORAGE_KEY);
   };
 
-  // Load Google Maps API
+  // ---- Google Maps API loading ----
   useEffect(() => {
     if (!isOpen) return;
-
     if (window.google && window.google.maps) {
       setIsLoaded(true);
       return;
     }
-
-    // Avoid multiple callbacks
-    window.initGoogleMapsCallback = () => {
-      setIsLoaded(true);
-    };
-
+    window.initGoogleMapsCallback = () => setIsLoaded(true);
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      console.error("Google Maps API key is missing");
       setLoadError(true);
       toast.error(
         t("mapsApiMissing", { defaultValue: "مفتاح الخرائط غير موجود" }),
       );
       return;
     }
-
     const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback&loading=async`;
     script.async = true;
     script.defer = true;
     script.onerror = () => {
-      console.error(
-        "Failed to load Google Maps script. Blocked by client or network error.",
-      );
       setLoadError(true);
       toast.error(
         t("mapsLoadError", {
@@ -129,19 +189,16 @@ export default function AddressModal({
       );
     };
     document.head.appendChild(script);
-
     return () => {
       if (document.head.contains(script)) document.head.removeChild(script);
       delete window.initGoogleMapsCallback;
     };
   }, [isOpen]);
 
-  // Map initialization after API loaded
+  // ---- Map initialization ----
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
-
-    const defaultCenter = { lat: 24.4539, lng: 54.3773 }; // UAE
-
+    const defaultCenter = { lat: 24.4539, lng: 54.3773 };
     const map = new window.google.maps.Map(mapRef.current, {
       center: defaultCenter,
       zoom: 12,
@@ -151,18 +208,48 @@ export default function AddressModal({
     });
     mapInstanceRef.current = map;
 
-    // Marker (using deprecated Marker but still functional)
     const marker = new window.google.maps.Marker({
       position: defaultCenter,
-      map: map,
+      map,
       draggable: true,
     });
     markerRef.current = marker;
 
+    const updatePinLocation = (lat: number, lng: number) => {
+      const link = `https://www.google.com/maps?q=${lat},${lng}`;
+      setFormData((prev) => ({ ...prev, pinLocation: link }));
+    };
+
+    const geocodeAndFill = (lat: number, lng: number) => {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode(
+        { location: { lat, lng } },
+        (results: any, status: any) => {
+          if (status === "OK" && results[0]) {
+            const components = results[0].address_components;
+            let city = "";
+            const area = extractArea(components);
+            for (const comp of components) {
+              if (comp.types.includes("locality")) city = comp.long_name;
+            }
+            const matchedEmirate = findEmirate(city);
+            setFormData((prev) => ({
+              ...prev,
+              address: results[0].formatted_address,
+              city: matchedEmirate || prev.city,
+              area: area || prev.area,
+              streetAddress: prev.streetAddress,
+            }));
+          }
+        },
+      );
+    };
+
     marker.addListener("dragend", () => {
-      const position = marker.getPosition();
-      setSelectedLocation({ lat: position.lat(), lng: position.lng() });
-      reverseGeocode(position.lat(), position.lng());
+      const pos = marker.getPosition();
+      setSelectedLocation({ lat: pos.lat(), lng: pos.lng() });
+      geocodeAndFill(pos.lat(), pos.lng());
+      updatePinLocation(pos.lat(), pos.lng());
     });
 
     map.addListener("click", (e: any) => {
@@ -170,10 +257,11 @@ export default function AddressModal({
       const lng = e.latLng.lng();
       marker.setPosition({ lat, lng });
       setSelectedLocation({ lat, lng });
-      reverseGeocode(lat, lng);
+      geocodeAndFill(lat, lng);
+      updatePinLocation(lat, lng);
     });
 
-    // Autocomplete (using deprecated Autocomplete but still functional)
+    // Autocomplete
     try {
       const autocomplete = new window.google.maps.places.Autocomplete(
         searchInputRef.current!,
@@ -182,94 +270,57 @@ export default function AddressModal({
           fields: ["address_components", "formatted_address", "geometry"],
         },
       );
-      autocompleteRef.current = autocomplete;
-
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
         if (place.geometry) {
-          const location = place.geometry.location;
-          map.setCenter(location);
-          marker.setPosition(location);
-          setSelectedLocation({ lat: location.lat(), lng: location.lng() });
+          const loc = place.geometry.location;
+          map.setCenter(loc);
+          marker.setPosition(loc);
+          setSelectedLocation({ lat: loc.lat(), lng: loc.lng() });
+          updatePinLocation(loc.lat(), loc.lng());
 
           let city = "",
-            region = "",
-            street = "";
+            street = "",
+            area = "";
           if (place.address_components) {
+            area = extractArea(place.address_components);
             for (const comp of place.address_components) {
               if (comp.types.includes("locality")) city = comp.long_name;
-              if (comp.types.includes("administrative_area_level_1"))
-                region = comp.long_name;
               if (comp.types.includes("route")) street = comp.long_name;
             }
           }
+          const matchedEmirate = findEmirate(city);
           setFormData((prev) => ({
             ...prev,
-            city: city || prev.city,
-            region: region || prev.region,
+            city: matchedEmirate || prev.city,
+            area: area || prev.area,
             streetAddress: street || prev.streetAddress,
           }));
         }
       });
     } catch (err) {
-      console.error("Error initializing Autocomplete:", err);
+      console.error("Autocomplete init error:", err);
     }
 
-    // Try geolocate
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const userLoc = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          };
-          map.setCenter(userLoc);
-          marker.setPosition(userLoc);
-          setSelectedLocation(userLoc);
-          reverseGeocode(userLoc.lat, userLoc.lng);
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          map.setCenter(loc);
+          marker.setPosition(loc);
+          setSelectedLocation(loc);
+          geocodeAndFill(loc.lat, loc.lng);
+          updatePinLocation(loc.lat, loc.lng);
         },
-        (err) => {
-          console.log("Geolocation denied or unavailable:", err);
-          toast.info(
-            t("geolocationDenied", {
-              defaultValue:
-                "تم تعطيل تحديد الموقع. يمكنك البحث عن عنوانك يدويًا.",
-            }),
-          );
-        },
+        () => console.log("Geolocation denied"),
       );
     }
   }, [isLoaded]);
 
-  const reverseGeocode = (lat: number, lng: number) => {
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode(
-      { location: { lat, lng } },
-      (results: any, status: any) => {
-        if (status === "OK" && results[0]) {
-          const address = results[0].formatted_address;
-          let city = "",
-            region = "";
-          for (const comp of results[0].address_components) {
-            if (comp.types.includes("locality")) city = comp.long_name;
-            if (comp.types.includes("administrative_area_level_1"))
-              region = comp.long_name;
-          }
-          setFormData((prev) => ({
-            ...prev,
-            address: address,
-            city: city || prev.city,
-            region: region || prev.region,
-          }));
-        } else {
-          console.error("Reverse geocoding failed:", status);
-        }
-      },
-    );
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -282,38 +333,52 @@ export default function AddressModal({
       !formData.fullName ||
       !formData.phone ||
       !formData.city ||
-      !formData.streetAddress
+      !formData.streetAddress ||
+      !formData.area
     ) {
-      const msg = t("validationRequired", {
-        defaultValue: "يرجى ملء جميع الحقول المطلوبة",
-      });
-      toast.error(msg);
+      toast.error(
+        t("validationRequired", {
+          defaultValue: "يرجى ملء جميع الحقول المطلوبة",
+        }),
+      );
       return;
     }
 
-    const fullAddress = `${formData.streetAddress}${formData.buildingNo ? `, ${formData.buildingNo}` : ""}, ${formData.region}, ${formData.city}`;
+    const sanitizedPhone = sanitizePhoneNumber(formData.phone);
+    if (!sanitizedPhone) {
+      toast.error(
+        t("invalidPhone", {
+          defaultValue:
+            "رقم الهاتف غير صحيح. تأكد من أنه مكون من 9-10 أرقام (بدون صفر إضافي)",
+        }),
+      );
+      return;
+    }
+
+    const fullAddress = `${formData.streetAddress}${formData.buildingNo ? `, ${formData.buildingNo}` : ""}, ${formData.area}, ${formData.city}`;
     const newAddress: Address = {
-      id: Date.now().toString(),
+      id: existingAddress?.id || Date.now().toString(), // keep same id if editing
       fullName: formData.fullName,
       address: fullAddress,
-      phone: `+971${formData.phone}`,
+      phone: `+971${sanitizedPhone.replace("971", "")}`,
       city: formData.city,
-      region: formData.region,
+      area: formData.area,
       buildingNo: formData.buildingNo,
       streetAddress: formData.streetAddress,
+      pinLocation: formData.pinLocation,
       isDefault: formData.isDefault,
     };
     onSave(newAddress);
     clearSavedFormData();
     onClose();
-    // Reset form
     setFormData({
       fullName: "",
       phone: "",
       city: "",
-      region: "",
+      area: "",
       buildingNo: "",
       streetAddress: "",
+      pinLocation: "",
       isDefault: false,
     });
   };
@@ -346,7 +411,6 @@ export default function AddressModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold">{t("title")}</h2>
           <button
@@ -358,7 +422,7 @@ export default function AddressModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Map Section */}
+          {/* Map */}
           <div className="relative">
             <div className="absolute top-2 left-2 right-2 z-10 flex gap-2">
               <div className="flex-1 relative">
@@ -407,15 +471,13 @@ export default function AddressModal({
                         mapInstanceRef.current?.setCenter(loc);
                         markerRef.current?.setPosition(loc);
                         setSelectedLocation(loc);
-                        reverseGeocode(loc.lat, loc.lng);
                       },
-                      (err) => {
+                      () =>
                         toast.error(
                           t("geolocationFailed", {
                             defaultValue: "فشل تحديد الموقع",
                           }),
-                        );
-                      },
+                        ),
                     );
                   } else {
                     toast.error(
@@ -438,7 +500,6 @@ export default function AddressModal({
             </div>
           </div>
 
-          {/* Form Fields - بدون تغيير في التصميم */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -455,7 +516,7 @@ export default function AddressModal({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                {t("city")}
+                {t("emirate") || "الإمارة"}
               </label>
               <input
                 type="text"
@@ -463,25 +524,29 @@ export default function AddressModal({
                 value={formData.city}
                 onChange={handleInputChange}
                 required
+                placeholder={t("selectEmirate") || "اختر الإمارة"}
                 className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
               />
             </div>
           </div>
 
+          {/* Area */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              {t("region")}
+              {t("area") || "المنطقة"}
             </label>
             <input
               type="text"
-              name="region"
-              value={formData.region}
+              name="area"
+              value={formData.area}
               onChange={handleInputChange}
               required
+              placeholder={t("selectArea") || "سيتم تعبئتها تلقائياً"}
               className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
             />
           </div>
 
+          {/* Phone */}
           <div className="flex gap-2">
             <div className="w-24 shrink-0">
               <label className="block text-sm font-medium mb-1">
@@ -504,14 +569,16 @@ export default function AddressModal({
                 placeholder="501234567"
                 className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
               />
+              <p className="text-xs text-gray-400 mt-1">
+                {t("phoneHint") ||
+                  "أدخل رقم الهاتف بدون صفر إضافي (مثال: 501234567)"}
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
-                {t("buildingNo")}
-              </label>
+              <label>{t("buildingNo")}</label>
               <input
                 type="text"
                 name="buildingNo"
@@ -521,9 +588,7 @@ export default function AddressModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                {t("streetAddress")}
-              </label>
+              <label>{t("streetAddress")}</label>
               <input
                 type="text"
                 name="streetAddress"
@@ -535,17 +600,30 @@ export default function AddressModal({
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t("pinLocation") || "رابط الموقع"}
+            </label>
+            <input
+              type="url"
+              name="pinLocation"
+              value={formData.pinLocation}
+              onChange={handleInputChange}
+              placeholder="https://www.google.com/maps?q=..."
+              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43] text-sm"
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               name="isDefault"
               checked={formData.isDefault}
               onChange={handleInputChange}
-              className="w-4 h-4 text-[#338A43] focus:ring-[#338A43]"
+              className="w-4 h-4 text-[#338A43]"
             />
             <label className="text-sm">{t("isDefault")}</label>
           </div>
-
           <div className="flex gap-3 pt-4">
             <button
               type="button"

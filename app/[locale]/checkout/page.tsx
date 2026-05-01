@@ -8,8 +8,9 @@ import Button from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import AddressModal from "@/components/AddressModal";
 import { PhoneCall, DoorOpen, PackageCheck } from "lucide-react";
-import { toast } from "sonner"; // ✅ مكتبة sonner
+import { toast } from "sonner";
 
+// ---------- Local storage helpers ----------
 const CHECKOUT_STORAGE_KEY = "heeb_checkout_data";
 
 const saveCheckoutToLocalStorage = (data: any) => {
@@ -32,14 +33,20 @@ const loadCheckoutFromLocalStorage = () => {
   return null;
 };
 
-interface Address {
+export interface Address {
   id: string;
   fullName: string;
   address: string;
   phone: string;
   city?: string;
+  area?: string;
+  buildingNo?: string;
+  streetAddress?: string;
+  isDefault?: boolean;
+  pinLocation?: string;
 }
 
+// ---------- Generate delivery day options (Arabic) ----------
 const getDeliveryDays = () => {
   const days = [];
   const today = new Date();
@@ -84,12 +91,15 @@ const deliveryOptionsGrid = [
   { id: "boxes", labelKey: "returnHibBoxes", icon: "/icons/box.svg" },
 ];
 
+// ---------- Main component ----------
 export default function CheckoutPage() {
   const { t, locale } = useTranslation("checkout");
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
-  const { items, totalPrice } = useCartStore();
+  const { items, totalPrice, clearCart } = useCartStore();
   const router = useRouter();
 
+  // Holds the address being edited (null when adding a new one)
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
@@ -97,14 +107,14 @@ export default function CheckoutPage() {
     null,
   );
   const [giftMessage, setGiftMessage] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash_on_delivery");
+  const [paymentMethod, setPaymentMethod] = useState<"COD" | "Paid">("COD");
 
   const [deliveryDays] = useState(getDeliveryDays());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Load saved checkout data on mount - NO dummy address anymore
+  // Load saved checkout data on mount
   useEffect(() => {
     const savedData = loadCheckoutFromLocalStorage();
     if (savedData) {
@@ -119,11 +129,10 @@ export default function CheckoutPage() {
         setGiftMessage(savedData.giftMessage);
       if (savedData.paymentMethod) setPaymentMethod(savedData.paymentMethod);
     }
-    // تم حذف العنوان التجريبي بالكامل
     setIsInitialLoad(false);
   }, []);
 
-  // Persist checkout data
+  // Persist checkout data to localStorage
   useEffect(() => {
     if (isInitialLoad) return;
     const checkoutData = {
@@ -159,11 +168,56 @@ export default function CheckoutPage() {
     setGiftMessage((prev) => (prev === "" ? " " : ""));
   };
 
+  // ✅ When user saves a new or edited address
   const handleSaveAddress = (address: Address) => {
     setSelectedAddress(address);
+    setEditingAddress(null); // clear editing mode
     toast.success(t("addressSaved", { defaultValue: "تم حفظ العنوان بنجاح" }));
   };
 
+  // ✅ Open modal to add a new address
+  const openAddAddressModal = () => {
+    setErrorMessage(""); // hide any previous submit error
+    setEditingAddress(null); // not editing
+    setIsAddressModalOpen(true);
+  };
+
+  // ✅ Open modal to edit the current address
+  const openEditAddressModal = () => {
+    setErrorMessage(""); // hide errors
+    setEditingAddress(selectedAddress); // pass current address to modal
+    setIsAddressModalOpen(true);
+  };
+
+  // Helper: build a formatted delivery date string expected by the API
+  const buildDeliveryDate = (): string | null => {
+    if (!selectedDate || !selectedTimeSlot) return null;
+    const dayObj = deliveryDays.find((d) => d.label === selectedDate);
+    if (!dayObj) return null;
+
+    const timeMatch = selectedTimeSlot.match(/(\d{2}):(\d{2})\s*(AM|PM)/i);
+    if (!timeMatch) return null;
+    let hour = parseInt(timeMatch[1], 10);
+    const minute = parseInt(timeMatch[2], 10);
+    const ampm = timeMatch[3].toUpperCase();
+
+    const deliveryDate = new Date(dayObj.fullDate);
+    deliveryDate.setHours(hour, minute, 0, 0);
+
+    const year = deliveryDate.getFullYear();
+    const month = String(deliveryDate.getMonth() + 1).padStart(2, "0");
+    const day = String(deliveryDate.getDate()).padStart(2, "0");
+    let hours = deliveryDate.getHours();
+    const amPmLetter = hours >= 12 ? "PM" : "AM";
+    if (hours > 12) hours -= 12;
+    if (hours === 0) hours = 12;
+    const formattedHours = String(hours).padStart(2, "0");
+    const formattedMinutes = String(deliveryDate.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
+  };
+
+  // ---------- Submit the order ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -176,6 +230,17 @@ export default function CheckoutPage() {
       toast.error(msg);
       return;
     }
+
+    const area_name = selectedAddress.area?.trim() || "";
+    if (!area_name) {
+      const msg = t("areaRequired", {
+        defaultValue: "الرجاء اختيار المنطقة الفرعية",
+      });
+      setErrorMessage(msg);
+      toast.error(msg);
+      return;
+    }
+
     if (!selectedDate || !selectedTimeSlot) {
       const msg = t("noDeliveryTimeAlert", {
         defaultValue: "الرجاء اختيار يوم ووقت التسليم",
@@ -185,42 +250,86 @@ export default function CheckoutPage() {
       return;
     }
 
+    const deliveryDateFormatted = buildDeliveryDate();
+    if (!deliveryDateFormatted) {
+      const msg = "Invalid delivery date/time";
+      setErrorMessage(msg);
+      toast.error(msg);
+      return;
+    }
+
+    // Phone number is already sanitized in AddressModal, but just in case it was loaded from old data
+    let phoneDigits = selectedAddress.phone.replace(/\D/g, "");
+    if (!phoneDigits.startsWith("971")) {
+      if (phoneDigits.startsWith("0")) {
+        phoneDigits = "971" + phoneDigits.substring(1);
+      } else {
+        phoneDigits = "971" + phoneDigits;
+      }
+    }
+    const mobile_number = phoneDigits;
+
+    const customer_name = selectedAddress.fullName;
+
+    // Validate emirate (should always be valid because we fill it automatically)
+    const validEmirates = [
+      "Dubai",
+      "Abu Dhabi",
+      "Sharjah",
+      "Ajman",
+      "Umm Al Quwain",
+      "Ras Al Khaimah",
+      "Fujairah",
+    ];
+    let emirate_name = selectedAddress.city?.trim() || "";
+    if (!validEmirates.includes(emirate_name)) {
+      emirate_name = "Dubai";
+      toast.info(
+        t("emirateAdjusted", {
+          defaultValue: "تم تعيين الإمارة إلى دبي لأن المدينة غير معروفة",
+        }),
+      );
+    }
+
+    const orderPayload = {
+      customer_name,
+      mobile_number,
+      emirate_name,
+      area_name,
+      payment_type: paymentMethod,
+      delivery_date: deliveryDateFormatted,
+      items: items.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+      })),
+      total_amount: total,
+      gift_message: giftMessage.trim() || null,
+      instruction: selectedInstruction,
+      pin_location: selectedAddress.pinLocation || undefined,
+    };
+
     setLoading(true);
     try {
-      const res = await fetch("/api/create-payment", {
+      const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items,
-          total,
-          address: selectedAddress,
-          deliveryDate: selectedDate,
-          timeSlot: selectedTimeSlot,
-          instruction: selectedInstruction,
-          giftMessage: giftMessage.trim() === "" ? null : giftMessage,
-          paymentMethod,
-          locale,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        const errMsg = data.error || t("paymentError");
-        console.error("Payment API Error:", errMsg);
+      if (!res.ok || data.statusCode !== 200) {
+        const errMsg = data.message || data.error || t("paymentError");
+        console.error("Checkout API Error:", errMsg);
         throw new Error(errMsg);
       }
 
-      if (data.payment_url) {
-        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-        window.location.href = data.payment_url;
-      } else {
-        const errMsg = t("noPaymentUrl");
-        console.error(errMsg);
-        throw new Error(errMsg);
-      }
+      clearCart();
+      localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+      toast.success(
+        t("orderPlacedSuccessfully", { defaultValue: "تم تقديم الطلب بنجاح!" }),
+      );
+      router.push(`/${locale}/order-success`);
     } catch (err: any) {
       console.error("Checkout Error:", err);
       const message = err.message || t("paymentError");
@@ -231,6 +340,7 @@ export default function CheckoutPage() {
     }
   };
 
+  // ---------- Render ----------
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
@@ -250,7 +360,7 @@ export default function CheckoutPage() {
         {t("billingInfo")}
       </h1>
 
-      {/* Display error banner if any (also sonner toast will show) */}
+      {/* Error banner */}
       {errorMessage && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
           <svg
@@ -286,7 +396,6 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-semibold">
                   {t("deliveryAddress")}
                 </h2>
-                {/* Removed dummy address removal button */}
               </div>
               {selectedAddress ? (
                 <div className="bg-neutral-50 p-4 rounded-xl space-y-2">
@@ -295,7 +404,7 @@ export default function CheckoutPage() {
                   <p className="text-neutral-600">{selectedAddress.phone}</p>
                   <button
                     type="button"
-                    onClick={() => setSelectedAddress(null)}
+                    onClick={openEditAddressModal}
                     className="text-sm text-red-500 hover:text-red-700 transition-colors"
                   >
                     {t("changeAddress")}
@@ -305,8 +414,7 @@ export default function CheckoutPage() {
                 <div className="text-center py-8 bg-neutral-50 rounded-xl">
                   <p className="text-neutral-500 mb-3">{t("noAddressAdded")}</p>
                   <button
-                    type="button"
-                    onClick={() => setIsAddressModalOpen(true)}
+                    onClick={openAddAddressModal}
                     className="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm hover:bg-primary/90 transition-all hover:shadow-md"
                   >
                     {t("addNewAddress")}
@@ -469,23 +577,23 @@ export default function CheckoutPage() {
                     <div className="space-y-3">
                       {[
                         {
-                          value: "cash_on_delivery",
+                          value: "COD",
                           icon: "/icons/cash.svg",
                           label: "cashOnDelivery",
                         },
                         {
-                          value: "card_on_delivery",
+                          value: "COD",
                           icon: "/icons/cash-visa.svg",
                           label: "cardOnDelivery",
                         },
                         {
-                          value: "credit_card",
+                          value: "Paid",
                           icon: "/icons/online.svg",
                           label: "creditCard",
                         },
                       ].map((method) => (
                         <label
-                          key={method.value}
+                          key={method.value + method.label}
                           className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all ${
                             paymentMethod === method.value
                               ? "bg-primary/5"
@@ -496,7 +604,9 @@ export default function CheckoutPage() {
                             type="radio"
                             value={method.value}
                             checked={paymentMethod === method.value}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
+                            onChange={(e) =>
+                              setPaymentMethod(e.target.value as "COD" | "Paid")
+                            }
                             className="w-4 h-4 accent-primary"
                           />
                           <Image
@@ -509,8 +619,7 @@ export default function CheckoutPage() {
                         </label>
                       ))}
                     </div>
-
-                    {paymentMethod === "credit_card" && (
+                    {paymentMethod === "Paid" && (
                       <div className="mt-4 p-4 bg-neutral-50 rounded-xl animate-fadeIn">
                         <p className="text-sm text-gray-500 text-center">
                           {t("securePaymentRedirect")}
@@ -603,11 +712,12 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Address modal */}
+      {/* Address modal (supports both add and edit) */}
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
         onSave={handleSaveAddress}
+        existingAddress={editingAddress}
       />
     </div>
   );

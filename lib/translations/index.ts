@@ -1,4 +1,3 @@
-// lib/messages.ts
 import arCommon from "./ar/common.json";
 import arCart from "./ar/cart.json";
 import arCheckout from "./ar/checkout.json";
@@ -13,7 +12,8 @@ import arCareers from "./ar/careers.json";
 import arHelp from "./ar/help.json";
 import arDeliveryAreas from "./ar/delivery-areas.json";
 import arAddressModal from "./ar/addressModal.json";
-import arOrderSuccess from "./ar/orderSuccess.json"; // ✅ جديد
+import arOrderSuccess from "./ar/orderSuccess.json";
+import arSearch from "./ar/search.json";
 
 import enCommon from "./en/common.json";
 import enCart from "./en/cart.json";
@@ -29,7 +29,8 @@ import enCareers from "./en/careers.json";
 import enHelp from "./en/help.json";
 import enDeliveryAreas from "./en/delivery-areas.json";
 import enAddressModal from "./en/addressModal.json";
-import enOrderSuccess from "./en/orderSuccess.json"; // ✅ جديد
+import enOrderSuccess from "./en/orderSuccess.json";
+import enSearch from "./en/search.json";
 
 export const messages = {
   ar: {
@@ -47,7 +48,8 @@ export const messages = {
     help: arHelp,
     deliveryAreas: arDeliveryAreas,
     addressModal: arAddressModal,
-    orderSuccess: arOrderSuccess, // ✅ جديد
+    orderSuccess: arOrderSuccess,
+    search: arSearch,
   },
   en: {
     common: enCommon,
@@ -64,6 +66,7 @@ export const messages = {
     help: enHelp,
     deliveryAreas: enDeliveryAreas,
     addressModal: enAddressModal,
-    orderSuccess: enOrderSuccess, // ✅ جديد
+    orderSuccess: enOrderSuccess,
+    search: enSearch,
   },
 };

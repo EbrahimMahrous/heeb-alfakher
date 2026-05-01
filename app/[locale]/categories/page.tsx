@@ -1,15 +1,30 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
-import { categories, getProductsByCategorySlug } from "@/lib/data";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { fetchAllCategories } from "@/lib/api/categories";
+import { fetchAllProducts } from "@/lib/api/products";
 
 export default function CategoriesPage() {
   const { t, locale } = useTranslation("categories");
   const isRtl = locale === "ar";
   const scrollRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // ✅ API category and product data
+  const [categories, setCategories] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Fetch categories and products once from the API
+    Promise.all([fetchAllCategories(), fetchAllProducts()])
+      .then(([cats, prods]) => {
+        setCategories(cats);
+        setProducts(prods);
+      })
+      .catch(console.error);
+  }, []);
 
   const scroll = (direction: "left" | "right", mainId: number) => {
     const el = scrollRefs.current[mainId];
@@ -43,7 +58,10 @@ export default function CategoriesPage() {
       {/* Categories list with products */}
       <div className="space-y-12">
         {categories.map((cat) => {
-          const categoryProducts = getProductsByCategorySlug(cat.slug);
+          // Get products from this category of all loaded products
+          const categoryProducts = products.filter(
+            (p) => p.categorySlug === cat.slug,
+          );
           const productCount = categoryProducts.length;
           if (productCount === 0) return null;
 

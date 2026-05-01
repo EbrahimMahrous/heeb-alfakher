@@ -7,32 +7,17 @@ import Button from "@/components/ui/button";
 import { useTranslation } from "@/lib/useTranslation";
 import { toast } from "sonner";
 import ProductCarousel from "@/components/ProductCarousel";
-import { products } from "@/lib/data";
+import { fetchAllProducts } from "@/lib/api/products";
+import ProductSkeleton from "@/components/ui/ProductSkeleton";
+import CartSkeleton from "@/components/ui/CartSkeleton";
 import { Trash2 } from "lucide-react";
 
-// Local storage key for cart persistence
 const CART_STORAGE_KEY = "heeb_cart";
 
-// Helper: Save cart items to localStorage
 const saveCartToLocalStorage = (items: any[]) => {
   if (typeof window !== "undefined") {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }
-};
-
-// Helper: Load cart items from localStorage
-const loadCartFromLocalStorage = () => {
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem(CART_STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error("Failed to parse cart from localStorage", e);
-      }
-    }
-  }
-  return null;
 };
 
 const ProductMeta = ({ weight }: { weight?: string }) => {
@@ -60,6 +45,8 @@ export default function CartPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [promoCode, setPromoCode] = useState("");
+  const [suggestedProducts, setSuggestedProducts] = useState<any[]>([]);
+  const [loadingSuggested, setLoadingSuggested] = useState(true);
 
   const shippingCost = 35;
   const freeShippingThreshold = 500;
@@ -72,26 +59,21 @@ export default function CartPage() {
     (subtotal / freeShippingThreshold) * 100,
   );
 
-  const cartProductIds = new Set(items.map((i) => i.id));
-  const suggestedProducts = products
-    .filter((p) => !cartProductIds.has(p.id))
-    .slice(0, 8);
-
-  // Load cart from API, then sync with localStorage
   useEffect(() => {
-    const loadCart = async () => {
-      try {
-        await fetchCart();
-      } catch (error) {
-        console.error("Failed to fetch cart from API", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadCart();
+    fetchAllProducts()
+      .then((all) => {
+        const cartIds = new Set(items.map((i) => i.id));
+        const filtered = all.filter((p: any) => !cartIds.has(p.id)).slice(0, 8);
+        setSuggestedProducts(filtered);
+      })
+      .catch(console.error)
+      .finally(() => setLoadingSuggested(false));
+  }, [items]);
+
+  useEffect(() => {
+    fetchCart().finally(() => setIsLoading(false));
   }, [fetchCart]);
 
-  // Save cart items to localStorage whenever they change
   useEffect(() => {
     if (!isLoading) {
       if (items.length > 0) {
@@ -124,11 +106,7 @@ export default function CartPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        جاري تحميل السلة...
-      </div>
-    );
+    return <CartSkeleton />;
   }
 
   if (items.length === 0) {
@@ -159,7 +137,7 @@ export default function CartPage() {
           <h1 className="text-2xl font-bold text-primary">
             {t("title")} ({items.reduce((sum, i) => sum + i.quantity, 0)})
           </h1>
-          {items.map((item) => {
+          {items.map((item, index) => {
             const hasDiscount =
               item.discountedPrice && item.price > item.discountedPrice;
             const discountPercent = hasDiscount
@@ -167,6 +145,11 @@ export default function CartPage() {
                   ((item.price - item.discountedPrice!) / item.price) * 100,
                 )
               : 0;
+            // ✅ check if the image is external to skip optimization
+            const isExternal =
+              typeof item.image === "string" &&
+              item.image.startsWith("https://app.heebshop.ae");
+
             return (
               <div
                 key={item.id}
@@ -177,7 +160,10 @@ export default function CartPage() {
                     src={item.image || "/product-img.png"}
                     alt={item.name}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover"
+                    loading={index === 0 ? "eager" : "lazy"}
+                    unoptimized={isExternal}
                   />
                 </div>
                 <div className="flex-1">
@@ -247,7 +233,6 @@ export default function CartPage() {
           <h2 className="text-center text-xl font-bold mb-4">
             {t("orderSummary")}
           </h2>
-
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span>{t("subtotal")}</span>
@@ -263,8 +248,6 @@ export default function CartPage() {
                   : `${shippingCost} ${t("currency")}`}
               </span>
             </div>
-
-            {/* Total + Incl. Tax */}
             <div className="pt-2">
               <div className="flex justify-between text-lg font-bold">
                 <span>{t("total")}</span>
@@ -277,7 +260,6 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* Progress bar (above the promo code field) */}
             {remainingForFree > 0 && (
               <div
                 className="mt-4 p-3 rounded-xl"
@@ -293,7 +275,6 @@ export default function CartPage() {
                     className="bg-[#338A43] h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   ></div>
-                  {/* Animated icon representing progress */}
                   <div
                     className="absolute top-1/2 -translate-y-1/2 transition-all duration-300"
                     style={{ left: `calc(${progressPercent}% - 8px)` }}
@@ -313,7 +294,6 @@ export default function CartPage() {
               </div>
             )}
 
-            {/* Promotional code field with icon */}
             <div className="pt-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -347,7 +327,6 @@ export default function CartPage() {
               </Button>
             </Link>
 
-            {/* Secure payment with icon */}
             <p
               className="text-center text-xs mt-2 flex items-center justify-center gap-1"
               style={{ color: "#94A3B8" }}
@@ -360,14 +339,27 @@ export default function CartPage() {
       </div>
 
       {/* Suggested Products */}
-      {suggestedProducts.length > 0 && (
+      {loadingSuggested ? (
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-primary mb-4">
+            {t("youMayAlsoLike")}
+          </h2>
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="min-w-62.5 sm:min-w-70 snap-start">
+                <ProductSkeleton />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : suggestedProducts.length > 0 ? (
         <div className="mt-16">
           <ProductCarousel
             title={t("youMayAlsoLike")}
             products={suggestedProducts}
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

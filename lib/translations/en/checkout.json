@@ -36,5 +36,7 @@
   "noAddressAlert": "Please add a delivery address first",
   "noDeliveryTimeAlert": "Please select a delivery day and time slot",
   "paymentError": "Payment error occurred",
-  "noPaymentUrl": "No payment URL received"
+  "noPaymentUrl": "No payment URL received",
+  "areaRequired": "Please enter the area name (e.g., Jumeirah, Deira)",
+  "orderPlacedSuccessfully": "The application has been successfully submitted!"
 }
