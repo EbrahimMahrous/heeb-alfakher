@@ -171,21 +171,21 @@ export default function CheckoutPage() {
   // ✅ When user saves a new or edited address
   const handleSaveAddress = (address: Address) => {
     setSelectedAddress(address);
-    setEditingAddress(null); // clear editing mode
+    setEditingAddress(null);
     toast.success(t("addressSaved", { defaultValue: "تم حفظ العنوان بنجاح" }));
   };
 
   // ✅ Open modal to add a new address
   const openAddAddressModal = () => {
-    setErrorMessage(""); // hide any previous submit error
-    setEditingAddress(null); // not editing
+    setErrorMessage("");
+    setEditingAddress(null);
     setIsAddressModalOpen(true);
   };
 
   // ✅ Open modal to edit the current address
   const openEditAddressModal = () => {
-    setErrorMessage(""); // hide errors
-    setEditingAddress(selectedAddress); // pass current address to modal
+    setErrorMessage("");
+    setEditingAddress(selectedAddress);
     setIsAddressModalOpen(true);
   };
 
@@ -217,7 +217,115 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Submit the order ----------
+  // ---------- Handle COD order submission ----------
+  const handleCodSubmit = async () => {
+    const area_name = selectedAddress?.area?.trim() || "";
+    if (!area_name)
+      throw new Error(
+        t("areaRequired", { defaultValue: "الرجاء اختيار المنطقة الفرعية" }),
+      );
+
+    const deliveryDateFormatted = buildDeliveryDate();
+    if (!deliveryDateFormatted) throw new Error("Invalid delivery date/time");
+
+    let phoneDigits = selectedAddress!.phone.replace(/\D/g, "");
+    if (!phoneDigits.startsWith("971")) {
+      if (phoneDigits.startsWith("0"))
+        phoneDigits = "971" + phoneDigits.substring(1);
+      else phoneDigits = "971" + phoneDigits;
+    }
+
+    const validEmirates = [
+      "Dubai",
+      "Abu Dhabi",
+      "Sharjah",
+      "Ajman",
+      "Umm Al Quwain",
+      "Ras Al Khaimah",
+      "Fujairah",
+    ];
+    let emirate_name = selectedAddress?.city?.trim() || "";
+    if (!validEmirates.includes(emirate_name)) emirate_name = "Dubai";
+
+    const orderPayload = {
+      customer_name: selectedAddress?.fullName,
+      mobile_number: phoneDigits,
+      emirate_name,
+      area_name,
+      payment_type: "COD",
+      delivery_date: deliveryDateFormatted,
+      items: items.map((item) => ({
+        product_id: item.id,
+        quantity: item.quantity,
+      })),
+      total_amount: total,
+      gift_message: giftMessage.trim() || null,
+      instruction: selectedInstruction,
+      pin_location: selectedAddress?.pinLocation || undefined,
+    };
+
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderPayload),
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.statusCode !== 200) {
+      throw new Error(data.message || data.error || t("paymentError"));
+    }
+
+    clearCart();
+    localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+    toast.success(
+      t("orderPlacedSuccessfully", { defaultValue: "تم تقديم الطلب بنجاح!" }),
+    );
+    router.push(`/${locale}/order-success`);
+  };
+
+  // ---------- Handle Paid (online payment) ----------
+  const handlePaidSubmit = async () => {
+    const area_name = selectedAddress?.area?.trim() || "";
+    if (!area_name)
+      throw new Error(
+        t("areaRequired", { defaultValue: "الرجاء اختيار المنطقة الفرعية" }),
+      );
+
+    // Prepare simplified order payload for payment gateway
+    const payload = {
+      items,
+      total,
+      address: selectedAddress,
+      deliveryDate: selectedDate,
+      timeSlot: selectedTimeSlot,
+      instruction: selectedInstruction,
+      giftMessage: giftMessage.trim() || null,
+      paymentMethod: "Paid",
+      locale,
+    };
+
+    const res = await fetch("/api/create-payment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || t("paymentError"));
+    }
+
+    if (data.payment_url) {
+      // Clear cart and redirect to payment gateway
+      clearCart();
+      localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+      window.location.href = data.payment_url;
+    } else {
+      throw new Error(t("noPaymentUrl"));
+    }
+  };
+
+  // ---------- Main submit handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -225,6 +333,15 @@ export default function CheckoutPage() {
     if (!selectedAddress) {
       const msg = t("noAddressAlert", {
         defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
+      });
+      setErrorMessage(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!selectedDate || !selectedTimeSlot) {
+      const msg = t("noDeliveryTimeAlert", {
+        defaultValue: "الرجاء اختيار يوم ووقت التسليم",
       });
       setErrorMessage(msg);
       toast.error(msg);
@@ -241,95 +358,13 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!selectedDate || !selectedTimeSlot) {
-      const msg = t("noDeliveryTimeAlert", {
-        defaultValue: "الرجاء اختيار يوم ووقت التسليم",
-      });
-      setErrorMessage(msg);
-      toast.error(msg);
-      return;
-    }
-
-    const deliveryDateFormatted = buildDeliveryDate();
-    if (!deliveryDateFormatted) {
-      const msg = "Invalid delivery date/time";
-      setErrorMessage(msg);
-      toast.error(msg);
-      return;
-    }
-
-    // Phone number is already sanitized in AddressModal, but just in case it was loaded from old data
-    let phoneDigits = selectedAddress.phone.replace(/\D/g, "");
-    if (!phoneDigits.startsWith("971")) {
-      if (phoneDigits.startsWith("0")) {
-        phoneDigits = "971" + phoneDigits.substring(1);
-      } else {
-        phoneDigits = "971" + phoneDigits;
-      }
-    }
-    const mobile_number = phoneDigits;
-
-    const customer_name = selectedAddress.fullName;
-
-    // Validate emirate (should always be valid because we fill it automatically)
-    const validEmirates = [
-      "Dubai",
-      "Abu Dhabi",
-      "Sharjah",
-      "Ajman",
-      "Umm Al Quwain",
-      "Ras Al Khaimah",
-      "Fujairah",
-    ];
-    let emirate_name = selectedAddress.city?.trim() || "";
-    if (!validEmirates.includes(emirate_name)) {
-      emirate_name = "Dubai";
-      toast.info(
-        t("emirateAdjusted", {
-          defaultValue: "تم تعيين الإمارة إلى دبي لأن المدينة غير معروفة",
-        }),
-      );
-    }
-
-    const orderPayload = {
-      customer_name,
-      mobile_number,
-      emirate_name,
-      area_name,
-      payment_type: paymentMethod,
-      delivery_date: deliveryDateFormatted,
-      items: items.map((item) => ({
-        product_id: item.id,
-        quantity: item.quantity,
-      })),
-      total_amount: total,
-      gift_message: giftMessage.trim() || null,
-      instruction: selectedInstruction,
-      pin_location: selectedAddress.pinLocation || undefined,
-    };
-
     setLoading(true);
     try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || data.statusCode !== 200) {
-        const errMsg = data.message || data.error || t("paymentError");
-        console.error("Checkout API Error:", errMsg);
-        throw new Error(errMsg);
+      if (paymentMethod === "COD") {
+        await handleCodSubmit();
+      } else {
+        await handlePaidSubmit();
       }
-
-      clearCart();
-      localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-      toast.success(
-        t("orderPlacedSuccessfully", { defaultValue: "تم تقديم الطلب بنجاح!" }),
-      );
-      router.push(`/${locale}/order-success`);
     } catch (err: any) {
       console.error("Checkout Error:", err);
       const message = err.message || t("paymentError");
@@ -340,7 +375,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // ---------- Render ----------
+  // ---------- Render (unchanged) ----------
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
@@ -441,11 +476,7 @@ export default function CheckoutPage() {
                             key={day.label}
                             type="button"
                             onClick={() => setSelectedDate(day.label)}
-                            className={`px-4 py-2 rounded-full border transition-all duration-200 ${
-                              selectedDate === day.label
-                                ? "bg-primary text-white border-primary shadow-md scale-105"
-                                : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"
-                            }`}
+                            className={`px-4 py-2 rounded-full border transition-all duration-200 ${selectedDate === day.label ? "bg-primary text-white border-primary shadow-md scale-105" : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"}`}
                           >
                             <div className="text-center">
                               <div className="font-medium whitespace-nowrap">
@@ -467,11 +498,7 @@ export default function CheckoutPage() {
                               key={slot}
                               type="button"
                               onClick={() => setSelectedTimeSlot(slot)}
-                              className={`px-4 py-2 rounded-full border transition-all duration-200 ${
-                                selectedTimeSlot === slot
-                                  ? "bg-primary text-white border-primary shadow-md scale-105"
-                                  : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"
-                              }`}
+                              className={`px-4 py-2 rounded-full border transition-all duration-200 ${selectedTimeSlot === slot ? "bg-primary text-white border-primary shadow-md scale-105" : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"}`}
                             >
                               {slot}
                             </button>
@@ -493,41 +520,25 @@ export default function CheckoutPage() {
                         key={opt.id}
                         type="button"
                         onClick={() => handleInstructionSelect(opt.id)}
-                        className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
-                          selectedInstruction === opt.id
-                            ? "border-[#338A43] bg-[#338A43]/5 shadow-md scale-105"
-                            : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"
-                        }`}
+                        className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${selectedInstruction === opt.id ? "border-[#338A43] bg-[#338A43]/5 shadow-md scale-105" : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"}`}
                       >
                         <div className="w-12 h-12 flex items-center justify-center mb-2">
                           {opt.id === "call" && (
                             <PhoneCall
                               size={28}
-                              className={`transition-all ${
-                                selectedInstruction === opt.id
-                                  ? "text-[#338A43]"
-                                  : "text-neutral-500 group-hover:text-[#338A43]"
-                              }`}
+                              className={`transition-all ${selectedInstruction === opt.id ? "text-[#338A43]" : "text-neutral-500 group-hover:text-[#338A43]"}`}
                             />
                           )}
                           {opt.id === "door" && (
                             <DoorOpen
                               size={28}
-                              className={`transition-all ${
-                                selectedInstruction === opt.id
-                                  ? "text-[#338A43]"
-                                  : "text-neutral-500 group-hover:text-[#338A43]"
-                              }`}
+                              className={`transition-all ${selectedInstruction === opt.id ? "text-[#338A43]" : "text-neutral-500 group-hover:text-[#338A43]"}`}
                             />
                           )}
                           {opt.id === "boxes" && (
                             <PackageCheck
                               size={28}
-                              className={`transition-all ${
-                                selectedInstruction === opt.id
-                                  ? "text-[#338A43]"
-                                  : "text-neutral-500 group-hover:text-[#338A43]"
-                              }`}
+                              className={`transition-all ${selectedInstruction === opt.id ? "text-[#338A43]" : "text-neutral-500 group-hover:text-[#338A43]"}`}
                             />
                           )}
                         </div>
@@ -594,11 +605,7 @@ export default function CheckoutPage() {
                       ].map((method) => (
                         <label
                           key={method.value + method.label}
-                          className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all ${
-                            paymentMethod === method.value
-                              ? "bg-primary/5"
-                              : "hover:bg-gray-50"
-                          }`}
+                          className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all ${paymentMethod === method.value ? "bg-primary/5" : "hover:bg-gray-50"}`}
                         >
                           <input
                             type="radio"
@@ -642,7 +649,7 @@ export default function CheckoutPage() {
           </form>
         </div>
 
-        {/* Order summary column */}
+        {/* Order summary column (same as before) */}
         <div className="lg:col-span-1 order-1 lg:order-2">
           <div className="bg-white border border-neutral-200 p-6 rounded-2xl shadow-lg sticky top-24 hover:shadow-xl transition-shadow">
             <h2 className="text-xl font-bold mb-4">{t("orderSummary")}</h2>
@@ -712,7 +719,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Address modal (supports both add and edit) */}
+      {/* Address modal */}
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
