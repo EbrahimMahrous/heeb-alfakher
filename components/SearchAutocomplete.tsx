@@ -1,4 +1,3 @@
-// components/SearchAutocomplete.tsx
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -32,9 +31,11 @@ export default function SearchAutocomplete() {
     setIsLoading(true);
     try {
       const data = await searchProducts(term.trim());
-      setResults(data.slice(0, 5));
+      // Filter out products with status "off"
+      const active = data.filter((p: any) => p.status !== "off");
+      setResults(active.slice(0, 5)); // limit to 5 items
       setHighlightIndex(-1);
-      setIsOpen(data.length > 0);
+      setIsOpen(active.length > 0);
     } catch (err) {
       console.error("Search failed", err);
       setResults([]);
@@ -102,7 +103,6 @@ export default function SearchAutocomplete() {
 
   const currencySymbol = t("currency", { defaultValue: "د.إ" });
   const weightUnit = t("weightUnit", { defaultValue: "kg" });
-  const viewAllText = t("viewAllResults") || "عرض كل النتائج";
 
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
@@ -210,15 +210,6 @@ export default function SearchAutocomplete() {
               );
             })}
           </div>
-          {/* {results.length > 0 && (
-            <Link
-              href={`/search?q=${encodeURIComponent(query.trim())}`}
-              onClick={() => setIsOpen(false)}
-              className="block text-center text-sm text-primary font-semibold py-3 border-t border-neutral-100 hover:bg-neutral-50 transition"
-            >
-              {viewAllText}
-            </Link>
-          )} */}
         </div>
       )}
     </div>

@@ -18,7 +18,6 @@ export default function ProductsPage() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // --- Fetch categories & products (with guaranteed categorySlug) ---
   useEffect(() => {
     const load = async () => {
       try {
@@ -37,12 +36,10 @@ export default function ProductsPage() {
     load();
   }, []);
 
-  // --- Identify current category from URL slug ---
   const mainCategory = slug
     ? (allCategories.find((cat) => cat.slug === slug) ?? null)
     : null;
 
-  // --- Filter states ---
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [maxPossiblePrice, setMaxPossiblePrice] = useState(1000);
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc" | "name-asc">(
@@ -53,7 +50,6 @@ export default function ProductsPage() {
   );
   const [showFilters, setShowFilters] = useState(false);
 
-  // Initialize selected categories based on URL slug
   useEffect(() => {
     if (mainCategory) {
       setSelectedCategorySlugs([mainCategory.slug]);
@@ -62,7 +58,6 @@ export default function ProductsPage() {
     }
   }, [mainCategory]);
 
-  // --- Filter products by selected categories ---
   const categoryFilteredProducts = useMemo(() => {
     if (selectedCategorySlugs.length === 0) return allProducts;
     return allProducts.filter((p) =>
@@ -70,7 +65,6 @@ export default function ProductsPage() {
     );
   }, [allProducts, selectedCategorySlugs]);
 
-  // --- Calculate max price from filtered products ---
   useEffect(() => {
     const maxPrice = Math.max(
       ...categoryFilteredProducts.map((p) => p.discountedPrice || p.price),
@@ -83,10 +77,11 @@ export default function ProductsPage() {
     ]);
   }, [categoryFilteredProducts]);
 
-  // --- Final filtering & sorting ---
+  // Final filtering & sorting – ADDED status filter
   const filteredProducts = useMemo(() => {
     let prods = categoryFilteredProducts.filter(
       (p) =>
+        p.status !== "off" && // <-- only show products with status "on"
         (p.discountedPrice || p.price) >= priceRange[0] &&
         (p.discountedPrice || p.price) <= priceRange[1],
     );
@@ -110,7 +105,6 @@ export default function ProductsPage() {
     return prods;
   }, [categoryFilteredProducts, priceRange, sortBy, locale]);
 
-  // Toggle a category filter (no URL change – just filtering)
   const toggleCategory = (catSlug: string) => {
     setSelectedCategorySlugs((prev) =>
       prev.includes(catSlug)
@@ -134,7 +128,6 @@ export default function ProductsPage() {
     setPriceRange([priceRange[0], value]);
   };
 
-  // --- Breadcrumb & page title ---
   let pageTitle = t("allProducts");
   const breadcrumbItems = [
     { href: "/", label: t("home") },
@@ -147,7 +140,6 @@ export default function ProductsPage() {
     breadcrumbItems.push({ label: t("allProducts"), href: "" });
   }
 
-  // If slug is provided but category not found (after loading)
   if (!loading && slug && !mainCategory) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
@@ -319,7 +311,6 @@ export default function ProductsPage() {
           </div>
 
           {loading ? (
-            /* Display skeleton loading cards */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <ProductSkeleton key={i} />

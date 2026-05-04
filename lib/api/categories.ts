@@ -8,8 +8,8 @@ import { apiFetch } from "../api";
 const toSlug = (text: string): string =>
   text
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-") // replace non-alphanumeric sequences with a hyphen
-    .replace(/^-+|-+$/g, ""); // remove leading/trailing hyphens
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 
 /**
  * Fetch all active product categories.
@@ -38,6 +38,8 @@ export async function fetchAllCategories() {
  * Endpoint: /shop-by-categories
  * Each category includes a list of products with limited data.
  */
+// categories.ts (only the modified function is shown; the rest of the file is unchanged)
+
 export async function fetchCategoriesWithProducts() {
   const json = await apiFetch("/shop-by-categories");
 
@@ -45,20 +47,21 @@ export async function fetchCategoriesWithProducts() {
     id: cat.id,
     name: cat.name_translated,
     nameEn: cat.name_en,
-    slug: toSlug(cat.name_en), // use the safe slug helper
+    slug: toSlug(cat.name_en),
     image: cat.image ? `${cat.image_path}${cat.image}` : null,
 
     // Map products inside each category
     products: cat.products.map((p: any) => ({
       id: p.id,
       name: p.name_translated,
-      nameEn: p.name_translated, // fallback (API does not provide separate English name)
+      nameEn: p.name_translated,
       price: Number(p.product_price),
       discountedPrice: Number(p.discounted_price) || undefined,
       discountPercent: Number(p.discount_percantage) || null,
-      image: null, // no image provided in this endpoint
+      image: null,
       inStock: true,
-      status: "on",
+      // Convert numeric status if provided; default to "on"
+      status: p.status !== undefined ? (p.status === 1 ? "on" : "off") : "on",
     })),
   }));
 }

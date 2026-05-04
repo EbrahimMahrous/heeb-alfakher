@@ -7,9 +7,8 @@ import ProductCard from "@/components/ProductCard";
 import ProductSkeleton from "@/components/ui/ProductSkeleton";
 import { XCircle } from "lucide-react";
 
-// Inner component that uses useSearchParams (needs Suspense boundary)
 function SearchResults() {
-  const { t, locale } = useTranslation("search");
+  const { t } = useTranslation("search");
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
   const [results, setResults] = useState<any[]>([]);
@@ -23,7 +22,11 @@ function SearchResults() {
     }
     setLoading(true);
     searchProducts(query)
-      .then((data) => setResults(data))
+      .then((data) => {
+        // Filter out products with status "off"
+        const active = data.filter((p: any) => p.status !== "off");
+        setResults(active);
+      })
       .catch((err) => {
         console.error("Search failed", err);
         setResults([]);
@@ -62,7 +65,6 @@ function SearchResults() {
   );
 }
 
-// Main page with Suspense boundary (required for useSearchParams)
 export default function SearchPage() {
   return (
     <Suspense

@@ -1,4 +1,3 @@
-// components/ProductMeta.tsx
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
 

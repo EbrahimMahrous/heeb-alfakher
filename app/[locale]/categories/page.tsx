@@ -12,12 +12,10 @@ export default function CategoriesPage() {
   const isRtl = locale === "ar";
   const scrollRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
-  // ✅ API category and product data
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
-    // Fetch categories and products once from the API
     Promise.all([fetchAllCategories(), fetchAllProducts()])
       .then(([cats, prods]) => {
         setCategories(cats);
@@ -58,9 +56,9 @@ export default function CategoriesPage() {
       {/* Categories list with products */}
       <div className="space-y-12">
         {categories.map((cat) => {
-          // Get products from this category of all loaded products
+          // Filter products: only those matching category AND with active status
           const categoryProducts = products.filter(
-            (p) => p.categorySlug === cat.slug,
+            (p) => p.categorySlug === cat.slug && p.status !== "off",
           );
           const productCount = categoryProducts.length;
           if (productCount === 0) return null;

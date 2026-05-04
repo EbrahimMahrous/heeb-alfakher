@@ -1,4 +1,3 @@
-// components/ProductCard.tsx
 "use client";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,11 +17,12 @@ export default function ProductCard({
   product,
   categorySlug,
 }: ProductCardProps) {
-  const { t, locale } = useTranslation("common"); // get locale for translations
+  const { t, locale } = useTranslation("common");
   const addItem = useCartStore((state) => state.addItem);
   const [isAdding, setIsAdding] = useState(false);
 
-  if (!product) return null;
+  // Hide product if it's null or status is "off"
+  if (!product || product.status === "off") return null;
 
   const handleAddToCart = async () => {
     if (isAdding || !product.inStock) return;
@@ -40,7 +40,7 @@ export default function ProductCard({
         weight: product.weight,
         origin: product.origin,
         originEn: product.originEn,
-        flagUrl: product.flagUrl, // pass flag for cart consistency
+        flagUrl: product.flagUrl,
       });
       toast.success(t("addToCart"));
     } catch (error) {
@@ -61,7 +61,6 @@ export default function ProductCard({
     typeof imageSrc === "string" &&
     imageSrc.startsWith("https://app.heebshop.ae");
 
-  // Origin name based on locale
   const originText = locale === "ar" ? product.origin : product.originEn;
 
   return (
@@ -98,7 +97,6 @@ export default function ProductCard({
           </h3>
         </Link>
 
-        {/* Flag and weight (localized unit) */}
         <ProductMeta
           flagUrl={product.flagUrl}
           origin={originText}

@@ -1,11 +1,24 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "@/lib/useTranslation";
 import Banner from "@/components/HeroCarousel";
 import CategorySection from "@/components/CategorySection";
 import ProductGrid from "@/components/ProductGrid";
 import { fetchAllProducts } from "@/lib/api/products";
 import { fetchSlides } from "@/lib/api/slider";
+
+/**
+ * Fisher-Yates shuffle algorithm.
+ * Returns a new shuffled copy of the array.
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
 
 export default function HomePage() {
   const { t } = useTranslation("common");
@@ -23,9 +36,17 @@ export default function HomePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const row1Products = allProducts.slice(0, 8);
-  const row2Products = allProducts.slice(4, 12);
-  const row3Products = allProducts.slice(8, 16);
+  // Shuffle products once when they load – changes every page refresh
+  const shuffledProducts = useMemo(
+    () => shuffleArray(allProducts),
+    [allProducts],
+  );
+
+  // Show more products per row (e.g., 12 instead of 8)
+  // You can adjust the slice numbers and sizes as you like
+  const row1 = shuffledProducts.slice(0, 12);
+  const row2 = shuffledProducts.slice(4, 16);
+  const row3 = shuffledProducts.slice(8, 20);
 
   const banner1 = {
     title: t("quickOffers"),
@@ -58,19 +79,19 @@ export default function HomePage() {
       <CategorySection loading={loading} />
       <ProductGrid
         title={t("quickOffers")}
-        products={row1Products}
+        products={row1}
         bannerContent={banner1}
         loading={loading}
       />
       <ProductGrid
         title={t("newProducts")}
-        products={row2Products}
+        products={row2}
         bannerContent={banner2}
         loading={loading}
       />
       <ProductGrid
         title={t("bestSellers")}
-        products={row3Products}
+        products={row3}
         bannerContent={banner3}
         loading={loading}
       />
