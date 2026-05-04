@@ -117,10 +117,9 @@ export async function fetchAllProductsWithCategorySlug() {
   return products;
 }
 
-// Search products by query string (safe – returns empty array on unexpected response)
+// Search products by query string (uses the correct parameter name: search_query)
 export async function searchProducts(query: string) {
-  // Do NOT manually encode query; apiFetch will encode the whole endpoint correctly.
-  const json = await apiFetch(`/search/products?search=${query}`);
+  const json = await apiFetch(`/search/products?search_query=${query}`);
   if (!json.data || !Array.isArray(json.data)) {
     console.warn("Unexpected search API response:", json);
     return [];

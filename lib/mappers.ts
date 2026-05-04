@@ -13,24 +13,45 @@ export function mapProduct(apiProduct: any) {
     apiProduct.discounted_price != null
       ? Number(apiProduct.discounted_price)
       : undefined;
-  // fallback: if discounted_price missing but discountPercent>0, compute
+
   let finalDiscountedPrice = discountedPrice;
   if (!finalDiscountedPrice && discountPercent > 0) {
     finalDiscountedPrice = Math.round(price * (1 - discountPercent / 100));
   }
 
+  // -- Country flag URL --
+  const flagBase =
+    apiProduct.country?.image_path || "https://app.heebshop.ae/uploads/flags/";
+  const flagFile = apiProduct.country?.flag || "";
+  const flagUrl = flagFile ? `${flagBase}${flagFile}` : null;
+
+  // -- Weight extraction --
+  let weight = apiProduct.weight || null;
+  if (!weight) {
+    const name = apiProduct.name_translated || "";
+    // Look for pattern "number + كيلو" (e.g., "2 كيلو")
+    const match = name.match(/(\d+)\s*كيلو/);
+    if (match) {
+      weight = match[1] + " كيلو";
+    } else if (name.includes("كيلو")) {
+      // If the word "كيلو" exists without a number, assume 1
+      weight = "1 كيلو";
+    }
+  }
+
   return {
     id: apiProduct.id,
-    name: apiProduct.name_translated,
-    nameEn: apiProduct.name_translated,
+    name: apiProduct.name_translated, // Arabic name
+    nameEn: apiProduct.name_translated, // fallback to Arabic name (API doesn't have separate EN product name)
     price,
     discountedPrice: finalDiscountedPrice,
     discountPercent: discountPercent > 0 ? discountPercent : null,
-    inStock: true, // The API does not contain a field, so we will assume availability.
+    inStock: true, // API lacks stock field; adjust if needed
     image: imageUrl,
-    weight: apiProduct.weight || null,
+    weight, // extracted weight string (e.g., "2 كيلو")
     origin: apiProduct.country?.name_translated || "",
     originEn: apiProduct.country?.name_en || "",
+    flagUrl, // full flag image URL
     description: apiProduct.description_translated || "",
     categorySlug:
       apiProduct.category?.name_en?.toLowerCase().replace(/\s+/g, "-") || null,

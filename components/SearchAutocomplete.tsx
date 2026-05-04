@@ -1,3 +1,4 @@
+// components/SearchAutocomplete.tsx
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -5,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
 import { searchProducts } from "@/lib/api/products";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Search } from "lucide-react";
 
 export default function SearchAutocomplete() {
   const { t } = useTranslation("common");
@@ -19,10 +20,8 @@ export default function SearchAutocomplete() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Fixed: provide explicit null as initial value
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounced search
   const doSearch = useCallback(async (term: string) => {
     if (!term.trim()) {
       setResults([]);
@@ -33,7 +32,7 @@ export default function SearchAutocomplete() {
     setIsLoading(true);
     try {
       const data = await searchProducts(term.trim());
-      setResults(data.slice(0, 5)); // show max 5 suggestions
+      setResults(data.slice(0, 5));
       setHighlightIndex(-1);
       setIsOpen(data.length > 0);
     } catch (err) {
@@ -49,13 +48,12 @@ export default function SearchAutocomplete() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       doSearch(query);
-    }, 350);
+    }, 300);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [query, doSearch]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -80,7 +78,6 @@ export default function SearchAutocomplete() {
     inputRef.current?.focus();
   };
 
-  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) return;
     if (e.key === "ArrowDown") {
@@ -103,9 +100,16 @@ export default function SearchAutocomplete() {
     }
   };
 
+  const currencySymbol = t("currency", { defaultValue: "د.إ" });
+  const weightUnit = t("weightUnit", { defaultValue: "kg" });
+  const viewAllText = t("viewAllResults") || "عرض كل النتائج";
+
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
       <div className="relative flex items-center">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+          <Search size={16} />
+        </div>
         <input
           ref={inputRef}
           type="text"
@@ -116,84 +120,105 @@ export default function SearchAutocomplete() {
           }}
           onKeyDown={handleKeyDown}
           placeholder={t("search")}
-          className="w-full border border-neutral-300 rounded-full py-2 pl-4 pr-10 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full border border-neutral-200 rounded-full py-2 pl-10 pr-10 bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
         />
         {query && (
           <button
             onClick={clearInput}
-            className="absolute right-9 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
           >
             <X size={16} />
           </button>
         )}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-          {isLoading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Image
-              src="/icons/search.svg"
-              alt="search"
-              width={16}
-              height={16}
-              className="opacity-60"
-            />
-          )}
-        </div>
+        {isLoading && (
+          <div className="absolute right-10 top-1/2 -translate-y-1/2">
+            <Loader2 size={16} className="animate-spin text-primary" />
+          </div>
+        )}
       </div>
 
-      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full mt-2 w-full bg-white border border-neutral-200 rounded-xl shadow-xl overflow-hidden z-50">
-          {results.map((product, idx) => (
-            <Link
-              key={product.id}
-              href={`/product/${product.id}`}
-              onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 transition-colors ${
-                idx === highlightIndex ? "bg-neutral-100" : ""
-              }`}
-            >
-              <div className="w-10 h-10 rounded-lg bg-neutral-100 overflow-hidden relative shrink-0">
-                <Image
-                  src={product.image || "/default-product.jpeg"}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-dark truncate">
-                  {product.name}
-                </p>
-                <p className="text-xs text-neutral-500">
-                  {product.discountedPrice ? (
-                    <>
-                      <span className="text-primary font-semibold">
-                        {product.discountedPrice} د.إ
-                      </span>
-                      <span className="line-through mx-1">{product.price}</span>
-                    </>
-                  ) : (
-                    <span className="text-primary font-semibold">
-                      {product.price} د.إ
-                    </span>
-                  )}
-                </p>
-              </div>
-            </Link>
-          ))}
+        <div className="absolute top-full mt-2 w-full bg-white border border-neutral-200 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
+          <div className="py-1">
+            {results.map((product, idx) => {
+              let weightDisplay = "";
+              if (product.weight) {
+                const weightStr =
+                  typeof product.weight === "number"
+                    ? product.weight.toString()
+                    : String(product.weight);
+                const cleanWeight = weightStr
+                  .replace(/\s*(كيلو|kg)\s*/gi, "")
+                  .trim();
+                if (cleanWeight) weightDisplay = `${cleanWeight} ${weightUnit}`;
+              }
 
-          {/* View all results link */}
-          {results.length > 0 && (
+              return (
+                <Link
+                  key={product.id}
+                  href={`/product/${product.id}`}
+                  onClick={() => setIsOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 transition-colors ${
+                    idx === highlightIndex ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-neutral-100 border border-neutral-200 overflow-hidden relative shrink-0">
+                    <Image
+                      src={product.image || "/default-product.jpeg"}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-dark truncate">
+                      {product.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-sm font-bold text-primary">
+                        {product.discountedPrice ? (
+                          <>
+                            {product.discountedPrice} {currencySymbol}
+                            <span className="ml-1 text-xs text-neutral-400 line-through font-normal">
+                              {product.price} {currencySymbol}
+                            </span>
+                          </>
+                        ) : (
+                          `${product.price} ${currencySymbol}`
+                        )}
+                      </span>
+                      {weightDisplay && (
+                        <span className="inline-flex items-center gap-1 text-xs text-neutral-500 bg-neutral-100 rounded-full px-2 py-0.5">
+                          {weightDisplay}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {product.flagUrl && (
+                    <div className="shrink-0" title={product.origin || ""}>
+                      <Image
+                        src={product.flagUrl}
+                        alt={product.origin || ""}
+                        width={20}
+                        height={20}
+                        className="rounded-full border border-neutral-200"
+                      />
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+          {/* {results.length > 0 && (
             <Link
               href={`/search?q=${encodeURIComponent(query.trim())}`}
               onClick={() => setIsOpen(false)}
-              className="block text-center text-sm text-primary font-medium py-3 border-t hover:bg-neutral-50 transition"
+              className="block text-center text-sm text-primary font-semibold py-3 border-t border-neutral-100 hover:bg-neutral-50 transition"
             >
-              {t("viewAllResults") || "عرض كل النتائج"}
+              {viewAllText}
             </Link>
-          )}
+          )} */}
         </div>
       )}
     </div>

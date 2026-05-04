@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -60,7 +61,8 @@ const getDeliveryDays = () => {
     "السبت",
   ];
 
-  for (let i = 0; i < 4; i++) {
+  // Skip today by starting i=1
+  for (let i = 1; i < 4; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
     const dayName = weekdaysAr[date.getDay()];
@@ -68,9 +70,7 @@ const getDeliveryDays = () => {
     const monthName = date.toLocaleDateString("ar-EG", { month: "short" });
 
     let label = "";
-    if (i === 0) label = "اليوم";
-    else if (i === 1) label = "غداً";
-    else if (i === 2) label = `${dayName} ${dayNum} ${monthName}`;
+    if (i === 1) label = "غداً";
     else label = `${dayName} ${dayNum} ${monthName}`;
 
     days.push({
@@ -84,6 +84,7 @@ const getDeliveryDays = () => {
 };
 
 const timeSlots = ["01:00 PM - 06:00 PM", "06:00 PM - 09:00 PM"];
+const DEFAULT_TIME_SLOT = timeSlots[0]; // "01:00 PM - 06:00 PM"
 
 const deliveryOptionsGrid = [
   { id: "call", labelKey: "callBeforeDelivery", icon: "/icons/call-ring.svg" },
@@ -91,18 +92,15 @@ const deliveryOptionsGrid = [
   { id: "boxes", labelKey: "returnHibBoxes", icon: "/icons/box.svg" },
 ];
 
-// ---------- Main component ----------
 export default function CheckoutPage() {
   const { t, locale } = useTranslation("checkout");
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const { items, totalPrice, clearCart } = useCartStore();
   const router = useRouter();
 
-  // Holds the address being edited (null when adding a new one)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedInstruction, setSelectedInstruction] = useState<string | null>(
     null,
   );
@@ -112,7 +110,6 @@ export default function CheckoutPage() {
   const [deliveryDays] = useState(getDeliveryDays());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
   // Load saved checkout data on mount
   useEffect(() => {
@@ -121,8 +118,6 @@ export default function CheckoutPage() {
       if (savedData.selectedAddress)
         setSelectedAddress(savedData.selectedAddress);
       if (savedData.selectedDate) setSelectedDate(savedData.selectedDate);
-      if (savedData.selectedTimeSlot)
-        setSelectedTimeSlot(savedData.selectedTimeSlot);
       if (savedData.selectedInstruction)
         setSelectedInstruction(savedData.selectedInstruction);
       if (savedData.giftMessage !== undefined)
@@ -138,7 +133,6 @@ export default function CheckoutPage() {
     const checkoutData = {
       selectedAddress,
       selectedDate,
-      selectedTimeSlot,
       selectedInstruction,
       giftMessage,
       paymentMethod,
@@ -147,7 +141,6 @@ export default function CheckoutPage() {
   }, [
     selectedAddress,
     selectedDate,
-    selectedTimeSlot,
     selectedInstruction,
     giftMessage,
     paymentMethod,
@@ -168,38 +161,31 @@ export default function CheckoutPage() {
     setGiftMessage((prev) => (prev === "" ? " " : ""));
   };
 
-  // ✅ When user saves a new or edited address
   const handleSaveAddress = (address: Address) => {
     setSelectedAddress(address);
     setEditingAddress(null);
     toast.success(t("addressSaved", { defaultValue: "تم حفظ العنوان بنجاح" }));
   };
 
-  // ✅ Open modal to add a new address
   const openAddAddressModal = () => {
-    setErrorMessage("");
     setEditingAddress(null);
     setIsAddressModalOpen(true);
   };
 
-  // ✅ Open modal to edit the current address
   const openEditAddressModal = () => {
-    setErrorMessage("");
     setEditingAddress(selectedAddress);
     setIsAddressModalOpen(true);
   };
 
-  // Helper: build a formatted delivery date string expected by the API
   const buildDeliveryDate = (): string | null => {
-    if (!selectedDate || !selectedTimeSlot) return null;
+    if (!selectedDate) return null;
     const dayObj = deliveryDays.find((d) => d.label === selectedDate);
     if (!dayObj) return null;
 
-    const timeMatch = selectedTimeSlot.match(/(\d{2}):(\d{2})\s*(AM|PM)/i);
+    const timeMatch = DEFAULT_TIME_SLOT.match(/(\d{2}):(\d{2})\s*(AM|PM)/i);
     if (!timeMatch) return null;
     let hour = parseInt(timeMatch[1], 10);
     const minute = parseInt(timeMatch[2], 10);
-    const ampm = timeMatch[3].toUpperCase();
 
     const deliveryDate = new Date(dayObj.fullDate);
     deliveryDate.setHours(hour, minute, 0, 0);
@@ -217,165 +203,149 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Handle COD order submission ----------
-  const handleCodSubmit = async () => {
-    const area_name = selectedAddress?.area?.trim() || "";
-    if (!area_name)
-      throw new Error(
-        t("areaRequired", { defaultValue: "الرجاء اختيار المنطقة الفرعية" }),
-      );
-
-    const deliveryDateFormatted = buildDeliveryDate();
-    if (!deliveryDateFormatted) throw new Error("Invalid delivery date/time");
-
-    let phoneDigits = selectedAddress!.phone.replace(/\D/g, "");
-    if (!phoneDigits.startsWith("971")) {
-      if (phoneDigits.startsWith("0"))
-        phoneDigits = "971" + phoneDigits.substring(1);
-      else phoneDigits = "971" + phoneDigits;
-    }
-
-    const validEmirates = [
-      "Dubai",
-      "Abu Dhabi",
-      "Sharjah",
-      "Ajman",
-      "Umm Al Quwain",
-      "Ras Al Khaimah",
-      "Fujairah",
-    ];
-    let emirate_name = selectedAddress?.city?.trim() || "";
-    if (!validEmirates.includes(emirate_name)) emirate_name = "Dubai";
-
-    const orderPayload = {
-      customer_name: selectedAddress?.fullName,
-      mobile_number: phoneDigits,
-      emirate_name,
-      area_name,
-      payment_type: "COD",
-      delivery_date: deliveryDateFormatted,
-      items: items.map((item) => ({
-        product_id: item.id,
-        quantity: item.quantity,
-      })),
-      total_amount: total,
-      gift_message: giftMessage.trim() || null,
-      instruction: selectedInstruction,
-      pin_location: selectedAddress?.pinLocation || undefined,
-    };
-
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderPayload),
-    });
-
-    const data = await res.json();
-    if (!res.ok || data.statusCode !== 200) {
-      throw new Error(data.message || data.error || t("paymentError"));
-    }
-
-    clearCart();
-    localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-    toast.success(
-      t("orderPlacedSuccessfully", { defaultValue: "تم تقديم الطلب بنجاح!" }),
-    );
-    router.push(`/${locale}/order-success`);
-  };
-
-  // ---------- Handle Paid (online payment) ----------
-  const handlePaidSubmit = async () => {
-    const area_name = selectedAddress?.area?.trim() || "";
-    if (!area_name)
-      throw new Error(
-        t("areaRequired", { defaultValue: "الرجاء اختيار المنطقة الفرعية" }),
-      );
-
-    // Prepare simplified order payload for payment gateway
-    const payload = {
-      items,
-      total,
-      address: selectedAddress,
-      deliveryDate: selectedDate,
-      timeSlot: selectedTimeSlot,
-      instruction: selectedInstruction,
-      giftMessage: giftMessage.trim() || null,
-      paymentMethod: "Paid",
-      locale,
-    };
-
-    const res = await fetch("/api/create-payment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || t("paymentError"));
-    }
-
-    if (data.payment_url) {
-      // Clear cart and redirect to payment gateway
-      clearCart();
-      localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-      window.location.href = data.payment_url;
-    } else {
-      throw new Error(t("noPaymentUrl"));
-    }
-  };
-
-  // ---------- Main submit handler ----------
+  // ---------- Main submit handler (two-step for Paid) ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage("");
 
     if (!selectedAddress) {
-      const msg = t("noAddressAlert", {
-        defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
-      });
-      setErrorMessage(msg);
-      toast.error(msg);
+      toast.error(
+        t("noAddressAlert", {
+          defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
+        }),
+      );
       return;
     }
 
-    if (!selectedDate || !selectedTimeSlot) {
-      const msg = t("noDeliveryTimeAlert", {
-        defaultValue: "الرجاء اختيار يوم ووقت التسليم",
-      });
-      setErrorMessage(msg);
-      toast.error(msg);
+    if (!selectedDate) {
+      toast.error(
+        t("noDeliveryTimeAlert", { defaultValue: "الرجاء اختيار يوم التسليم" }),
+      );
       return;
     }
 
     const area_name = selectedAddress.area?.trim() || "";
     if (!area_name) {
-      const msg = t("areaRequired", {
-        defaultValue: "الرجاء اختيار المنطقة الفرعية",
-      });
-      setErrorMessage(msg);
-      toast.error(msg);
+      toast.error(
+        t("areaRequired", { defaultValue: "الرجاء اختيار المنطقة الفرعية" }),
+      );
       return;
     }
 
     setLoading(true);
     try {
-      if (paymentMethod === "COD") {
-        await handleCodSubmit();
-      } else {
-        await handlePaidSubmit();
+      // Build phone number in international format
+      let phoneDigits = selectedAddress.phone.replace(/\D/g, "");
+      if (!phoneDigits.startsWith("971")) {
+        if (phoneDigits.startsWith("0"))
+          phoneDigits = "971" + phoneDigits.substring(1);
+        else phoneDigits = "971" + phoneDigits;
       }
+
+      const validEmirates = [
+        "Dubai",
+        "Abu Dhabi",
+        "Sharjah",
+        "Ajman",
+        "Umm Al Quwain",
+        "Ras Al Khaimah",
+        "Fujairah",
+      ];
+      let emirate_name = selectedAddress.city?.trim() || "";
+      if (!validEmirates.includes(emirate_name)) emirate_name = "Dubai";
+
+      const orderPayload = {
+        customer_name: selectedAddress.fullName,
+        mobile_number: phoneDigits,
+        emirate_name,
+        area_name,
+        payment_type: paymentMethod, // "COD" or "Paid"
+        delivery_date: buildDeliveryDate(),
+        items: items.map((item) => ({
+          product_id: item.id,
+          quantity: item.quantity,
+        })),
+        total_amount: total,
+        gift_message: giftMessage.trim() || null,
+        instruction: selectedInstruction,
+        pin_location: selectedAddress.pinLocation || undefined,
+        locale,
+      };
+
+      // ----- COD flow -----
+      if (paymentMethod === "COD") {
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+        });
+        const data = await res.json();
+        if (!res.ok || (data.statusCode && data.statusCode !== 200)) {
+          throw new Error(data.message || data.error || t("paymentError"));
+        }
+        // Clear cart immediately for COD
+        clearCart();
+        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+        localStorage.removeItem("pending_payment");
+        toast.success(
+          t("orderPlacedSuccessfully", {
+            defaultValue: "تم تقديم الطلب بنجاح!",
+          }),
+        );
+        router.push(`/${locale}/order-success`);
+        return;
+      }
+
+      // ----- Paid flow (two steps) -----
+      // 1. Create the order via /api/checkout
+      const orderRes = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+      const orderData = await orderRes.json();
+      if (
+        !orderRes.ok ||
+        (orderData.statusCode && orderData.statusCode !== 200)
+      ) {
+        throw new Error(
+          orderData.message || orderData.error || t("paymentError"),
+        );
+      }
+
+      // 2. Request payment URL from the dedicated payment endpoint
+      const paymentPayload = {
+        total,
+        address: {
+          fullName: selectedAddress.fullName,
+          phone: selectedAddress.phone,
+          city: selectedAddress.city,
+          area: selectedAddress.area,
+        },
+        locale,
+      };
+      const payRes = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentPayload),
+      });
+      const payData = await payRes.json();
+      if (!payRes.ok || !payData.payment_url) {
+        throw new Error(payData.error || t("noPaymentUrl"));
+      }
+
+      // Save pending payment to clear cart later on success page
+      localStorage.setItem("pending_payment", JSON.stringify(orderPayload));
+      // Redirect to Ziina payment page
+      window.location.href = payData.payment_url;
     } catch (err: any) {
       console.error("Checkout Error:", err);
-      const message = err.message || t("paymentError");
-      setErrorMessage(message);
-      toast.error(message);
+      toast.error(err.message || t("paymentError"));
     } finally {
       setLoading(false);
     }
   };
 
-  // ---------- Render (unchanged) ----------
+  // ---------- Render (unchanged from your last version) ----------
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
@@ -395,38 +365,12 @@ export default function CheckoutPage() {
         {t("billingInfo")}
       </h1>
 
-      {/* Error banner */}
-      {errorMessage && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
-          <svg
-            className="w-5 h-5 shrink-0"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span className="text-sm">{errorMessage}</span>
-          <button
-            onClick={() => setErrorMessage("")}
-            className="ml-auto text-red-500 hover:text-red-700"
-          >
-            ✕
-          </button>
-        </div>
-      )}
-
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Form column */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Delivery address */}
-            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">
                   {t("deliveryAddress")}
@@ -450,7 +394,7 @@ export default function CheckoutPage() {
                   <p className="text-neutral-500 mb-3">{t("noAddressAdded")}</p>
                   <button
                     onClick={openAddAddressModal}
-                    className="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm hover:bg-primary/90 transition-all hover:shadow-md"
+                    className="inline-block bg-primary text-white px-6 py-2 rounded-full text-sm"
                   >
                     {t("addNewAddress")}
                   </button>
@@ -461,56 +405,39 @@ export default function CheckoutPage() {
             {selectedAddress && (
               <>
                 {/* Schedule delivery */}
-                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                   <h2 className="text-xl font-semibold mb-4">
                     {t("scheduleDelivery")}
                   </h2>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium mb-2 text-gray-700">
-                        {t("selectDay")}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {deliveryDays.map((day) => (
-                          <button
-                            key={day.label}
-                            type="button"
-                            onClick={() => setSelectedDate(day.label)}
-                            className={`px-4 py-2 rounded-full border transition-all duration-200 ${selectedDate === day.label ? "bg-primary text-white border-primary shadow-md scale-105" : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"}`}
-                          >
-                            <div className="text-center">
-                              <div className="font-medium whitespace-nowrap">
-                                {day.label}
-                              </div>
+                  <div>
+                    <p className="text-sm font-medium mb-2 text-gray-700">
+                      {t("selectDay")}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {deliveryDays.map((day) => (
+                        <button
+                          key={day.label}
+                          type="button"
+                          onClick={() => setSelectedDate(day.label)}
+                          className={`px-4 py-2 rounded-full border transition-all ${
+                            selectedDate === day.label
+                              ? "bg-primary text-white border-primary shadow-md scale-105"
+                              : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"
+                          }`}
+                        >
+                          <div className="text-center">
+                            <div className="font-medium whitespace-nowrap">
+                              {day.label}
                             </div>
-                          </button>
-                        ))}
-                      </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                    {selectedDate && (
-                      <div>
-                        <p className="text-sm font-medium mb-2 text-gray-700">
-                          {t("selectTimeSlot")}
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {timeSlots.map((slot) => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setSelectedTimeSlot(slot)}
-                              className={`px-4 py-2 rounded-full border transition-all duration-200 ${selectedTimeSlot === slot ? "bg-primary text-white border-primary shadow-md scale-105" : "bg-white border-neutral-300 hover:border-primary hover:shadow-sm hover:scale-105"}`}
-                            >
-                              {slot}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
                 {/* Delivery Instructions */}
-                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                   <h2 className="text-xl font-semibold mb-4">
                     {t("deliveryInstructions")}
                   </h2>
@@ -520,25 +447,41 @@ export default function CheckoutPage() {
                         key={opt.id}
                         type="button"
                         onClick={() => handleInstructionSelect(opt.id)}
-                        className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${selectedInstruction === opt.id ? "border-[#338A43] bg-[#338A43]/5 shadow-md scale-105" : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"}`}
+                        className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
+                          selectedInstruction === opt.id
+                            ? "border-[#338A43] bg-[#338A43]/5 shadow-md scale-105"
+                            : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"
+                        }`}
                       >
                         <div className="w-12 h-12 flex items-center justify-center mb-2">
                           {opt.id === "call" && (
                             <PhoneCall
                               size={28}
-                              className={`transition-all ${selectedInstruction === opt.id ? "text-[#338A43]" : "text-neutral-500 group-hover:text-[#338A43]"}`}
+                              className={
+                                selectedInstruction === opt.id
+                                  ? "text-[#338A43]"
+                                  : "text-neutral-500"
+                              }
                             />
                           )}
                           {opt.id === "door" && (
                             <DoorOpen
                               size={28}
-                              className={`transition-all ${selectedInstruction === opt.id ? "text-[#338A43]" : "text-neutral-500 group-hover:text-[#338A43]"}`}
+                              className={
+                                selectedInstruction === opt.id
+                                  ? "text-[#338A43]"
+                                  : "text-neutral-500"
+                              }
                             />
                           )}
                           {opt.id === "boxes" && (
                             <PackageCheck
                               size={28}
-                              className={`transition-all ${selectedInstruction === opt.id ? "text-[#338A43]" : "text-neutral-500 group-hover:text-[#338A43]"}`}
+                              className={
+                                selectedInstruction === opt.id
+                                  ? "text-[#338A43]"
+                                  : "text-neutral-500"
+                              }
                             />
                           )}
                         </div>
@@ -561,9 +504,9 @@ export default function CheckoutPage() {
                         type="checkbox"
                         checked={giftMessage !== ""}
                         onChange={handleGiftToggle}
-                        className="w-5 h-5 accent-[#338A43] transition-transform group-hover:scale-110"
+                        className="w-5 h-5 accent-[#338A43]"
                       />
-                      <span className="text-base font-medium group-hover:text-[#338A43] transition-colors">
+                      <span className="text-base font-medium">
                         {t("addGiftMessage")}
                       </span>
                     </label>
@@ -574,73 +517,69 @@ export default function CheckoutPage() {
                           value={giftMessage === " " ? "" : giftMessage}
                           onChange={(e) => setGiftMessage(e.target.value)}
                           rows={3}
-                          className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#338A43] transition-all"
+                          className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#338A43]"
                         />
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Payment */}
-                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                {/* Payment methods */}
+                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                   <h2 className="text-xl font-semibold mb-4">{t("payment")}</h2>
-                  <div className="space-y-4">
-                    <div className="space-y-3">
-                      {[
-                        {
-                          value: "COD",
-                          icon: "/icons/cash.svg",
-                          label: "cashOnDelivery",
-                        },
-                        {
-                          value: "COD",
-                          icon: "/icons/cash-visa.svg",
-                          label: "cardOnDelivery",
-                        },
-                        {
-                          value: "Paid",
-                          icon: "/icons/online.svg",
-                          label: "creditCard",
-                        },
-                      ].map((method) => (
-                        <label
-                          key={method.value + method.label}
-                          className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all ${paymentMethod === method.value ? "bg-primary/5" : "hover:bg-gray-50"}`}
-                        >
-                          <input
-                            type="radio"
-                            value={method.value}
-                            checked={paymentMethod === method.value}
-                            onChange={(e) =>
-                              setPaymentMethod(e.target.value as "COD" | "Paid")
-                            }
-                            className="w-4 h-4 accent-primary"
-                          />
-                          <Image
-                            src={method.icon}
-                            alt={method.label}
-                            width={24}
-                            height={24}
-                          />
-                          <span className="font-medium">{t(method.label)}</span>
-                        </label>
-                      ))}
-                    </div>
-                    {paymentMethod === "Paid" && (
-                      <div className="mt-4 p-4 bg-neutral-50 rounded-xl animate-fadeIn">
-                        <p className="text-sm text-gray-500 text-center">
-                          {t("securePaymentRedirect")}
-                        </p>
-                      </div>
-                    )}
+                  <div className="space-y-3">
+                    {[
+                      {
+                        value: "COD",
+                        icon: "/icons/cash.svg",
+                        label: "cashOnDelivery",
+                      },
+                      {
+                        value: "Paid",
+                        icon: "/icons/online.svg",
+                        label: "creditCard",
+                      },
+                    ].map((method) => (
+                      <label
+                        key={method.value}
+                        className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg ${
+                          paymentMethod === method.value
+                            ? "bg-primary/5"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          value={method.value}
+                          checked={paymentMethod === method.value}
+                          onChange={(e) =>
+                            setPaymentMethod(e.target.value as "COD" | "Paid")
+                          }
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <Image
+                          src={method.icon}
+                          alt={method.label}
+                          width={24}
+                          height={24}
+                        />
+                        <span className="font-medium">{t(method.label)}</span>
+                      </label>
+                    ))}
                   </div>
+                  {paymentMethod === "Paid" && (
+                    <div className="mt-4 p-4 bg-neutral-50 rounded-xl">
+                      <p className="text-sm text-gray-500 text-center">
+                        {t("securePaymentRedirect")}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Confirm button */}
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-lg font-semibold transition-all hover:shadow-lg transform hover:scale-[1.02] active:scale-100 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-lg font-semibold transition-all hover:shadow-lg"
                 >
                   {loading ? t("redirecting") : t("confirmOrder")}
                 </Button>
@@ -649,14 +588,14 @@ export default function CheckoutPage() {
           </form>
         </div>
 
-        {/* Order summary column (same as before) */}
+        {/* Order summary (unchanged) */}
         <div className="lg:col-span-1 order-1 lg:order-2">
-          <div className="bg-white border border-neutral-200 p-6 rounded-2xl shadow-lg sticky top-24 hover:shadow-xl transition-shadow">
+          <div className="bg-white border border-neutral-200 p-6 rounded-2xl shadow-lg sticky top-24">
             <h2 className="text-xl font-bold mb-4">{t("orderSummary")}</h2>
             <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
               {items.map((item) => (
                 <div key={item.id} className="flex gap-3 text-sm group">
-                  <div className="w-12 h-12 bg-neutral-100 rounded-lg overflow-hidden relative shrink-0 group-hover:shadow-md transition-all">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-lg overflow-hidden relative shrink-0">
                     <Image
                       src={item.image || "/product-img.png"}
                       alt={item.name}
@@ -665,9 +604,7 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium line-clamp-1 group-hover:text-primary transition-colors">
-                      {item.name}
-                    </p>
+                    <p className="font-medium line-clamp-1">{item.name}</p>
                     <p className="text-neutral-500 text-xs">
                       {item.quantity} × {item.discountedPrice || item.price}{" "}
                       {t("currency")}
@@ -703,10 +640,7 @@ export default function CheckoutPage() {
                 ({t("taxInclusive")})
               </div>
             </div>
-            <div
-              className="mt-6 pt-4 border-t text-center flex items-center justify-center gap-2 text-xs"
-              style={{ color: "#94A3B8" }}
-            >
+            <div className="mt-6 pt-4 border-t text-center flex items-center justify-center gap-2 text-xs text-[#94A3B8]">
               <Image
                 src="/icons/safe.svg"
                 alt="secure"

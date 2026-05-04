@@ -13,6 +13,7 @@ export interface CartItem {
   weight?: string;
   origin?: string;
   originEn?: string;
+  flagUrl?: string;
 }
 
 interface CartStore {
@@ -110,19 +111,6 @@ export const useCartStore = create<CartStore>()((set, get) => ({
       } else {
         set({ items: [], totalItems: 0, totalPrice: 0 });
       }
-
-      // Optional: try to sync with backend API (if available)
-      // Uncomment below if you have a working API
-      /*
-      const res = await fetch(`/api/cart?userId=${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.items && data.items.length) {
-          set({ items: data.items, totalItems: data.totalItems, totalPrice: data.totalPrice });
-          saveCartToLocalStorage(data.items);
-        }
-      }
-      */
     } catch (err: any) {
       console.error("Error fetching cart", err);
       set({ error: err.message });

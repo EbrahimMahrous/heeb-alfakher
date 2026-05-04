@@ -38,5 +38,6 @@
   "currency": "AED",
   "newProductsDesc": "Latest added products",
   "bestSellersDesc": "Most requested by our customers",
-  "whatsappMessage": "Hello! I would like to inquire about your products."
+  "whatsappMessage": "Hello! I would like to inquire about your products.",
+  "weightUnit": "kg"
 }

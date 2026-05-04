@@ -9,7 +9,7 @@
   "faq": "الأسئلة الشائعة",
   "returns": "سياسة الاسترجاع",
   "viewAll": "عرض الكل",
-  
+
   "outOfStock": "غير متوفر",
   "productHidden": "المنتج غير متاح حالياً",
   "productNotFound": "المنتج غير موجود",
@@ -38,5 +38,6 @@
   "currency": "د.إ",
   "newProductsDesc": "أحدث المنتجات المضافة",
   "bestSellersDesc": "الأكثر طلباً من عملائنا",
-  "whatsappMessage": "مرحباً! أرغب في الاستفسار عن منتجاتكم."
+  "whatsappMessage": "مرحباً! أرغب في الاستفسار عن منتجاتكم.",
+  "weightUnit": "كيلو"
 }

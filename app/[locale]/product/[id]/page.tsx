@@ -13,6 +13,42 @@ import ProductCarousel from "@/components/ProductCarousel";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
+// --- ProductMeta (inline component to show flag and weight) ---
+function ProductMeta({
+  flagUrl,
+  origin,
+  weight,
+}: {
+  flagUrl?: string | null;
+  origin?: string;
+  weight?: string | null;
+}) {
+  if (!flagUrl && !weight) return null;
+
+  return (
+    <div className="mt-2 inline-flex items-center gap-1 bg-neutral-100 border border-neutral-200 rounded-full px-2 py-0.5 w-fit">
+      {flagUrl && origin && (
+        <>
+          <Image
+            src={flagUrl}
+            alt={origin}
+            width={16}
+            height={16}
+            className="h-4 w-4 rounded-full object-cover"
+          />
+          <span className="text-xs text-neutral-700">{origin}</span>
+        </>
+      )}
+      {weight && (
+        <>
+          <span className="text-neutral-400 text-xs">•</span>
+          <span className="text-xs text-neutral-700">{weight}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const { t, locale } = useTranslation("product");
   const { id } = useParams();
@@ -48,12 +84,10 @@ export default function ProductDetailPage() {
       .finally(() => setLoadingSuggested(false));
   }, [id]);
 
-  // ✅ Display during loading: Page structure
   if (loadingProduct) {
     return <ProductDetailSkeleton />;
   }
 
-  // Product not found (after downloading)
   if (!product) {
     return (
       <div className="container mx-auto px-4 py-8 text-center">
@@ -62,7 +96,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  // The product is hidden
   if (product.status === "off") {
     return (
       <div className="container mx-auto px-4 py-8 text-center text-gray-500">
@@ -83,9 +116,16 @@ export default function ProductDetailPage() {
       await addItem({
         id: product.id,
         name: product.name,
-        price: product.discountedPrice || product.price,
+        nameEn: product.nameEn,
+        price: product.price,
+        discountedPrice: product.discountedPrice,
+        discountPercent: product.discountPercent,
         quantity,
         image: product.image,
+        weight: product.weight,
+        origin: product.origin,
+        originEn: product.originEn,
+        flagUrl: product.flagUrl, // pass flag for cart consistency
       });
       toast.success(t("addToCart"));
     } catch (error) {
@@ -95,6 +135,7 @@ export default function ProductDetailPage() {
     }
   };
 
+  // Determine display values based on locale
   const originText = locale === "ar" ? product.origin : product.originEn;
   const currency = t("currency");
   const imageSrc = product.image || "/default-product.jpeg";
@@ -122,6 +163,7 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
+        {/* Image */}
         <div className="relative bg-neutral-100 rounded-2xl overflow-hidden h-96 md:h-125">
           <Image
             src={imageSrc}
@@ -147,6 +189,7 @@ export default function ProductDetailPage() {
           )}
         </div>
 
+        {/* Details */}
         <div className="flex flex-col gap-4">
           {product.discountPercent && (
             <div className="inline-block bg-red-100 text-red-600 text-sm font-semibold px-3 py-1 rounded-full w-fit">
@@ -156,6 +199,8 @@ export default function ProductDetailPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-dark">
             {product.name}
           </h1>
+
+          {/* Price */}
           <div className="flex items-baseline gap-3 flex-wrap">
             {product.discountedPrice ? (
               <>
@@ -176,23 +221,14 @@ export default function ProductDetailPage() {
             </span>
           </div>
 
-          {(product.weight || originText) && (
-            <div className="flex items-center gap-4 text-sm text-neutral-600 border-t border-b border-neutral-200 py-3">
-              {product.weight && (
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold">{t("weight")}:</span>
-                  <span>{product.weight}</span>
-                </div>
-              )}
-              {originText && (
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold">{t("origin")}:</span>
-                  <span>{originText}</span>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Meta: origin flag + weight */}
+          <ProductMeta
+            flagUrl={product.flagUrl}
+            origin={originText}
+            weight={product.weight}
+          />
 
+          {/* Quantity and Add to cart */}
           <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center border border-neutral-300 rounded-full overflow-hidden">
               <button
@@ -230,6 +266,7 @@ export default function ProductDetailPage() {
             </Button>
           </div>
 
+          {/* Expandable description */}
           <div className="mt-6 border border-neutral-200 rounded-xl overflow-hidden">
             <button
               onClick={() => setIsDetailsOpen(!isDetailsOpen)}
@@ -249,6 +286,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      {/* Suggested products */}
       {suggested.length > 0 && (
         <div className="mt-16">
           <ProductCarousel title={t("youMayAlsoLike")} products={suggested} />
