@@ -4,7 +4,7 @@ type CacheEntry = {
 };
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_DURATION = 60 * 1000; // 1 minutes
+const CACHE_DURATION = 45 * 1000; // 45 seconds
 export async function apiFetch(endpoint: string): Promise<any> {
   const cacheKey = endpoint;
   const now = Date.now();

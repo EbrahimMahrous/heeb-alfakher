@@ -312,6 +312,12 @@ export default function CheckoutPage() {
         );
       }
 
+      // ✅ Save the order_id from the response for later confirmation
+      if (orderData.id || orderData.order_id) {
+        const orderId = orderData.id || orderData.order_id;
+        localStorage.setItem("pending_order_id", String(orderId));
+      }
+
       // 2. Request payment URL from the dedicated payment endpoint
       const paymentPayload = {
         total,
@@ -345,7 +351,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // ---------- Render (unchanged from your last version) ----------
+  // ---------- Render (unchanged) ----------
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}

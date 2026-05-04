@@ -5,13 +5,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "@/lib/useTranslation";
 import { useCartStore } from "@/store/cartStore";
+import { MessageCircle } from "lucide-react"; // safe icon
 
-// ----- Custom bottom-left banner after successful payment -----
+// Banner shown only when online payment is confirmed
 function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
   const { t } = useTranslation("orderSuccess");
   const [visible, setVisible] = useState(true);
 
-  // Auto-hide after 60 seconds
   useEffect(() => {
     const timer = setTimeout(() => setVisible(false), 30000);
     return () => clearTimeout(timer);
@@ -56,46 +56,75 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
 }
 
 export default function OrderSuccessPage() {
-  const { t, locale } = useTranslation("orderSuccess");
+  const { t } = useTranslation("orderSuccess");
   const searchParams = useSearchParams();
-  // Extract session_id (Ziina will replace {id} with the actual payment_intent ID)
+  // session_id is present only for online payments (Ziina replaces {id})
   const sessionId =
     searchParams.get("session_id") || searchParams.get("payment_intent");
   const clearCart = useCartStore((state) => state.clearCart);
   const [countdown, setCountdown] = useState(10);
   const router = useRouter();
+  const [paymentConfirmed, setPaymentConfirmed] = useState<boolean | null>(
+    null,
+  );
+  const [confirming, setConfirming] = useState(false);
 
-  // Clear cart and saved data ONLY if we came from a real payment (sessionId present)
+  // Determine flow: COD (no sessionId) vs online payment
+  const isOnlinePayment = !!sessionId;
+
   useEffect(() => {
-    if (sessionId) {
+    if (isOnlinePayment) {
+      // Online payment: must confirm via backend
+      setConfirming(true);
+      fetch("/api/confirm-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payment_intent_id: sessionId,
+          order_id: localStorage.getItem("pending_order_id"),
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setPaymentConfirmed(true);
+            clearCart();
+            localStorage.removeItem("heeb_checkout_data");
+            localStorage.removeItem("pending_payment");
+            localStorage.removeItem("pending_order_id");
+          } else {
+            setPaymentConfirmed(false);
+          }
+        })
+        .catch(() => setPaymentConfirmed(false))
+        .finally(() => setConfirming(false));
+    } else {
+      // COD: order already placed, clean up and show success immediately
+      setPaymentConfirmed(true);
       clearCart();
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("heeb_checkout_data");
-        localStorage.removeItem("pending_payment");
-      }
+      localStorage.removeItem("heeb_checkout_data");
+      localStorage.removeItem("pending_payment");
+      localStorage.removeItem("pending_order_id");
     }
-  }, [sessionId, clearCart]);
+  }, [sessionId, isOnlinePayment, clearCart]);
 
-  // Countdown timer
+  // Countdown auto-redirect
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // Auto-redirect to home after countdown
   useEffect(() => {
-    if (countdown === 0) {
-      router.push("/");
-    }
+    if (countdown === 0) router.push("/");
   }, [countdown, router]);
-
-  const whatsappLink = "https://wa.me/971523630501";
 
   return (
     <div className="container mx-auto px-4 py-12">
-      {/* Show banner only if payment was processed */}
-      {sessionId && <OrderSuccessBanner orderRef={sessionId} />}
+      {/* Show floating banner only for online payment that was confirmed */}
+      {isOnlinePayment && paymentConfirmed && sessionId && (
+        <OrderSuccessBanner orderRef={sessionId} />
+      )}
 
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
         <div className="flex justify-center mb-6">
@@ -116,16 +145,35 @@ export default function OrderSuccessPage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-800 mb-3">{t("title")}</h1>
-        <p className="text-gray-600 mb-6">{t("message")}</p>
-
-        {sessionId && (
-          <div className="bg-gray-50 p-4 rounded-xl mb-6">
-            <p className="text-sm text-gray-500">{t("referenceNumber")}</p>
-            <p className="text-lg font-mono font-bold text-primary">
-              {sessionId}
-            </p>
-          </div>
+        {/* Show appropriate heading based on state */}
+        {isOnlinePayment && confirming && (
+          <h1 className="text-2xl font-bold text-gray-800 mb-3">
+            {t("confirmingPayment")}
+          </h1>
+        )}
+        {!confirming && paymentConfirmed === true && (
+          <>
+            <h1 className="text-2xl font-bold text-gray-800 mb-3">
+              {t("title")}
+            </h1>
+            <p className="text-gray-600 mb-6">{t("message")}</p>
+            {sessionId && (
+              <div className="bg-gray-50 p-4 rounded-xl mb-6">
+                <p className="text-sm text-gray-500">{t("referenceNumber")}</p>
+                <p className="text-lg font-mono font-bold text-primary">
+                  {sessionId}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+        {!confirming && paymentConfirmed === false && (
+          <>
+            <h1 className="text-2xl font-bold text-red-600 mb-3">
+              {t("paymentFailed")}
+            </h1>
+            <p className="text-gray-600 mb-6">{t("paymentFailedDesc")}</p>
+          </>
         )}
 
         <div className="space-y-3">
@@ -145,23 +193,12 @@ export default function OrderSuccessPage() {
         <div className="mt-8 border-t pt-6">
           <p className="text-sm text-gray-500 mb-2">{t("needHelp")}</p>
           <a
-            href={whatsappLink}
+            href="https://wa.me/971523630501"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium transition"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                fillRule="evenodd"
-                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-..."
-                clipRule="evenodd"
-              />
-            </svg>
+            <MessageCircle className="w-5 h-5" />
             <span>{t("whatsappContact")}</span>
           </a>
         </div>
