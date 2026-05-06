@@ -1,4 +1,3 @@
-// app/[locale]/delivery-areas/page.tsx
 "use client";
 import { useTranslation } from "@/lib/useTranslation";
 import Link from "next/link";
@@ -31,13 +30,13 @@ export default function DeliveryAreasPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      {/* Breadcrumb */}
+      {/* Breadcrumb – home link keeps language, arrow flips with direction */}
       <div className="mb-6">
         <Link
-          href="/"
+          href={`/${locale}`}
           className="text-primary hover:underline flex items-center gap-1"
         >
-          <span>←</span> {t("home")}
+          <span>{isArabic ? "→" : "←"}</span> {t("home")}
         </Link>
       </div>
 

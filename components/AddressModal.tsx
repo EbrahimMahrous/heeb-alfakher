@@ -135,7 +135,7 @@ interface AddressModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (address: Address) => void;
-  existingAddress?: Address | null; // for editing an existing address
+  existingAddress?: Address | null;
 }
 
 declare global {
@@ -252,20 +252,20 @@ const Combobox: React.FC<ComboboxProps> = ({
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
-            onChange(e.target.value); // allow free typing
+            onChange(e.target.value);
             setIsOpen(true);
           }}
           onFocus={() => !disabled && setIsOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full bg-[#E2E8F0] rounded-lg p-2 pr-8 border-0 focus:ring-2 focus:ring-[#338A43] ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+          className={`w-full bg-[#E2E8F0] rounded-lg p-2 pe-8 border-0 focus:ring-2 focus:ring-[#338A43] ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
         />
-        {/* Clear (X) button */}
+        {/* Clear (X) button – uses logical end */}
         {value && !disabled && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             tabIndex={-1}
           >
             ✕
@@ -281,7 +281,7 @@ const Combobox: React.FC<ComboboxProps> = ({
                 opt === value ? "bg-green-50 font-medium" : ""
               }`}
               onMouseDown={(e) => {
-                e.preventDefault(); // prevent blur
+                e.preventDefault();
                 onChange(opt);
                 setSearchTerm(opt);
                 setIsOpen(false);
@@ -311,7 +311,7 @@ export default function AddressModal({
     area: "",
     buildingNo: "",
     streetAddress: "",
-    pinLocation: "", // still stored, just not displayed
+    pinLocation: "",
     isDefault: false,
   });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -568,7 +568,7 @@ export default function AddressModal({
       area: formData.area,
       buildingNo: formData.buildingNo,
       streetAddress: formData.streetAddress,
-      pinLocation: formData.pinLocation, // hidden from UI but sent to backend
+      pinLocation: formData.pinLocation,
       isDefault: formData.isDefault,
     };
     onSave(newAddress);
@@ -611,7 +611,6 @@ export default function AddressModal({
       </div>
     );
 
-  // Get the list of areas for the currently selected emirate
   const currentAreas = formData.city
     ? AREAS_BY_EMIRATE[formData.city] || []
     : [];
@@ -632,20 +631,21 @@ export default function AddressModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Map */}
           <div className="relative">
-            <div className="absolute top-2 left-2 right-2 z-10 flex gap-2">
+            <div className="absolute top-2 inset-s-2 inset-e-2 z-10 flex gap-2">
               <div className="flex-1 relative">
                 <input
                   ref={searchInputRef}
                   type="text"
                   placeholder={t("searchPlaceholder")}
-                  className="w-full bg-white border border-gray-300 rounded-full py-2 pr-10 pl-4 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-[#338A43]"
+                  // Swap physical padding to logical: pe-10 (end-10) ps-4 (start-4)
+                  className="w-full bg-white border border-gray-300 rounded-full py-2 pe-10 ps-4 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-[#338A43]"
                 />
                 <Image
                   src="/icons/search.svg"
                   alt="search"
                   width={16}
                   height={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2"
+                  className="absolute inset-s-3 top-1/2 -translate-y-1/2"
                 />
               </div>
             </div>
@@ -653,7 +653,7 @@ export default function AddressModal({
               ref={mapRef}
               className="w-full h-64 rounded-xl overflow-hidden border border-gray-200"
             />
-            <div className="absolute bottom-2 left-2 right-2 flex gap-2 z-10">
+            <div className="absolute bottom-2 inset-s-2 inset-e-2 flex gap-2 z-10">
               <button
                 type="button"
                 onClick={() => {
@@ -734,7 +734,7 @@ export default function AddressModal({
                 setFormData((prev) => ({
                   ...prev,
                   city: val,
-                  area: "", // reset area when emirate changes
+                  area: "",
                 }));
               }}
               placeholder={t("selectEmirate") || "اختر الإمارة"}
@@ -821,9 +821,7 @@ export default function AddressModal({
             </div>
           </div>
 
-          {/* Pin location field hidden from UI – data is still stored and sent */}
           {/* No visible input for pinLocation */}
-
           <div className="flex items-center gap-2">
             <input
               type="checkbox"

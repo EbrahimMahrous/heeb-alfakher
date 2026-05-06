@@ -6,7 +6,7 @@ import { useCartStore } from "@/store/cartStore";
 import Button from "@/components/ui/button";
 import { toast } from "sonner";
 import { useTranslation } from "@/lib/useTranslation";
-import ProductMeta from "./ProductMeta"; // shared component
+import ProductMeta from "./ProductMeta";
 
 interface ProductCardProps {
   product: any;
@@ -21,7 +21,6 @@ export default function ProductCard({
   const addItem = useCartStore((state) => state.addItem);
   const [isAdding, setIsAdding] = useState(false);
 
-  // Hide product if it's null or status is "off"
   if (!product || product.status === "off") return null;
 
   const handleAddToCart = async () => {
@@ -53,8 +52,8 @@ export default function ProductCard({
   const productName = locale === "ar" ? product.name : product.nameEn;
   const effectiveCategorySlug = categorySlug || product.categorySlug;
   const productLink = effectiveCategorySlug
-    ? `/product/${product.id}?category=${effectiveCategorySlug}`
-    : `/product/${product.id}`;
+    ? `/${locale}/product/${product.id}?category=${effectiveCategorySlug}`
+    : `/${locale}/product/${product.id}`;
 
   const imageSrc = product.image || "/default-product.jpeg";
   const isExternal =
@@ -75,11 +74,15 @@ export default function ProductCard({
           className="object-cover"
           unoptimized={isExternal}
         />
+
+        {/* Discount badge – uses logical start instead of physical right */}
         {product.discountPercent && (
-          <div className="absolute top-2 right-2 bg-orange text-white text-xs font-bold px-2 py-1 rounded-full">
+          <div className="absolute top-2 inset-s-2 bg-orange text-white text-xs font-bold px-2 py-1 rounded-full">
             {t("discount")}
           </div>
         )}
+
+        {/* Out of stock overlay */}
         {!product.inStock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="bg-white text-red-600 font-bold px-4 py-1 rounded-full text-sm shadow">

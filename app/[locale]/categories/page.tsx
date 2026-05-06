@@ -36,9 +36,12 @@ export default function CategoriesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
+      {/* Breadcrumb – home link now keeps the language */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
-        <Link href="/" className="hover:text-primary transition-colors">
+        <Link
+          href={`/${locale}`}
+          className="hover:text-primary transition-colors"
+        >
           {t("home")}
         </Link>
         <span>/</span>
@@ -68,7 +71,7 @@ export default function CategoriesPage() {
               {/* Main category title with product count */}
               <div className="flex items-baseline gap-3 mb-4">
                 <Link
-                  href={`/category/${cat.slug}`}
+                  href={`/${locale}/category/${cat.slug}`}
                   className="text-2xl font-bold text-dark hover:text-primary transition-colors"
                 >
                   {locale === "ar" ? cat.name : cat.nameEn}
@@ -80,9 +83,10 @@ export default function CategoriesPage() {
 
               {/* Products horizontal scrollable row */}
               <div className="relative group">
+                {/* Previous button – placed at logical start (flips with RTL) */}
                 <button
                   onClick={() => scroll(isRtl ? "right" : "left", cat.id)}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/90"
+                  className="absolute inset-s-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/90"
                   aria-label={t("prev")}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -100,7 +104,7 @@ export default function CategoriesPage() {
                       locale === "ar" ? product.name : product.nameEn;
                     return (
                       <Link
-                        href={`/product/${product.id}`}
+                        href={`/${locale}/product/${product.id}`}
                         key={product.id}
                         className="shrink-0 w-36 sm:w-40 text-center group/product"
                       >
@@ -121,9 +125,10 @@ export default function CategoriesPage() {
                   })}
                 </div>
 
+                {/* Next button – placed at logical end */}
                 <button
                   onClick={() => scroll(isRtl ? "left" : "right", cat.id)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/90"
+                  className="absolute inset-e-0 top-1/2 -translate-y-1/2 z-10 bg-black/70 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-black/90"
                   aria-label={t("next")}
                 >
                   <ChevronRight className="w-4 h-4" />

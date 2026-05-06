@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslation } from "@/lib/useTranslation";
 import { useCartStore } from "@/store/cartStore";
-import { MessageCircle } from "lucide-react"; // safe icon
+import { MessageCircle } from "lucide-react";
 
 // Banner shown only when online payment is confirmed
 function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
@@ -20,7 +20,8 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 bg-white border border-green-400 rounded-2xl shadow-2xl p-4 max-w-sm animate-in slide-in-from-left">
+    // Use logical start (switches side in RTL) and animate from start instead of left
+    <div className="fixed bottom-4 inset-s-4 z-50 bg-white border border-green-400 rounded-2xl shadow-2xl p-4 max-w-sm animate-in slide-in-from-start">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
           <svg
@@ -47,7 +48,8 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
       </div>
       <button
         onClick={() => setVisible(false)}
-        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+        // Use logical end for the close button
+        className="absolute top-2 inset-e-2 text-gray-400 hover:text-gray-600"
       >
         ✕
       </button>
@@ -56,7 +58,7 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
 }
 
 export default function OrderSuccessPage() {
-  const { t } = useTranslation("orderSuccess");
+  const { t, locale } = useTranslation("orderSuccess");
   const searchParams = useSearchParams();
   // session_id is present only for online payments (Ziina replaces {id})
   const sessionId =
@@ -71,6 +73,9 @@ export default function OrderSuccessPage() {
 
   // Determine flow: COD (no sessionId) vs online payment
   const isOnlinePayment = !!sessionId;
+
+  // Localize the home URL to keep the language
+  const homeHref = `/${locale}`;
 
   useEffect(() => {
     if (isOnlinePayment) {
@@ -116,8 +121,8 @@ export default function OrderSuccessPage() {
   }, [countdown]);
 
   useEffect(() => {
-    if (countdown === 0) router.push("/");
-  }, [countdown, router]);
+    if (countdown === 0) router.push(homeHref);
+  }, [countdown, router, homeHref]);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -178,7 +183,7 @@ export default function OrderSuccessPage() {
 
         <div className="space-y-3">
           <Link
-            href="/"
+            href={homeHref}
             className="inline-block bg-primary text-white px-8 py-3 rounded-full font-medium hover:bg-primary/90 transition"
           >
             {t("backToHome")}

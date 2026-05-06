@@ -1,11 +1,17 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { useTranslation } from "@/lib/useTranslation";
 
 export default function Footer() {
-  const { t, locale } = useTranslation("common");
+  const { t } = useTranslation("common");
+  const params = useParams();
+  const locale = (params?.locale as string) || "ar";
   const isRtl = locale === "ar";
+
+  // Helper to add locale prefix to internal paths
+  const localizeHref = (path: string) => `/${locale}${path}`;
 
   return (
     <footer className="bg-[#338A43] text-white py-10 mt-12">
@@ -91,17 +97,26 @@ export default function Footer() {
             <h4 className="font-semibold text-lg mb-3">{t("explore")}</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/about" className="hover:underline transition">
+                <Link
+                  href={localizeHref("/about")}
+                  className="hover:underline transition"
+                >
                   {t("aboutInfo")}
                 </Link>
               </li>
               <li>
-                <Link href="/returns" className="hover:underline transition">
+                <Link
+                  href={localizeHref("/returns")}
+                  className="hover:underline transition"
+                >
                   {t("returnsPolicy")}
                 </Link>
               </li>
               <li>
-                <Link href="/careers" className="hover:underline transition">
+                <Link
+                  href={localizeHref("/careers")}
+                  className="hover:underline transition"
+                >
                   {t("careers")}
                 </Link>
               </li>
@@ -113,20 +128,26 @@ export default function Footer() {
             <h4 className="font-semibold text-lg mb-3">{t("support")}</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/help" className="hover:underline transition">
+                <Link
+                  href={localizeHref("/help")}
+                  className="hover:underline transition"
+                >
                   {t("helpCenter")}
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/delivery-areas"
+                  href={localizeHref("/delivery-areas")}
                   className="hover:underline transition"
                 >
                   {t("deliveryAreas")}
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:underline transition">
+                <Link
+                  href={localizeHref("/faq")}
+                  className="hover:underline transition"
+                >
                   {t("faqFooter")}
                 </Link>
               </li>

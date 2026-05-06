@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Toaster } from "sonner";
 
@@ -47,13 +48,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Await the headers promise, then read the custom locale header
+  const headersList = await headers();
+  const locale = headersList.get("x-locale") || "ar"; // fallback to Arabic
+
+  // Set HTML attributes based on locale
+  const isRTL = locale === "ar";
+  const lang = locale;
+  const dir = isRTL ? "rtl" : "ltr";
+
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={lang} dir={dir}>
       <head>
         {/* Google Tag Manager – placed as high as possible in <head> */}
         <script

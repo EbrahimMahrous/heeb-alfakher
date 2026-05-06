@@ -8,7 +8,7 @@ import { searchProducts } from "@/lib/api/products";
 import { Loader2, X, Search } from "lucide-react";
 
 export default function SearchAutocomplete() {
-  const { t } = useTranslation("common");
+  const { t, locale } = useTranslation("common");
   const router = useRouter();
 
   const [query, setQuery] = useState("");
@@ -31,9 +31,8 @@ export default function SearchAutocomplete() {
     setIsLoading(true);
     try {
       const data = await searchProducts(term.trim());
-      // Filter out products with status "off"
       const active = data.filter((p: any) => p.status !== "off");
-      setResults(active.slice(0, 5)); // limit to 5 items
+      setResults(active.slice(0, 5));
       setHighlightIndex(-1);
       setIsOpen(active.length > 0);
     } catch (err) {
@@ -91,10 +90,10 @@ export default function SearchAutocomplete() {
       e.preventDefault();
       if (highlightIndex >= 0 && results[highlightIndex]) {
         setIsOpen(false);
-        router.push(`/product/${results[highlightIndex].id}`);
+        router.push(`/${locale}/product/${results[highlightIndex].id}`);
       } else if (query.trim()) {
         setIsOpen(false);
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+        router.push(`/${locale}/search?q=${encodeURIComponent(query.trim())}`);
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
@@ -107,7 +106,7 @@ export default function SearchAutocomplete() {
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
       <div className="relative flex items-center">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+        <div className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
           <Search size={16} />
         </div>
         <input
@@ -120,18 +119,18 @@ export default function SearchAutocomplete() {
           }}
           onKeyDown={handleKeyDown}
           placeholder={t("search")}
-          className="w-full border border-neutral-200 rounded-full py-2 pl-10 pr-10 bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+          className="w-full border border-neutral-200 rounded-full py-2 ps-10 pe-10 bg-white focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
         />
         {query && (
           <button
             onClick={clearInput}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+            className="absolute inset-e-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
           >
             <X size={16} />
           </button>
         )}
         {isLoading && (
-          <div className="absolute right-10 top-1/2 -translate-y-1/2">
+          <div className="absolute inset-e-10 top-1/2 -translate-y-1/2">
             <Loader2 size={16} className="animate-spin text-primary" />
           </div>
         )}
@@ -156,7 +155,7 @@ export default function SearchAutocomplete() {
               return (
                 <Link
                   key={product.id}
-                  href={`/product/${product.id}`}
+                  href={`/${locale}/product/${product.id}`}
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 transition-colors ${
                     idx === highlightIndex ? "bg-primary/5" : ""
@@ -180,7 +179,7 @@ export default function SearchAutocomplete() {
                         {product.discountedPrice ? (
                           <>
                             {product.discountedPrice} {currencySymbol}
-                            <span className="ml-1 text-xs text-neutral-400 line-through font-normal">
+                            <span className="ms-1 text-xs text-neutral-400 line-through font-normal">
                               {product.price} {currencySymbol}
                             </span>
                           </>

@@ -12,42 +12,7 @@ import { toast } from "sonner";
 import ProductCarousel from "@/components/ProductCarousel";
 import ProductDetailSkeleton from "@/components/ui/ProductDetailSkeleton";
 import { ChevronDown, ChevronUp } from "lucide-react";
-
-// --- ProductMeta (inline component to show flag and weight) ---
-function ProductMeta({
-  flagUrl,
-  origin,
-  weight,
-}: {
-  flagUrl?: string | null;
-  origin?: string;
-  weight?: string | null;
-}) {
-  if (!flagUrl && !weight) return null;
-
-  return (
-    <div className="mt-2 inline-flex items-center gap-1 bg-neutral-100 border border-neutral-200 rounded-full px-2 py-0.5 w-fit">
-      {flagUrl && origin && (
-        <>
-          <Image
-            src={flagUrl}
-            alt={origin}
-            width={16}
-            height={16}
-            className="h-4 w-4 rounded-full object-cover"
-          />
-          <span className="text-xs text-neutral-700">{origin}</span>
-        </>
-      )}
-      {weight && (
-        <>
-          <span className="text-neutral-400 text-xs">•</span>
-          <span className="text-xs text-neutral-700">{weight}</span>
-        </>
-      )}
-    </div>
-  );
-}
+import ProductMeta from "@/components/ProductMeta";
 
 export default function ProductDetailPage() {
   const { t, locale } = useTranslation("product");
@@ -125,7 +90,7 @@ export default function ProductDetailPage() {
         weight: product.weight,
         origin: product.origin,
         originEn: product.originEn,
-        flagUrl: product.flagUrl, // pass flag for cart consistency
+        flagUrl: product.flagUrl,
       });
       toast.success(t("addToCart"));
     } catch (error) {
@@ -142,16 +107,16 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
+      {/* Breadcrumb – all links now preserve locale */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-4 flex-wrap">
-        <Link href="/" className="hover:text-primary transition">
+        <Link href={`/${locale}`} className="hover:text-primary transition">
           {t("home")}
         </Link>
         {category && (
           <>
             <span>/</span>
             <Link
-              href={`/category/${category.slug}`}
+              href={`/${locale}/category/${category.slug}`}
               className="hover:text-primary transition"
             >
               {locale === "ar" ? category.name : category.nameEn}
@@ -176,7 +141,8 @@ export default function ProductDetailPage() {
             }
           />
           {product.discountPercent && (
-            <div className="absolute top-4 right-4 bg-orange text-white text-sm font-bold px-3 py-1 rounded-full z-10">
+            // Fixed: use end-4 instead of erroneous inset-e-4
+            <div className="absolute top-4 end-4 bg-orange text-white text-sm font-bold px-3 py-1 rounded-full z-10">
               {t("discount")}
             </div>
           )}
@@ -221,7 +187,7 @@ export default function ProductDetailPage() {
             </span>
           </div>
 
-          {/* Meta: origin flag + weight */}
+          {/* Meta: origin flag + weight – using external shared component */}
           <ProductMeta
             flagUrl={product.flagUrl}
             origin={originText}
@@ -270,7 +236,7 @@ export default function ProductDetailPage() {
           <div className="mt-6 border border-neutral-200 rounded-xl overflow-hidden">
             <button
               onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-              className="w-full flex justify-between items-center p-4 bg-neutral-50 hover:bg-neutral-100 transition text-right"
+              className="w-full flex justify-between items-center p-4 bg-neutral-50 hover:bg-neutral-100 transition text-end"
             >
               <span className="font-semibold text-lg">
                 {t("productDetails")}

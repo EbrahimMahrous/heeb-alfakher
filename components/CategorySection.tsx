@@ -33,6 +33,7 @@ export default function CategorySection({
   const isLoading =
     externalLoading !== undefined ? externalLoading : internalLoading;
 
+  // Update Swiper navigation elements when RTL changes
   useEffect(() => {
     if (swiperRef.current && swiperRef.current.params.navigation) {
       swiperRef.current.params.navigation.prevEl = navigationPrevEl;
@@ -43,9 +44,7 @@ export default function CategorySection({
 
   useEffect(() => {
     fetchAllCategories()
-      .then((cats) => {
-        setCategories(cats);
-      })
+      .then((cats) => setCategories(cats))
       .catch((err) => console.error("Failed to load categories", err))
       .finally(() => setInternalLoading(false));
   }, []);
@@ -61,7 +60,7 @@ export default function CategorySection({
           {t("shopByCategory")}
         </h2>
         <Link
-          href="/categories"
+          href={`/${locale}/categories`}
           className="text-orange hover:text-orange/80 transition text-sm font-medium"
         >
           {t("viewAll")}
@@ -70,7 +69,7 @@ export default function CategorySection({
 
       <div className="relative">
         {isLoading ? (
-          /* ✅ Skeleton display during loading */
+          /* Skeleton display while loading */
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="min-w-24 md:min-w-28">
@@ -79,7 +78,7 @@ export default function CategorySection({
             ))}
           </div>
         ) : (
-          /* ✅ The real slider after downloading */
+          /* Actual slider after data loaded */
           <Swiper
             onSwiper={(swiper) => (swiperRef.current = swiper)}
             modules={[Navigation]}
@@ -100,7 +99,7 @@ export default function CategorySection({
           >
             {categories.map((cat) => (
               <SwiperSlide key={cat.id} className="w-auto!">
-                <Link href={`/subcategory/${cat.slug}`}>
+                <Link href={`/${locale}/subcategory/${cat.slug}`}>
                   <div className="flex flex-col items-center text-center group cursor-pointer">
                     <div className="w-24 h-24 md:w-28 md:h-28 bg-neutral-100 rounded-full flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-all duration-300">
                       {cat.image ? (
@@ -129,13 +128,17 @@ export default function CategorySection({
           </Swiper>
         )}
 
-        {/* Scroll buttons – only appear after loading */}
+        {/* Navigation arrows – only visible after loading */}
         {!isLoading && (
           <>
+            {/* Previous arrow – switches side based on RTL */}
             <div
               ref={prevRef}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition-all duration-200"
-              style={{ display: "flex" }}
+              className={`absolute top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition-all duration-200 ${
+                isRtl
+                  ? "right-0 translate-x-2 md:translate-x-4"
+                  : "left-0 -translate-x-2 md:-translate-x-4"
+              }`}
               onClick={() => {
                 if (isRtl) {
                   swiperRef.current?.slideNext();
@@ -160,10 +163,15 @@ export default function CategorySection({
                 />
               </svg>
             </div>
+
+            {/* Next arrow – switches side based on RTL */}
             <div
               ref={nextRef}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-4 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition-all duration-200"
-              style={{ display: "flex" }}
+              className={`absolute top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center cursor-pointer hover:bg-neutral-100 transition-all duration-200 ${
+                isRtl
+                  ? "left-0 -translate-x-2 md:-translate-x-4"
+                  : "right-0 translate-x-2 md:translate-x-4"
+              }`}
               onClick={() => {
                 if (isRtl) {
                   swiperRef.current?.slidePrev();

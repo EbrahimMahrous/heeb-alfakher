@@ -1,5 +1,4 @@
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslation } from "@/lib/useTranslation";
@@ -11,9 +10,9 @@ export default function AboutPage() {
     <div className="min-h-screen flex flex-col">
       {/* Content */}
       <div className="container mx-auto px-4 py-8 flex-1">
-        {/* Breadcrumb */}
+        {/* Breadcrumb – home link now keeps the language */}
         <div className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-          <Link href="/" className="hover:text-primary transition">
+          <Link href={`/${locale}`} className="hover:text-primary transition">
             {t("home")}
           </Link>
           <span>›</span>

@@ -8,7 +8,6 @@ export default function TapBar() {
 
   return (
     <>
-      {/* Top bar - dark with white text */}
       <div className="bg-dark text-center py-2 border-b border-neutral-200">
         <div className="container mx-auto px-4 flex justify-center items-center gap-2">
           <Heart size={14} className="text-primary" />

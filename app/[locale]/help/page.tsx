@@ -3,13 +3,18 @@ import { useTranslation } from "@/lib/useTranslation";
 import Link from "next/link";
 
 export default function HelpPage() {
-  const { t } = useTranslation("help");
+  const { t, locale } = useTranslation("help");
+
+  // Localize all internal routes
+  const homeHref = `/${locale}`;
+  const faqHref = `/${locale}/faq`;
+  const returnsHref = `/${locale}/returns`;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       {/* Breadcrumb navigation */}
       <div className="mb-6">
-        <Link href="/" className="text-primary hover:underline">
+        <Link href={homeHref} className="text-primary hover:underline">
           ← {t("home")}
         </Link>
       </div>
@@ -23,7 +28,7 @@ export default function HelpPage() {
         {/* FAQ card */}
         <div className="bg-neutral-100 p-6 rounded-2xl">
           <h2 className="text-2xl font-semibold mb-2">{t("faq")}</h2>
-          <Link href="/faq" className="text-primary">
+          <Link href={faqHref} className="text-primary">
             {t("goToFaq")} →
           </Link>
         </div>
@@ -56,7 +61,7 @@ export default function HelpPage() {
         {/* Returns policy card */}
         <div className="bg-neutral-100 p-6 rounded-2xl">
           <h2 className="text-2xl font-semibold mb-2">{t("returnsHelp")}</h2>
-          <Link href="/returns" className="text-primary">
+          <Link href={returnsHref} className="text-primary">
             {t("viewReturnPolicy")} →
           </Link>
         </div>

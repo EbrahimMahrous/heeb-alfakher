@@ -1,5 +1,6 @@
 "use client";
 import { useRef } from "react";
+import Link from "next/link"; // use Next.js Link for locale persistence
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCard from "./ProductCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -18,6 +19,7 @@ export default function ProductCarousel({
   const { t, locale } = useTranslation("common");
   const scrollRef = useRef<HTMLDivElement>(null);
   const isRtl = locale === "ar";
+  const localizedViewAll = `/${locale}${viewAllLink}`;
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
@@ -27,6 +29,7 @@ export default function ProductCarousel({
       scrollRef.current.scrollTo({ left: to, behavior: "smooth" });
     }
   };
+
   const visibleProducts = (products || [])
     .filter((p) => p != null)
     .filter((p) => p.status !== "off");
@@ -44,17 +47,20 @@ export default function ProductCarousel({
       {title && (
         <div className="flex justify-between items-center mb-4 px-4">
           <h2 className="text-2xl font-bold text-primary">{title}</h2>
-          <a href={viewAllLink} className="text-orange hover:underline text-sm">
+          <Link
+            href={localizedViewAll}
+            className="text-orange hover:underline text-sm"
+          >
             {t("browseAll")} →
-          </a>
+          </Link>
         </div>
       )}
 
       <div className="relative group">
-        {/* Left scroll button */}
+        {/* Previous button – placed at logical start (flips with RTL) */}
         <button
           onClick={() => scroll(isRtl ? "right" : "left")}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="absolute inset-s-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
           aria-label={t("previous") || "السابق"}
         >
           <ChevronLeft className="text-white w-4 h-4" />
@@ -73,10 +79,9 @@ export default function ProductCarousel({
           ))}
         </div>
 
-        {/* Right scroll button */}
         <button
           onClick={() => scroll(isRtl ? "left" : "right")}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
+          className="absolute inset-e-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
           aria-label={t("next") || "التالي"}
         >
           <ChevronRight className="text-white w-4 h-4" />

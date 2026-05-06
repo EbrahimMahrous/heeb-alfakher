@@ -1,12 +1,11 @@
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslation } from "@/lib/useTranslation";
 
 export default function FaqPage() {
-  const { t } = useTranslation("faq");
+  const { t, locale } = useTranslation("faq");
   const [active, setActive] = useState<number | null>(0);
 
   const toggle = (index: number) => {
@@ -22,9 +21,9 @@ export default function FaqPage() {
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-4xl flex-1">
-      {/* breadcrumb */}
+      {/* breadcrumb – home link now keeps the language */}
       <div className="text-sm text-gray-500 mb-6 flex gap-2">
-        <Link href="/" className="hover:text-primary transition">
+        <Link href={`/${locale}`} className="hover:text-primary transition">
           {t("home")}
         </Link>
         <span>›</span>
@@ -43,7 +42,7 @@ export default function FaqPage() {
           >
             <button
               onClick={() => toggle(index)}
-              className="w-full flex justify-between items-center p-5 text-left font-semibold hover:bg-gray-50 transition"
+              className="w-full flex justify-between items-center p-5 text-start font-semibold hover:bg-gray-50 transition"
             >
               <span>{faq.q}</span>
 

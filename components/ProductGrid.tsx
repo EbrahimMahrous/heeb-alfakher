@@ -40,6 +40,11 @@ export default function ProductGrid({
     }
   };
 
+  // Ensure internal links carry the current locale
+  const localizedBannerHref = bannerContent?.linkHref
+    ? `/${locale}${bannerContent.linkHref}`
+    : `/${locale}/categories`;
+
   if (loading) {
     return (
       <div className="my-8">
@@ -59,7 +64,7 @@ export default function ProductGrid({
     );
   }
 
-  // Actual products (without download)
+  // Filter out null/off products
   const visibleProducts = (products || [])
     .filter((p) => p != null)
     .filter((p) => p.status !== "off");
@@ -71,7 +76,7 @@ export default function ProductGrid({
   return (
     <div className="my-8">
       <div className="relative group">
-        {/* Left scroll button */}
+        {/* Left scroll button – direction logic flips for RTL */}
         <button
           onClick={() => scroll(isRtl ? "right" : "left")}
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-dark text-white rounded-full p-2 shadow-md hover:bg-dark/80 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
@@ -86,7 +91,7 @@ export default function ProductGrid({
           className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-hide"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {/* Banner Card */}
+          {/* Banner Card – uses localized link */}
           {bannerContent && (
             <div className="min-w-62.5 sm:min-w-70 snap-start">
               <div className="relative rounded-2xl overflow-hidden shadow-md h-86 flex flex-col">
@@ -116,7 +121,7 @@ export default function ProductGrid({
                     )}
                   </div>
                   <Link
-                    href={bannerContent.linkHref || "/categories"}
+                    href={localizedBannerHref}
                     className="mt-4 text-orange font-semibold hover:underline inline-flex items-center gap-1 drop-shadow"
                   >
                     {bannerContent.linkText || t("browseAll")}
@@ -135,7 +140,7 @@ export default function ProductGrid({
           ))}
         </div>
 
-        {/* Right scroll button */}
+        {/* Right scroll button – direction logic flips for RTL */}
         <button
           onClick={() => scroll(isRtl ? "left" : "right")}
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-dark text-white rounded-full p-2 shadow-md hover:bg-dark/80 transition opacity-0 group-hover:opacity-100 focus:opacity-100"

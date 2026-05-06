@@ -14,18 +14,13 @@ export default function ProductMeta({
 }: ProductMetaProps) {
   const { t } = useTranslation("common"); 
 
-  // Don't render if there's no data
   if (!flagUrl && !weight) return null;
 
-  // Get localized weight unit (e.g., "كيلو" or "kg")
   const weightUnit = t("weightUnit", { defaultValue: "kg" });
 
-  // Prepare display weight string
   let displayWeight: string | null = null;
   if (weight != null) {
-    // Convert number to string if necessary
     let weightStr = typeof weight === "number" ? weight.toString() : weight;
-    // Remove any existing unit text to avoid duplication
     weightStr = weightStr.replace(/\s*(كيلو|kg)\s*/gi, "").trim();
     if (weightStr) {
       displayWeight = `${weightStr} ${weightUnit}`;

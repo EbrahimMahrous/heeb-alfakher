@@ -6,10 +6,11 @@ import { toast } from "sonner";
 
 export default function CareersPage() {
   const { t, locale } = useTranslation("careers");
+  const isArabic = locale === "ar";
 
   const handleApply = (position: string) => {
     toast.info(
-      locale === "ar"
+      isArabic
         ? `سيتم تفعيل التقديم على وظيفة ${position} قريباً`
         : `Application for ${position} will be available soon`,
       { duration: 3000 },
@@ -18,13 +19,13 @@ export default function CareersPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Breadcrumb */}
+      {/* Breadcrumb – home link keeps language, arrow flips with direction */}
       <div className="mb-6">
         <Link
-          href="/"
+          href={`/${locale}`}
           className="text-primary hover:underline flex items-center gap-1"
         >
-          <span>←</span> {t("home")}
+          <span>{isArabic ? "→" : "←"}</span> {t("home")}
         </Link>
       </div>
 

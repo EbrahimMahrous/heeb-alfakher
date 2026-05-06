@@ -105,6 +105,10 @@ export default function CartPage() {
     }
   };
 
+  // Localised routes
+  const homeHref = `/${locale}`;
+  const checkoutHref = `/${locale}/checkout`;
+
   if (isLoading) {
     return <CartSkeleton />;
   }
@@ -113,7 +117,7 @@ export default function CartPage() {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-2xl">{t("empty")}</h1>
-        <Link href="/" className="text-primary mt-4 inline-block">
+        <Link href={homeHref} className="text-primary mt-4 inline-block">
           {t("shopNow")}
         </Link>
       </div>
@@ -122,9 +126,9 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
+      {/* Breadcrumb – locale aware */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
-        <Link href="/" className="hover:text-primary transition">
+        <Link href={homeHref} className="hover:text-primary transition">
           {t("home")}
         </Link>
         <span>/</span>
@@ -145,7 +149,6 @@ export default function CartPage() {
                   ((item.price - item.discountedPrice!) / item.price) * 100,
                 )
               : 0;
-            // ✅ check if the image is external to skip optimization
             const isExternal =
               typeof item.image === "string" &&
               item.image.startsWith("https://app.heebshop.ae");
@@ -275,9 +278,12 @@ export default function CartPage() {
                     className="bg-[#338A43] h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   ></div>
+                  {/* Delivery truck icon – positioned using logical inline-start */}
                   <div
                     className="absolute top-1/2 -translate-y-1/2 transition-all duration-300"
-                    style={{ left: `calc(${progressPercent}% - 8px)` }}
+                    style={{
+                      insetInlineStart: `calc(${progressPercent}% - 8px)`,
+                    }}
                   >
                     <Image
                       src="/icons/delivery-process.svg"
@@ -288,7 +294,8 @@ export default function CartPage() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-neutral-600 mt-1 text-right">
+                {/* Completion text now uses text-end instead of text-right */}
+                <p className="text-xs text-neutral-600 mt-1 text-end">
                   {progressPercent.toFixed(0)}% مكتمل
                 </p>
               </div>
@@ -302,14 +309,16 @@ export default function CartPage() {
                     alt="coupon"
                     width={18}
                     height={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2"
+                    // Icon now uses logical start instead of left-3
+                    className="absolute inset-s-3 top-1/2 -translate-y-1/2"
                   />
                   <input
                     type="text"
                     placeholder={t("promoCode")}
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
-                    className="w-full border border-neutral-300 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary"
+                    // Input padding now uses start (ps) and end (pe)
+                    className="w-full border border-neutral-300 rounded-full py-2 ps-10 pe-4 text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
                 <Button
@@ -321,16 +330,13 @@ export default function CartPage() {
               </div>
             </div>
 
-            <Link href="/checkout" className="block mt-4">
+            <Link href={checkoutHref} className="block mt-4">
               <Button className="w-full bg-[#338A43] hover:bg-[#338A43]/90 text-white py-3 rounded-full text-base font-semibold">
                 {t("checkout")}
               </Button>
             </Link>
 
-            <p
-              className="text-center text-xs mt-2 flex items-center justify-center gap-1"
-              style={{ color: "#94A3B8" }}
-            >
+            <p className="text-center text-xs mt-2 flex items-center justify-center gap-1 text-[#94A3B8]">
               <Image src="/icons/safe.svg" alt="safe" width={16} height={16} />
               <span>{t("securePayment")}</span>
             </p>

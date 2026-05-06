@@ -111,6 +111,10 @@ export default function CheckoutPage() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // Localised routes
+  const homeHref = `/${locale}`;
+  const cartHref = `/${locale}/cart`;
+
   // Load saved checkout data on mount
   useEffect(() => {
     const savedData = loadCheckoutFromLocalStorage();
@@ -258,7 +262,7 @@ export default function CheckoutPage() {
         mobile_number: phoneDigits,
         emirate_name,
         area_name,
-        payment_type: paymentMethod, // "COD" or "Paid"
+        payment_type: paymentMethod,
         delivery_date: buildDeliveryDate(),
         items: items.map((item) => ({
           product_id: item.id,
@@ -351,16 +355,15 @@ export default function CheckoutPage() {
     }
   };
 
-  // ---------- Render (unchanged) ----------
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb */}
+      {/* Breadcrumb – all links now locale-prefixed */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
-        <Link href="/" className="hover:text-primary transition-colors">
+        <Link href={homeHref} className="hover:text-primary transition-colors">
           {t("home")}
         </Link>
         <span>/</span>
-        <Link href="/cart" className="hover:text-primary transition-colors">
+        <Link href={cartHref} className="hover:text-primary transition-colors">
           {t("cart")}
         </Link>
         <span>/</span>
@@ -516,8 +519,9 @@ export default function CheckoutPage() {
                         {t("addGiftMessage")}
                       </span>
                     </label>
+                    {/* Use logical margin-inline-end instead of physical mr-8 */}
                     {giftMessage !== "" && (
-                      <div className="mt-3 mr-8 animate-fadeIn">
+                      <div className="mt-3 ms-8 animate-fadeIn">
                         <textarea
                           placeholder={t("giftMessagePlaceholder")}
                           value={giftMessage === " " ? "" : giftMessage}
@@ -594,7 +598,7 @@ export default function CheckoutPage() {
           </form>
         </div>
 
-        {/* Order summary (unchanged) */}
+        {/* Order summary */}
         <div className="lg:col-span-1 order-1 lg:order-2">
           <div className="bg-white border border-neutral-200 p-6 rounded-2xl shadow-lg sticky top-24">
             <h2 className="text-xl font-bold mb-4">{t("orderSummary")}</h2>
@@ -642,7 +646,8 @@ export default function CheckoutPage() {
                   {total} {t("currency")}
                 </span>
               </div>
-              <div className="text-right text-xs text-neutral-500">
+              {/* Use text-end instead of text-right for RTL */}
+              <div className="text-end text-xs text-neutral-500">
                 ({t("taxInclusive")})
               </div>
             </div>

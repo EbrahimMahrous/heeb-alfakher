@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useTranslation } from "@/lib/useTranslation";
 
 export default function ReturnsPage() {
-  const { t } = useTranslation("returns");
+  const { t, locale } = useTranslation("returns");
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="container mx-auto px-4 py-10 flex-1 max-w-4xl">
-        {/* breadcrumb */}
+        {/* breadcrumb – now uses current locale */}
         <div className="text-sm text-gray-500 mb-6 flex gap-2">
-          <Link href="/" className="hover:text-primary transition">
+          <Link href={`/${locale}`} className="hover:text-primary transition">
             {t("home")}
           </Link>
           <span>›</span>

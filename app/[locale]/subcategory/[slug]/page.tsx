@@ -12,7 +12,8 @@ import { SlidersHorizontal, ArrowDownUp } from "lucide-react";
 
 export default function ProductsPage() {
   const { t, locale } = useTranslation("subcategory");
-  const { slug } = useParams();
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
 
   const [allCategories, setAllCategories] = useState<any[]>([]);
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -81,7 +82,7 @@ export default function ProductsPage() {
   const filteredProducts = useMemo(() => {
     let prods = categoryFilteredProducts.filter(
       (p) =>
-        p.status !== "off" && // <-- only show products with status "on"
+        p.status !== "off" && // only show products with status "on"
         (p.discountedPrice || p.price) >= priceRange[0] &&
         (p.discountedPrice || p.price) <= priceRange[1],
     );
@@ -128,10 +129,11 @@ export default function ProductsPage() {
     setPriceRange([priceRange[0], value]);
   };
 
+  // Breadcrumb with locale-prefixed links
   let pageTitle = t("allProducts");
   const breadcrumbItems = [
-    { href: "/", label: t("home") },
-    { href: "/categories", label: t("categories") },
+    { href: `/${locale}`, label: t("home") },
+    { href: `/${locale}/categories`, label: t("categories") },
   ];
   if (mainCategory) {
     pageTitle = locale === "ar" ? mainCategory.name : mainCategory.nameEn;
