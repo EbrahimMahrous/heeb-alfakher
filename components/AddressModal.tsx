@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { useTranslation } from "@/lib/useTranslation";
 import { toast } from "sonner";
 
-// ---------- Supported emirates ----------
+// ---------- Supported emirates (used only for geocoding validation) ----------
 const EMIRATES = [
   "Dubai",
   "Abu Dhabi",
@@ -15,120 +16,17 @@ const EMIRATES = [
   "Fujairah",
 ];
 
-// ---------- Areas per emirate (partial list – can be extended) ----------
-const AREAS_BY_EMIRATE: Record<string, string[]> = {
-  Dubai: [
-    "Jumeirah",
-    "Marina",
-    "Deira",
-    "Bur Dubai",
-    "Karama",
-    "Al Barsha",
-    "Satwa",
-    "JLT",
-    "Business Bay",
-    "Mirdif",
-    "Al Qusais",
-    "Discovery Gardens",
-    "Palm Jumeirah",
-    "Jebel Ali",
-    "Al Nahda",
-    "Dubai Silicon Oasis",
-    "Dubai Sports City",
-    "International City",
-    "Arabian Ranches",
-    "Emirates Hills",
-    "The Springs",
-    "Al Furjan",
-    "Town Square",
-    "Dubai Hills Estate",
-    "Al Khawaneej",
-    "Al Warqaa",
-    "Nad Al Sheba",
-    "Al Barari",
-  ],
-  "Abu Dhabi": [
-    "Al Reem Island",
-    "Khalifa City",
-    "Mohammed Bin Zayed City",
-    "Al Raha Beach",
-    "Yas Island",
-    "Saadiyat Island",
-    "Al Zahiyah",
-    "Al Maryah Island",
-    "Al Bateen",
-    "Al Mushrif",
-    "Al Shamkha",
-    "Al Reef",
-    "Shakhbout City",
-    "Al Falah City",
-    "Al Ain City",
-    "Madinat Zayed",
-  ],
-  Sharjah: [
-    "Al Majaz",
-    "Al Qasimia",
-    "Al Nahda Sharjah",
-    "Al Khan",
-    "Muwaileh",
-    "Al Taawun",
-    "Al Ruwaida",
-    "Al Juraina",
-    "Al Mirgab",
-    "Al Hazana",
-    "Al Layyeh",
-    "Al Suyoh",
-  ],
-  Ajman: [
-    "Al Nuaimiya",
-    "Al Rashidiya",
-    "Al Jurf",
-    "Al Mowaihat",
-    "Emirates City",
-    "Al Zahraa",
-    "Ajman Downtown",
-    "Al Hamidiya",
-    "Al Corniche",
-  ],
-  "Umm Al Quwain": [
-    "Al Salamah",
-    "Al Riqqah",
-    "Umm Al Quwain City",
-    "Al Baqra",
-    "Falaj Al Mualla",
-  ],
-  "Ras Al Khaimah": [
-    "Al Nakheel",
-    "Al Hamra",
-    "Mina Al Arab",
-    "Ras Al Khaimah City",
-    "Al Jazirah Al Hamra",
-    "Khor Khwair",
-    "Al Mamura",
-    "Al Fahleen",
-    "Adhen",
-  ],
-  Fujairah: [
-    "Fujairah City",
-    "Dibba Al-Fujairah",
-    "Al Qurayyah",
-    "Mirbah",
-    "Al Bidya",
-    "Sakamkam",
-  ],
-};
-
 export interface Address {
   id: string;
   fullName: string;
   address: string;
   phone: string; // stored as "+971XXXXXXXXX"
   city?: string; // emirate (auto‑filled)
-  area?: string; // well‑known sub‑area (auto‑filled, editable)
+  area?: string; // well‑known sub‑area (auto‑filled)
   buildingNo?: string;
-  streetAddress?: string;
+  streetAddress?: string; // hidden, always empty
   isDefault?: boolean;
-  pinLocation?: string; // Google Maps sharing link (hidden from UI, used for backend)
+  pinLocation?: string; // Google Maps sharing link
 }
 
 interface AddressModalProps {
@@ -175,125 +73,11 @@ const extractArea = (components: any[]): string => {
 // ---------- Phone number sanitizer ----------
 const sanitizePhoneNumber = (rawPhone: string): string => {
   let digits = rawPhone.replace(/\D/g, "");
-  if (digits.length >= 7 && digits.startsWith("0")) {
+  if (digits.length >= 7 && digits.startsWith("0"))
     digits = digits.substring(1);
-  }
-  if (!digits.startsWith("971")) {
-    digits = "971" + digits;
-  }
-  if (digits.length < 10 || digits.length > 12) {
-    return "";
-  }
+  if (!digits.startsWith("971")) digits = "971" + digits;
+  if (digits.length < 10 || digits.length > 12) return "";
   return digits;
-};
-
-// ---------- Searchable Combobox with clear button ----------
-interface ComboboxProps {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-}
-
-const Combobox: React.FC<ComboboxProps> = ({
-  label,
-  value,
-  options,
-  onChange,
-  placeholder,
-  disabled = false,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // Filter options based on search term
-  const filtered = options.filter((opt) =>
-    opt.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Sync search term with value from outside (e.g., map auto-fill)
-  useEffect(() => {
-    if (value) {
-      setSearchTerm(value);
-    } else {
-      setSearchTerm("");
-    }
-  }, [value]);
-
-  const handleClear = () => {
-    onChange("");
-    setSearchTerm("");
-    setIsOpen(false);
-  };
-
-  return (
-    <div ref={wrapperRef} className="relative">
-      <label className="block text-sm font-medium mb-1">{label}</label>
-      <div className="relative">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            onChange(e.target.value);
-            setIsOpen(true);
-          }}
-          onFocus={() => !disabled && setIsOpen(true)}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={`w-full bg-[#E2E8F0] rounded-lg p-2 pe-8 border-0 focus:ring-2 focus:ring-[#338A43] ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
-        />
-        {/* Clear (X) button – uses logical end */}
-        {value && !disabled && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            tabIndex={-1}
-          >
-            ✕
-          </button>
-        )}
-      </div>
-      {isOpen && !disabled && filtered.length > 0 && (
-        <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg">
-          {filtered.map((opt) => (
-            <li
-              key={opt}
-              className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 ${
-                opt === value ? "bg-green-50 font-medium" : ""
-              }`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onChange(opt);
-                setSearchTerm(opt);
-                setIsOpen(false);
-              }}
-            >
-              {opt}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
 };
 
 export default function AddressModal({
@@ -303,14 +87,17 @@ export default function AddressModal({
   existingAddress,
 }: AddressModalProps) {
   const { t } = useTranslation("addressModal");
+  const params = useParams();
+  const locale = (params?.locale as string) || "ar";
+  const isRtl = locale === "ar";
 
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    city: "",
-    area: "",
+    city: "", // auto‑filled
+    area: "", // auto‑filled
     buildingNo: "",
-    streetAddress: "",
+    streetAddress: "", // always empty, not shown
     pinLocation: "",
     isDefault: false,
   });
@@ -326,8 +113,9 @@ export default function AddressModal({
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [locationDenied, setLocationDenied] = useState(false);
 
-  // Pre‑fill form when editing an existing address
+  // ---------- Pre‑fill form when editing an existing address ----------
   useEffect(() => {
     if (!isOpen) return;
     if (existingAddress) {
@@ -347,7 +135,6 @@ export default function AddressModal({
       return;
     }
 
-    // Load previously saved form data for a new address
     const saved = localStorage.getItem(ADDRESS_FORM_STORAGE_KEY);
     if (saved) {
       try {
@@ -360,7 +147,7 @@ export default function AddressModal({
     setIsInitialLoad(false);
   }, [isOpen, existingAddress]);
 
-  // Persist form data to localStorage only when creating a new address (not editing)
+  // ---------- Persist form data to localStorage (only for new addresses) ----------
   useEffect(() => {
     if (!isOpen || isInitialLoad || existingAddress) return;
     localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(formData));
@@ -370,7 +157,7 @@ export default function AddressModal({
     localStorage.removeItem(ADDRESS_FORM_STORAGE_KEY);
   };
 
-  // ---- Google Maps API loading ----
+  // ---------- Google Maps API loading ----------
   useEffect(() => {
     if (!isOpen) return;
     if (window.google && window.google.maps) {
@@ -381,9 +168,7 @@ export default function AddressModal({
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       setLoadError(true);
-      toast.error(
-        t("mapsApiMissing", { defaultValue: "مفتاح الخرائط غير موجود" }),
-      );
+      toast.error(t("mapsApiMissing"));
       return;
     }
     const script = document.createElement("script");
@@ -392,12 +177,7 @@ export default function AddressModal({
     script.defer = true;
     script.onerror = () => {
       setLoadError(true);
-      toast.error(
-        t("mapsLoadError", {
-          defaultValue:
-            "تعذر تحميل الخرائط. تأكد من تعطيل أدوات الحظر (Adblock) أو أعد المحاولة.",
-        }),
-      );
+      toast.error(t("mapsLoadError"));
     };
     document.head.appendChild(script);
     return () => {
@@ -406,9 +186,10 @@ export default function AddressModal({
     };
   }, [isOpen]);
 
-  // ---- Map initialization ----
+  // ---------- Map initialization ----------
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
+
     const defaultCenter = { lat: 24.4539, lng: 54.3773 };
     const map = new window.google.maps.Map(mapRef.current, {
       center: defaultCenter,
@@ -428,7 +209,6 @@ export default function AddressModal({
 
     const updatePinLocation = (lat: number, lng: number) => {
       const link = `https://www.google.com/maps?q=${lat},${lng}`;
-      // Update hidden pinLocation only
       setFormData((prev) => ({ ...prev, pinLocation: link }));
     };
 
@@ -450,7 +230,6 @@ export default function AddressModal({
               address: results[0].formatted_address,
               city: matchedEmirate || prev.city,
               area: area || prev.area,
-              streetAddress: prev.streetAddress,
             }));
           }
         },
@@ -474,47 +253,46 @@ export default function AddressModal({
     });
 
     // Autocomplete for the search input
-    try {
-      const autocomplete = new window.google.maps.places.Autocomplete(
-        searchInputRef.current!,
-        {
-          componentRestrictions: { country: "ae" },
-          fields: ["address_components", "formatted_address", "geometry"],
-        },
-      );
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (place.geometry) {
-          const loc = place.geometry.location;
-          map.setCenter(loc);
-          marker.setPosition(loc);
-          setSelectedLocation({ lat: loc.lat(), lng: loc.lng() });
-          updatePinLocation(loc.lat(), loc.lng());
+    if (searchInputRef.current) {
+      try {
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          searchInputRef.current,
+          {
+            componentRestrictions: { country: "ae" },
+            fields: ["address_components", "formatted_address", "geometry"],
+          },
+        );
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry) {
+            const loc = place.geometry.location;
+            map.setCenter(loc);
+            marker.setPosition(loc);
+            setSelectedLocation({ lat: loc.lat(), lng: loc.lng() });
+            updatePinLocation(loc.lat(), loc.lng());
 
-          let city = "",
-            street = "",
-            area = "";
-          if (place.address_components) {
-            area = extractArea(place.address_components);
-            for (const comp of place.address_components) {
-              if (comp.types.includes("locality")) city = comp.long_name;
-              if (comp.types.includes("route")) street = comp.long_name;
+            let city = "",
+              area = "";
+            if (place.address_components) {
+              area = extractArea(place.address_components);
+              for (const comp of place.address_components) {
+                if (comp.types.includes("locality")) city = comp.long_name;
+              }
             }
+            const matchedEmirate = findEmirate(city);
+            setFormData((prev) => ({
+              ...prev,
+              city: matchedEmirate || prev.city,
+              area: area || prev.area,
+            }));
           }
-          const matchedEmirate = findEmirate(city);
-          setFormData((prev) => ({
-            ...prev,
-            city: matchedEmirate || prev.city,
-            area: area || prev.area,
-            streetAddress: street || prev.streetAddress,
-          }));
-        }
-      });
-    } catch (err) {
-      console.error("Autocomplete init error:", err);
+        });
+      } catch (err) {
+        console.error("Autocomplete init error:", err);
+      }
     }
 
-    // Geolocate user if allowed
+    // Try geolocation – if allowed, fill fields; if denied, show a message
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -524,41 +302,42 @@ export default function AddressModal({
           setSelectedLocation(loc);
           geocodeAndFill(loc.lat, loc.lng);
           updatePinLocation(loc.lat, loc.lng);
+          setLocationDenied(false);
         },
-        () => console.log("Geolocation denied"),
+        () => {
+          setLocationDenied(true);
+        },
       );
+    } else {
+      setLocationDenied(true);
     }
   }, [isLoaded]);
 
+  // ---------- Validation & Save ----------
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (
       !formData.fullName ||
       !formData.phone ||
       !formData.city ||
-      !formData.streetAddress ||
       !formData.area
     ) {
-      toast.error(
-        t("validationRequired", {
-          defaultValue: "يرجى ملء جميع الحقول المطلوبة",
-        }),
-      );
+      toast.error(t("validationRequired"));
       return;
     }
 
     const sanitizedPhone = sanitizePhoneNumber(formData.phone);
     if (!sanitizedPhone) {
-      toast.error(
-        t("invalidPhone", {
-          defaultValue:
-            "رقم الهاتف غير صحيح. تأكد من أنه مكون من 9-10 أرقام (بدون صفر إضافي)",
-        }),
-      );
+      toast.error(t("invalidPhone", { defaultValue: "رقم الهاتف غير صحيح" }));
       return;
     }
 
-    const fullAddress = `${formData.streetAddress}${formData.buildingNo ? `, ${formData.buildingNo}` : ""}, ${formData.area}, ${formData.city}`;
+    // Build full address string (streetAddress is hidden and always empty)
+    const parts = [formData.area, formData.city];
+    if (formData.buildingNo) parts.unshift(formData.buildingNo);
+    const fullAddress = parts.join(", ");
+
     const newAddress: Address = {
       id: existingAddress?.id || Date.now().toString(),
       fullName: formData.fullName,
@@ -567,7 +346,7 @@ export default function AddressModal({
       city: formData.city,
       area: formData.area,
       buildingNo: formData.buildingNo,
-      streetAddress: formData.streetAddress,
+      streetAddress: "", // always empty
       pinLocation: formData.pinLocation,
       isDefault: formData.isDefault,
     };
@@ -599,7 +378,7 @@ export default function AddressModal({
             }}
             className="px-4 py-2 bg-primary text-white rounded-full"
           >
-            {t("ok", { defaultValue: "حسنًا" })}
+            {t("ok")}
           </button>
         </div>
       </div>
@@ -611,13 +390,10 @@ export default function AddressModal({
       </div>
     );
 
-  const currentAreas = formData.city
-    ? AREAS_BY_EMIRATE[formData.city] || []
-    : [];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold">{t("title")}</h2>
           <button
@@ -629,26 +405,35 @@ export default function AddressModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Search input placed above the map – clean design */}
+          {locationDenied && !formData.city && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-2 text-sm text-amber-800 flex items-center gap-2">
+              <span>📍</span>
+              <span>{t("geolocationDenied")}</span>
+            </div>
+          )}
+
+          <div className="relative">
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder={t("searchPlaceholder")}
+              className="w-full bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#338A43]"
+            />
+            {/* Search icon – absolute but outside the input to avoid overlap */}
+            <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+              <Image
+                src="/icons/search.svg"
+                alt="search"
+                width={18}
+                height={18}
+              />
+            </span>
+            {/* Clear button – if needed later */}
+          </div>
+
           {/* Map */}
           <div className="relative">
-            <div className="absolute top-2 inset-s-2 inset-e-2 z-10 flex gap-2">
-              <div className="flex-1 relative">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={t("searchPlaceholder")}
-                  // Swap physical padding to logical: pe-10 (end-10) ps-4 (start-4)
-                  className="w-full bg-white border border-gray-300 rounded-full py-2 pe-10 ps-4 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-[#338A43]"
-                />
-                <Image
-                  src="/icons/search.svg"
-                  alt="search"
-                  width={16}
-                  height={16}
-                  className="absolute inset-s-3 top-1/2 -translate-y-1/2"
-                />
-              </div>
-            </div>
             <div
               ref={mapRef}
               className="w-full h-64 rounded-xl overflow-hidden border border-gray-200"
@@ -679,20 +464,12 @@ export default function AddressModal({
                         mapInstanceRef.current?.setCenter(loc);
                         markerRef.current?.setPosition(loc);
                         setSelectedLocation(loc);
+                        // geocode will fill city/area automatically
                       },
-                      () =>
-                        toast.error(
-                          t("geolocationFailed", {
-                            defaultValue: "فشل تحديد الموقع",
-                          }),
-                        ),
+                      () => toast.error(t("geolocationFailed")),
                     );
                   } else {
-                    toast.error(
-                      t("geolocationNotSupported", {
-                        defaultValue: "المتصفح لا يدعم تحديد الموقع",
-                      }),
-                    );
+                    toast.error(t("geolocationNotSupported"));
                   }
                 }}
                 className="flex-1 bg-white text-gray-800 py-1.5 rounded-full text-sm shadow-md flex items-center justify-center gap-1 hover:bg-gray-100"
@@ -708,55 +485,53 @@ export default function AddressModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                {t("fullName")}
-              </label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, fullName: e.target.value }))
-                }
-                required
-                className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
-              />
-            </div>
-
-            {/* Emirate combobox with clear button */}
-            <Combobox
-              label={t("emirate") || "الإمارة"}
-              value={formData.city}
-              options={EMIRATES}
-              onChange={(val) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  city: val,
-                  area: "",
-                }));
-              }}
-              placeholder={t("selectEmirate") || "اختر الإمارة"}
+          {/* Full Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t("fullName")}
+            </label>
+            <input
+              type="text"
+              name="fullName"
+              value={formData.fullName}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, fullName: e.target.value }))
+              }
+              required
+              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
             />
           </div>
 
-          {/* Area combobox with clear button */}
-          <Combobox
-            label={t("area") || "المنطقة"}
-            value={formData.area}
-            options={currentAreas}
-            onChange={(val) => setFormData((prev) => ({ ...prev, area: val }))}
-            placeholder={
-              formData.city
-                ? t("selectArea") || "اختر المنطقة"
-                : t("selectCityFirst") || "اختر المدينة أولاً"
-            }
-            disabled={!formData.city}
-          />
+          {/* Emirate (read‑only, auto‑filled) */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t("emirate")}
+            </label>
+            <input
+              type="text"
+              value={formData.city}
+              readOnly
+              placeholder={t("selectEmirate")}
+              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 text-gray-600 cursor-not-allowed"
+            />
+          </div>
 
-          {/* Phone */}
-          <div className="flex gap-2">
+          {/* Area (read‑only, auto‑filled) */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              {t("area")}
+            </label>
+            <input
+              type="text"
+              value={formData.area}
+              readOnly
+              placeholder={t("selectArea")}
+              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 text-gray-600 cursor-not-allowed"
+            />
+          </div>
+
+          {/* Phone number with country code – direction handled for RTL */}
+          <div className={`flex gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
             <div className="w-24 shrink-0">
               <label className="block text-sm font-medium mb-1">
                 {t("countryCode")}
@@ -779,49 +554,34 @@ export default function AddressModal({
                 required
                 placeholder="501234567"
                 className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
+                dir="ltr"
               />
               <p className="text-xs text-gray-400 mt-1">
-                {t("phoneHint") ||
-                  "أدخل رقم الهاتف بدون صفر إضافي (مثال: 501234567)"}
+                {t("phoneHint", {
+                  defaultValue:
+                    "أدخل رقم الهاتف بدون صفر إضافي (مثال: 501234567)",
+                })}
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label>{t("buildingNo")}</label>
-              <input
-                type="text"
-                name="buildingNo"
-                value={formData.buildingNo}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    buildingNo: e.target.value,
-                  }))
-                }
-                className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
-              />
-            </div>
-            <div>
-              <label>{t("streetAddress")}</label>
-              <input
-                type="text"
-                name="streetAddress"
-                value={formData.streetAddress}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    streetAddress: e.target.value,
-                  }))
-                }
-                required
-                className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
-              />
-            </div>
+          {/* Building number (optional) */}
+          <div>
+            <label>{t("buildingNo")}</label>
+            <input
+              type="text"
+              name="buildingNo"
+              value={formData.buildingNo}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, buildingNo: e.target.value }))
+              }
+              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
+            />
           </div>
 
-          {/* No visible input for pinLocation */}
+          {/* Street address field is completely hidden */}
+
+          {/* Default address checkbox */}
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -838,6 +598,7 @@ export default function AddressModal({
             <label className="text-sm">{t("isDefault")}</label>
           </div>
 
+          {/* Buttons */}
           <div className="flex gap-3 pt-4">
             <button
               type="button"
