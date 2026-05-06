@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
 import { Toaster } from "sonner";
+import DirUpdater from "@/components/DirUpdater"; // 👈 external component
 
 const storeInfo = {
   name: "حيب الفاخر",
@@ -12,13 +13,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
   title: storeInfo.name,
   description: "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
-
   icons: {
     icon: "/logo-icon.svg",
     shortcut: "/logo-icon.svg",
     apple: "/logo-icon.svg",
   },
-
   openGraph: {
     title: storeInfo.name,
     description: "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
@@ -34,14 +33,12 @@ export const metadata: Metadata = {
     ],
     type: "website",
   },
-
   twitter: {
     card: "summary_large_image",
     title: storeInfo.name,
     description: "Heeb Al Fakher store for seasonal fruits, dairy and pickles",
     images: ["/logo-icon.svg"],
   },
-
   robots: {
     index: true,
     follow: true,
@@ -53,11 +50,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Await the headers promise, then read the custom locale header
   const headersList = await headers();
-  const locale = headersList.get("x-locale") || "ar"; // fallback to Arabic
+  const locale = headersList.get("x-locale") || "ar";
 
-  // Set HTML attributes based on locale
   const isRTL = locale === "ar";
   const lang = locale;
   const dir = isRTL ? "rtl" : "ltr";
@@ -86,6 +81,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: "none", visibility: "hidden" }}
           ></iframe>
         </noscript>
+
+        {/* Updates lang/dir on every locale change without page refresh */}
+        <DirUpdater />
+
         {children}
         <Toaster position="bottom-center" richColors closeButton />
       </body>
