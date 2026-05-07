@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useTranslation } from "@/lib/useTranslation";
 import { toast } from "sonner";
 
-// ---------- Supported emirates (used only for geocoding validation) ----------
+// ---------- Supported emirates ----------
 const EMIRATES = [
   "Dubai",
   "Abu Dhabi",
@@ -20,13 +20,13 @@ export interface Address {
   id: string;
   fullName: string;
   address: string;
-  phone: string; // stored as "+971XXXXXXXXX"
-  city?: string; // emirate (auto‑filled)
-  area?: string; // well‑known sub‑area (auto‑filled)
+  phone: string;
+  city?: string;
+  area?: string;
   buildingNo?: string;
-  streetAddress?: string; // hidden, always empty
+  streetAddress?: string; // hidden
   isDefault?: boolean;
-  pinLocation?: string; // Google Maps sharing link
+  pinLocation?: string;
 }
 
 interface AddressModalProps {
@@ -94,10 +94,10 @@ export default function AddressModal({
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
-    city: "", // auto‑filled
-    area: "", // auto‑filled
+    city: "",
+    area: "",
     buildingNo: "",
-    streetAddress: "", // always empty, not shown
+    streetAddress: "",
     pinLocation: "",
     isDefault: false,
   });
@@ -114,8 +114,9 @@ export default function AddressModal({
   const markerRef = useRef<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [locationDenied, setLocationDenied] = useState(false);
+  const [emirateManuallySet, setEmirateManuallySet] = useState(false);
 
-  // ---------- Pre‑fill form when editing an existing address ----------
+  // ---------- Pre‑fill ----------
   useEffect(() => {
     if (!isOpen) return;
     if (existingAddress) {
@@ -132,6 +133,7 @@ export default function AddressModal({
         pinLocation: existingAddress.pinLocation || "",
         isDefault: existingAddress.isDefault || false,
       });
+      setEmirateManuallySet(!!existingAddress.city);
       return;
     }
 
@@ -140,6 +142,7 @@ export default function AddressModal({
       try {
         const parsed = JSON.parse(saved);
         setFormData((prev) => ({ ...prev, ...parsed }));
+        setEmirateManuallySet(!!parsed.city);
       } catch (e) {
         console.error("Failed to parse saved address form data", e);
       }
@@ -147,7 +150,7 @@ export default function AddressModal({
     setIsInitialLoad(false);
   }, [isOpen, existingAddress]);
 
-  // ---------- Persist form data to localStorage (only for new addresses) ----------
+  // ---------- Persist ----------
   useEffect(() => {
     if (!isOpen || isInitialLoad || existingAddress) return;
     localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(formData));
@@ -157,7 +160,7 @@ export default function AddressModal({
     localStorage.removeItem(ADDRESS_FORM_STORAGE_KEY);
   };
 
-  // ---------- Google Maps API loading ----------
+  // ---------- Google Maps loading ----------
   useEffect(() => {
     if (!isOpen) return;
     if (window.google && window.google.maps) {
@@ -228,7 +231,9 @@ export default function AddressModal({
             setFormData((prev) => ({
               ...prev,
               address: results[0].formatted_address,
-              city: matchedEmirate || prev.city,
+              city: emirateManuallySet
+                ? prev.city
+                : matchedEmirate || prev.city,
               area: area || prev.area,
             }));
           }
@@ -252,7 +257,7 @@ export default function AddressModal({
       updatePinLocation(lat, lng);
     });
 
-    // Autocomplete for the search input
+    // Autocomplete
     if (searchInputRef.current) {
       try {
         const autocomplete = new window.google.maps.places.Autocomplete(
@@ -282,7 +287,9 @@ export default function AddressModal({
             const matchedEmirate = findEmirate(city);
             setFormData((prev) => ({
               ...prev,
-              city: matchedEmirate || prev.city,
+              city: emirateManuallySet
+                ? prev.city
+                : matchedEmirate || prev.city,
               area: area || prev.area,
             }));
           }
@@ -292,7 +299,7 @@ export default function AddressModal({
       }
     }
 
-    // Try geolocation – if allowed, fill fields; if denied, show a message
+    // Geolocate
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -333,7 +340,6 @@ export default function AddressModal({
       return;
     }
 
-    // Build full address string (streetAddress is hidden and always empty)
     const parts = [formData.area, formData.city];
     if (formData.buildingNo) parts.unshift(formData.buildingNo);
     const fullAddress = parts.join(", ");
@@ -346,7 +352,7 @@ export default function AddressModal({
       city: formData.city,
       area: formData.area,
       buildingNo: formData.buildingNo,
-      streetAddress: "", // always empty
+      streetAddress: "",
       pinLocation: formData.pinLocation,
       isDefault: formData.isDefault,
     };
@@ -363,6 +369,7 @@ export default function AddressModal({
       pinLocation: "",
       isDefault: false,
     });
+    setEmirateManuallySet(false);
   };
 
   if (!isOpen) return null;
@@ -405,7 +412,7 @@ export default function AddressModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Search input placed above the map – clean design */}
+          {/* Location denied warning */}
           {locationDenied && !formData.city && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-2 text-sm text-amber-800 flex items-center gap-2">
               <span>📍</span>
@@ -413,6 +420,7 @@ export default function AddressModal({
             </div>
           )}
 
+          {/* Search bar */}
           <div className="relative">
             <input
               ref={searchInputRef}
@@ -420,7 +428,6 @@ export default function AddressModal({
               placeholder={t("searchPlaceholder")}
               className="w-full bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#338A43]"
             />
-            {/* Search icon – absolute but outside the input to avoid overlap */}
             <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
               <Image
                 src="/icons/search.svg"
@@ -429,7 +436,6 @@ export default function AddressModal({
                 height={18}
               />
             </span>
-            {/* Clear button – if needed later */}
           </div>
 
           {/* Map */}
@@ -464,7 +470,6 @@ export default function AddressModal({
                         mapInstanceRef.current?.setCenter(loc);
                         markerRef.current?.setPosition(loc);
                         setSelectedLocation(loc);
-                        // geocode will fill city/area automatically
                       },
                       () => toast.error(t("geolocationFailed")),
                     );
@@ -502,21 +507,31 @@ export default function AddressModal({
             />
           </div>
 
-          {/* Emirate (read‑only, auto‑filled) */}
+          {/* Emirate – always dropdown */}
           <div>
             <label className="block text-sm font-medium mb-1">
               {t("emirate")}
             </label>
-            <input
-              type="text"
+            <select
               value={formData.city}
-              readOnly
-              placeholder={t("selectEmirate")}
-              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 text-gray-600 cursor-not-allowed"
-            />
+              onChange={(e) => {
+                const selected = e.target.value;
+                setFormData((prev) => ({ ...prev, city: selected }));
+                setEmirateManuallySet(true);
+              }}
+              required
+              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
+            >
+              <option value="">{t("selectEmirate")}</option>
+              {EMIRATES.map((emirate) => (
+                <option key={emirate} value={emirate}>
+                  {emirate}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Area (read‑only, auto‑filled) */}
+          {/* Area – read‑only */}
           <div>
             <label className="block text-sm font-medium mb-1">
               {t("area")}
@@ -530,7 +545,7 @@ export default function AddressModal({
             />
           </div>
 
-          {/* Phone number with country code – direction handled for RTL */}
+          {/* Phone */}
           <div className={`flex gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
             <div className="w-24 shrink-0">
               <label className="block text-sm font-medium mb-1">
@@ -565,7 +580,7 @@ export default function AddressModal({
             </div>
           </div>
 
-          {/* Building number (optional) */}
+          {/* Building number */}
           <div>
             <label>{t("buildingNo")}</label>
             <input
@@ -578,8 +593,6 @@ export default function AddressModal({
               className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
             />
           </div>
-
-          {/* Street address field is completely hidden */}
 
           {/* Default address checkbox */}
           <div className="flex items-center gap-2">
@@ -596,6 +609,16 @@ export default function AddressModal({
               className="w-4 h-4 text-[#338A43]"
             />
             <label className="text-sm">{t("isDefault")}</label>
+          </div>
+
+          {/* Friendly reminder before saving */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex justify-center items-center text-sm text-blue-800 text-center">
+            <span>
+              {t("addressHint", {
+                defaultValue:
+                  "يرجى التأكد من صحة العنوان قبل الحفظ لضمان سرعة التوصيل 🚚",
+              })}
+            </span>
           </div>
 
           {/* Buttons */}
