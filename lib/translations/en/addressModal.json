@@ -31,6 +31,5 @@
   "emirate": "Emirate",
   "selectEmirate": "Select emirate",
   "phoneHint": "Enter phone number without extra leading zero (e.g. 501234567)",
-  "invalidPhone": "Invalid phone number. Please enter 9-10 digits without additional zeros",
-  "addressHint": "Please review your address before saving to ensure your order is delivered as quickly as possible!"
+  "invalidPhone": "Invalid phone number. Please enter 9-10 digits without additional zeros"
 }

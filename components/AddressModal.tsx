@@ -16,6 +16,109 @@ const EMIRATES = [
   "Fujairah",
 ];
 
+// ---------- Areas per emirate (for reference only – not used for validation) ----------
+const AREAS_BY_EMIRATE: Record<string, string[]> = {
+  Dubai: [
+    "Jumeirah",
+    "Marina",
+    "Deira",
+    "Bur Dubai",
+    "Karama",
+    "Al Barsha",
+    "Satwa",
+    "JLT",
+    "Business Bay",
+    "Mirdif",
+    "Al Qusais",
+    "Discovery Gardens",
+    "Palm Jumeirah",
+    "Jebel Ali",
+    "Al Nahda",
+    "Dubai Silicon Oasis",
+    "Dubai Sports City",
+    "International City",
+    "Arabian Ranches",
+    "Emirates Hills",
+    "The Springs",
+    "Al Furjan",
+    "Town Square",
+    "Dubai Hills Estate",
+    "Al Khawaneej",
+    "Al Warqaa",
+    "Nad Al Sheba",
+    "Al Barari",
+  ],
+  "Abu Dhabi": [
+    "Al Reem Island",
+    "Khalifa City",
+    "Mohammed Bin Zayed City",
+    "Al Raha Beach",
+    "Yas Island",
+    "Saadiyat Island",
+    "Al Zahiyah",
+    "Al Maryah Island",
+    "Al Bateen",
+    "Al Mushrif",
+    "Al Shamkha",
+    "Al Reef",
+    "Shakhbout City",
+    "Al Falah City",
+    "Al Ain City",
+    "Madinat Zayed",
+  ],
+  Sharjah: [
+    "Al Majaz",
+    "Al Qasimia",
+    "Al Nahda Sharjah",
+    "Al Khan",
+    "Muwaileh",
+    "Al Taawun",
+    "Al Ruwaida",
+    "Al Juraina",
+    "Al Mirgab",
+    "Al Hazana",
+    "Al Layyeh",
+    "Al Suyoh",
+  ],
+  Ajman: [
+    "Al Nuaimiya",
+    "Al Rashidiya",
+    "Al Jurf",
+    "Al Mowaihat",
+    "Emirates City",
+    "Al Zahraa",
+    "Ajman Downtown",
+    "Al Hamidiya",
+    "Al Corniche",
+  ],
+  "Umm Al Quwain": [
+    "Al Salamah",
+    "Al Riqqah",
+    "Umm Al Quwain City",
+    "Al Baqra",
+    "Falaj Al Mualla",
+  ],
+  "Ras Al Khaimah": [
+    "Al Nakheel",
+    "Al Hamra",
+    "Mina Al Arab",
+    "Ras Al Khaimah City",
+    "Al Jazirah Al Hamra",
+    "Khor Khwair",
+    "Al Mamura",
+    "Al Fahleen",
+    "Adhen",
+  ],
+  Fujairah: [
+    "Fujairah City",
+    "Dibba Al-Fujairah",
+    "Al Qurayyah",
+    "Mirbah",
+    "Al Bidya",
+    "Sakamkam",
+  ],
+};
+
 export interface Address {
   id: string;
   fullName: string;
@@ -116,7 +219,18 @@ export default function AddressModal({
   const [locationDenied, setLocationDenied] = useState(false);
   const [emirateManuallySet, setEmirateManuallySet] = useState(false);
 
-  // ---------- Pre‑fill ----------
+  // Refs to avoid stale closures inside map callbacks
+  const cityRef = useRef(formData.city);
+  const manualRef = useRef(emirateManuallySet);
+
+  useEffect(() => {
+    cityRef.current = formData.city;
+  }, [formData.city]);
+  useEffect(() => {
+    manualRef.current = emirateManuallySet;
+  }, [emirateManuallySet]);
+
+  // ---------- Pre‑fill form ----------
   useEffect(() => {
     if (!isOpen) return;
     if (existingAddress) {
@@ -228,14 +342,37 @@ export default function AddressModal({
               if (comp.types.includes("locality")) city = comp.long_name;
             }
             const matchedEmirate = findEmirate(city);
-            setFormData((prev) => ({
-              ...prev,
-              address: results[0].formatted_address,
-              city: emirateManuallySet
-                ? prev.city
-                : matchedEmirate || prev.city,
-              area: area || prev.area,
-            }));
+
+            // If user manually selected an emirate, validate match
+            if (manualRef.current && cityRef.current) {
+              if (matchedEmirate !== cityRef.current) {
+                // Mismatch – clear area and warn
+                setFormData((prev) => ({ ...prev, area: "" }));
+                toast.warning(
+                  t("areaMismatch", {
+                    defaultValue:
+                      "هذا الموقع خارج الإمارة التي اخترتها. الرجاء اختيار إمارة مطابقة أو تكبير الخريطة.",
+                  }),
+                );
+                return;
+              }
+              // Emirate matches – fill area with Google's value
+              setFormData((prev) => ({
+                ...prev,
+                address: results[0].formatted_address,
+                area: area || prev.area,
+                // Do NOT override the manually selected emirate
+                city: prev.city,
+              }));
+            } else {
+              // No manual selection – auto‑fill both
+              setFormData((prev) => ({
+                ...prev,
+                address: results[0].formatted_address,
+                city: matchedEmirate || prev.city,
+                area: area || prev.area,
+              }));
+            }
           }
         },
       );
@@ -285,13 +422,25 @@ export default function AddressModal({
               }
             }
             const matchedEmirate = findEmirate(city);
-            setFormData((prev) => ({
-              ...prev,
-              city: emirateManuallySet
-                ? prev.city
-                : matchedEmirate || prev.city,
-              area: area || prev.area,
-            }));
+
+            if (manualRef.current && cityRef.current) {
+              if (matchedEmirate !== cityRef.current) {
+                setFormData((prev) => ({ ...prev, area: "" }));
+                toast.warning(t("areaMismatch"));
+                return;
+              }
+              setFormData((prev) => ({
+                ...prev,
+                area: area || prev.area,
+                city: prev.city, // keep manual selection
+              }));
+            } else {
+              setFormData((prev) => ({
+                ...prev,
+                city: matchedEmirate || prev.city,
+                area: area || prev.area,
+              }));
+            }
           }
         });
       } catch (err) {
@@ -516,7 +665,12 @@ export default function AddressModal({
               value={formData.city}
               onChange={(e) => {
                 const selected = e.target.value;
-                setFormData((prev) => ({ ...prev, city: selected }));
+                // Reset area when emirate changes manually
+                setFormData((prev) => ({
+                  ...prev,
+                  city: selected,
+                  area: "", // clear area so invalid ones disappear
+                }));
                 setEmirateManuallySet(true);
               }}
               required
@@ -531,7 +685,7 @@ export default function AddressModal({
             </select>
           </div>
 
-          {/* Area – read‑only */}
+          {/* Area – read‑only, filled directly from Google Maps */}
           <div>
             <label className="block text-sm font-medium mb-1">
               {t("area")}
@@ -609,16 +763,6 @@ export default function AddressModal({
               className="w-4 h-4 text-[#338A43]"
             />
             <label className="text-sm">{t("isDefault")}</label>
-          </div>
-
-          {/* Friendly reminder before saving */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex justify-center items-center text-sm text-blue-800 text-center">
-            <span>
-              {t("addressHint", {
-                defaultValue:
-                  "يرجى التأكد من صحة العنوان قبل الحفظ لضمان سرعة التوصيل 🚚",
-              })}
-            </span>
           </div>
 
           {/* Buttons */}
