@@ -71,7 +71,9 @@ export default function CartPage() {
   }, [items]);
 
   useEffect(() => {
-    fetchCart().finally(() => setIsLoading(false));
+    // fetchCart is now synchronous – no .finally needed
+    fetchCart();
+    setIsLoading(false);
   }, [fetchCart]);
 
   useEffect(() => {
@@ -84,17 +86,17 @@ export default function CartPage() {
     }
   }, [items, isLoading]);
 
-  const handleUpdateQuantity = async (id: number, quantity: number) => {
+  const handleUpdateQuantity = (id: number, quantity: number) => {
     if (quantity < 1) return;
     setIsUpdating(true);
-    await updateQuantity(id, quantity);
+    updateQuantity(id, quantity);
     setIsUpdating(false);
     toast.success(t("updated"));
   };
 
-  const handleRemoveItem = async (id: number) => {
+  const handleRemoveItem = (id: number) => {
     setIsUpdating(true);
-    await removeItem(id);
+    removeItem(id);
     setIsUpdating(false);
     toast.success(t("removed"));
   };
@@ -278,7 +280,6 @@ export default function CartPage() {
                     className="bg-[#338A43] h-2.5 rounded-full transition-all duration-300"
                     style={{ width: `${progressPercent}%` }}
                   ></div>
-                  {/* Delivery truck icon – positioned using logical inline-start */}
                   <div
                     className="absolute top-1/2 -translate-y-1/2 transition-all duration-300"
                     style={{
@@ -294,7 +295,6 @@ export default function CartPage() {
                     />
                   </div>
                 </div>
-                {/* Completion text now uses text-end instead of text-right */}
                 <p className="text-xs text-neutral-600 mt-1 text-end">
                   {progressPercent.toFixed(0)}% مكتمل
                 </p>
@@ -309,7 +309,6 @@ export default function CartPage() {
                     alt="coupon"
                     width={18}
                     height={18}
-                    // Icon now uses logical start instead of left-3
                     className="absolute inset-s-3 top-1/2 -translate-y-1/2"
                   />
                   <input
@@ -317,7 +316,6 @@ export default function CartPage() {
                     placeholder={t("promoCode")}
                     value={promoCode}
                     onChange={(e) => setPromoCode(e.target.value)}
-                    // Input padding now uses start (ps) and end (pe)
                     className="w-full border border-neutral-300 rounded-full py-2 ps-10 pe-4 text-sm focus:outline-none focus:border-primary"
                   />
                 </div>
