@@ -24,8 +24,8 @@ export default function Footer() {
               <Image
                 src="/logo-heeb.svg"
                 alt="Heeb Al Fakher"
-                width={50}
-                height={50}
+                width={0}
+                height={0}
                 className="h-12 w-auto"
               />
             </div>

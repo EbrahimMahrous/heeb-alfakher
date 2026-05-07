@@ -24,13 +24,13 @@ export default function Header() {
   return (
     <header className="bg-white shadow-md py-4 px-4 md:px-8 sticky top-0 z-50">
       <div className="container mx-auto flex flex-wrap items-center justify-between gap-4">
-        {/* Logo – always goes to home with locale */}
+        {/* Logo – دائمًا يذهب إلى الرئيسية باللغة المختارة */}
         <Link href={homeHref} className="flex items-center">
           <Image
             src="/logo-heeb.svg"
             alt="Heeb Al Fakher"
-            width={120}
-            height={40}
+            width={0}
+            height={0}
             className="h-10 w-auto"
             priority
           />

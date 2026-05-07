@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+export const maxDuration = 30;
 
 const ZIINA_API =
   process.env.ZIINA_API_BASE_URL || "https://api-v2.ziina.com/api";

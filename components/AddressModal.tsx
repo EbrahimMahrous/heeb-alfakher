@@ -16,7 +16,7 @@ const EMIRATES = [
   "Fujairah",
 ];
 
-// ---------- Areas per emirate (for reference only) ----------
+// ---------- Complete areas per emirate ----------
 const AREAS_BY_EMIRATE: Record<string, string[]> = {
   Dubai: [
     "Jumeirah",
@@ -126,7 +126,7 @@ export interface Address {
   phone: string;
   city?: string;
   area?: string;
-  buildingNo?: string;
+  buildingNo?: string; // still included in interface but not filled
   streetAddress?: string;
   isDefault?: boolean;
   pinLocation?: string;
@@ -156,18 +156,18 @@ const findEmirate = (cityName: string): string => {
 };
 
 const extractArea = (components: any[]): string => {
-  for (const comp of components) {
-    if (comp.types.includes("sublocality_level_1")) return comp.long_name;
-  }
-  for (const comp of components) {
-    if (comp.types.includes("sublocality")) return comp.long_name;
-  }
-  for (const comp of components) {
-    if (comp.types.includes("neighborhood")) return comp.long_name;
-  }
-  for (const comp of components) {
-    if (comp.types.includes("administrative_area_level_2"))
-      return comp.long_name;
+  const AREA_TYPES = [
+    "sublocality_level_1",
+    "sublocality",
+    "neighborhood",
+    "administrative_area_level_2",
+    "administrative_area_level_1",
+    "route",
+  ];
+  for (const type of AREA_TYPES) {
+    for (const comp of components) {
+      if (comp.types.includes(type)) return comp.long_name;
+    }
   }
   return "";
 };
@@ -179,6 +179,143 @@ const sanitizePhoneNumber = (rawPhone: string): string => {
   if (!digits.startsWith("971")) digits = "971" + digits;
   if (digits.length < 10 || digits.length > 12) return "";
   return digits;
+};
+
+// ---------- Reusable Searchable Select (used for both Emirate and Area) ----------
+const SearchableSelect = ({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  disabled,
+  required = false,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(value);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const filtered = options.filter((opt) =>
+    opt.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  // Sync external value changes (e.g. map auto‑fill)
+  useEffect(() => {
+    setSearchTerm(value);
+  }, [value]);
+
+  // Close dropdown on outside click & notify if unrecognized area is left
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+        // If the typed text is not a valid option, revert and warn
+        if (searchTerm && !options.includes(searchTerm)) {
+          setSearchTerm(value);
+          if (searchTerm !== value) {
+            toast.error("يرجى اختيار منطقة من القائمة");
+          }
+        }
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchTerm, value, options]);
+
+  const handleClear = () => {
+    onChange("");
+    setSearchTerm("");
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <label className="block text-sm font-medium mb-1">{label}</label>
+      <div className="relative">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setIsOpen(true);
+            // Do NOT update actual value until selection
+          }}
+          onFocus={() => !disabled && setIsOpen(true)}
+          placeholder={placeholder}
+          disabled={disabled}
+          required={required}
+          className={`w-full bg-[#E2E8F0] rounded-lg p-2 pe-8 border-0 focus:ring-2 focus:ring-[#338A43] ${
+            disabled ? "opacity-60 cursor-not-allowed" : ""
+          }`}
+        />
+        {/* Clear button */}
+        {value && !disabled && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            tabIndex={-1}
+          >
+            ✕
+          </button>
+        )}
+        {/* Chevron indicator */}
+        <span className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </span>
+      </div>
+      {/* Dropdown list */}
+      {isOpen && !disabled && filtered.length > 0 && (
+        <ul className="absolute z-30 mt-1 max-h-48 w-full overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg">
+          {filtered.map((opt) => (
+            <li
+              key={opt}
+              className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 transition ${
+                opt === value ? "bg-green-100 font-semibold text-primary" : ""
+              }`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(opt);
+                setSearchTerm(opt);
+                setIsOpen(false);
+              }}
+            >
+              {opt}
+            </li>
+          ))}
+        </ul>
+      )}
+      {/* If no results and search term is non‑empty */}
+      {isOpen && !disabled && searchTerm && filtered.length === 0 && (
+        <div className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm text-gray-500 text-center">
+          لا توجد نتائج
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default function AddressModal({
@@ -197,7 +334,7 @@ export default function AddressModal({
     phone: "",
     city: "",
     area: "",
-    buildingNo: "",
+    buildingNo: "", // hidden, always empty
     streetAddress: "",
     pinLocation: "",
     isDefault: false,
@@ -215,19 +352,13 @@ export default function AddressModal({
   const markerRef = useRef<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [locationDenied, setLocationDenied] = useState(false);
-  const [emirateManuallySet, setEmirateManuallySet] = useState(false);
-
-  const cityRef = useRef(formData.city);
-  const manualRef = useRef(emirateManuallySet);
-
+  const [emirateManual, setEmirateManual] = useState(false);
+  const emirateManualRef = useRef(emirateManual);
   useEffect(() => {
-    cityRef.current = formData.city;
-  }, [formData.city]);
-  useEffect(() => {
-    manualRef.current = emirateManuallySet;
-  }, [emirateManuallySet]);
+    emirateManualRef.current = emirateManual;
+  }, [emirateManual]);
 
-  // Pre‑fill
+  // ---------- Pre‑fill ----------
   useEffect(() => {
     if (!isOpen) return;
     if (existingAddress) {
@@ -244,7 +375,7 @@ export default function AddressModal({
         pinLocation: existingAddress.pinLocation || "",
         isDefault: existingAddress.isDefault || false,
       });
-      setEmirateManuallySet(true);
+      setEmirateManual(true);
       return;
     }
 
@@ -256,7 +387,7 @@ export default function AddressModal({
           ...prev,
           fullName: parsed.fullName || "",
           phone: parsed.phone || "",
-          buildingNo: parsed.buildingNo || "",
+          buildingNo: "",
           city: "",
           area: "",
         }));
@@ -273,13 +404,11 @@ export default function AddressModal({
     const dataToSave = {
       fullName: formData.fullName,
       phone: formData.phone,
-      buildingNo: formData.buildingNo,
     };
     localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
   }, [
     formData.fullName,
     formData.phone,
-    formData.buildingNo,
     isOpen,
     isInitialLoad,
     existingAddress,
@@ -343,6 +472,15 @@ export default function AddressModal({
       setFormData((prev) => ({ ...prev, pinLocation: link }));
     };
 
+    const matchAreaToList = (areaName: string, emirate: string): string => {
+      if (!emirate || !areaName) return areaName;
+      const allowed = AREAS_BY_EMIRATE[emirate] || [];
+      const found = allowed.find(
+        (a) => a.toLowerCase() === areaName.toLowerCase(),
+      );
+      return found || "";
+    };
+
     const geocodeAndFill = (lat: number, lng: number) => {
       const geocoder = new window.google.maps.Geocoder();
       geocoder.geocode(
@@ -357,33 +495,37 @@ export default function AddressModal({
             }
             const matchedEmirate = findEmirate(city);
 
-            if (manualRef.current && cityRef.current) {
-              if (matchedEmirate !== cityRef.current) {
-                // Mismatch – reset emirate and manual flag
-                setFormData((prev) => ({ ...prev, area: "", city: "" }));
-                setEmirateManuallySet(false);
+            if (emirateManualRef.current) {
+              if (matchedEmirate && matchedEmirate !== formData.city) {
+                setFormData((prev) => ({
+                  ...prev,
+                  area: "",
+                  address: results[0].formatted_address,
+                }));
                 toast.warning(
                   t("areaMismatch", {
                     defaultValue:
-                      "تم إعادة تعيين الإمارة المختارة لعدم تطابقها مع الموقع. يمكنك الآن تحديد الموقع مرة أخرى.",
+                      "هذه المنطقة لا تتبع الإمارة المختارة. الرجاء ادخال المنطقة يدويًا أو تغيير الإمارة.",
                   }),
                 );
-                return;
+              } else {
+                const matchedArea = matchAreaToList(area, formData.city);
+                setFormData((prev) => ({
+                  ...prev,
+                  address: results[0].formatted_address,
+                  area: matchedArea || prev.area,
+                }));
               }
-              // Match – fill area but keep manual emirate
-              setFormData((prev) => ({
-                ...prev,
-                address: results[0].formatted_address,
-                area: area || prev.area,
-                city: prev.city,
-              }));
             } else {
-              // Auto-fill both emirate and area
+              const targetCity = matchedEmirate || "";
+              const matchedArea = targetCity
+                ? matchAreaToList(area, targetCity)
+                : area;
               setFormData((prev) => ({
                 ...prev,
                 address: results[0].formatted_address,
-                city: matchedEmirate || prev.city,
-                area: area || prev.area,
+                city: targetCity || prev.city,
+                area: matchedArea || prev.area,
               }));
             }
           }
@@ -419,44 +561,67 @@ export default function AddressModal({
         );
         autocomplete.addListener("place_changed", () => {
           const place = autocomplete.getPlace();
-          if (place.geometry) {
-            const loc = place.geometry.location;
-            map.setCenter(loc);
-            marker.setPosition(loc);
-            setSelectedLocation({ lat: loc.lat(), lng: loc.lng() });
-            updatePinLocation(loc.lat(), loc.lng());
+          if (!place.geometry || !place.address_components) {
+            toast.error(
+              t("mapsErrorGeneral", {
+                defaultValue: "يرجى اختيار عنوان من القائمة",
+              }),
+            );
+            return;
+          }
 
-            let city = "",
-              area = "";
-            if (place.address_components) {
-              area = extractArea(place.address_components);
-              for (const comp of place.address_components) {
-                if (comp.types.includes("locality")) city = comp.long_name;
-              }
-            }
-            const matchedEmirate = findEmirate(city);
+          const loc = place.geometry.location;
+          map.setCenter(loc);
+          marker.setPosition(loc);
+          setSelectedLocation({ lat: loc.lat(), lng: loc.lng() });
+          updatePinLocation(loc.lat(), loc.lng());
 
-            if (manualRef.current && cityRef.current) {
-              if (matchedEmirate !== cityRef.current) {
-                setFormData((prev) => ({ ...prev, area: "", city: "" }));
-                setEmirateManuallySet(false);
-                toast.warning(t("areaMismatch"));
-                return;
-              }
-              setFormData((prev) => ({
-                ...prev,
-                area: area || prev.area,
-                city: prev.city,
-              }));
-            } else {
-              setFormData((prev) => ({
-                ...prev,
-                city: matchedEmirate || prev.city,
-                area: area || prev.area,
-              }));
+          let city = "",
+            area = "";
+          if (place.address_components) {
+            area = extractArea(place.address_components);
+            for (const comp of place.address_components) {
+              if (comp.types.includes("locality")) city = comp.long_name;
             }
           }
+          const matchedEmirate = findEmirate(city);
+
+          if (emirateManualRef.current) {
+            if (matchedEmirate && matchedEmirate !== formData.city) {
+              setFormData((prev) => ({
+                ...prev,
+                area: "",
+                address: place.formatted_address || "",
+              }));
+              toast.warning(t("areaMismatch"));
+            } else {
+              const matchedArea = matchAreaToList(area, formData.city);
+              setFormData((prev) => ({
+                ...prev,
+                area: matchedArea || prev.area,
+                address: place.formatted_address || "",
+              }));
+            }
+          } else {
+            const targetCity = matchedEmirate || "";
+            const matchedArea = targetCity
+              ? matchAreaToList(area, targetCity)
+              : area;
+            setFormData((prev) => ({
+              ...prev,
+              city: targetCity || prev.city,
+              area: matchedArea || prev.area,
+              address: place.formatted_address || "",
+            }));
+          }
         });
+
+        setTimeout(() => {
+          const pacContainer = document.querySelector(".pac-container");
+          if (pacContainer) {
+            (pacContainer as HTMLElement).style.zIndex = "999999";
+          }
+        }, 500);
       } catch (err) {
         console.error("Autocomplete init error:", err);
       }
@@ -499,7 +664,6 @@ export default function AddressModal({
       return;
     }
     const parts = [formData.area, formData.city];
-    if (formData.buildingNo) parts.unshift(formData.buildingNo);
     const fullAddress = parts.join(", ");
 
     const newAddress: Address = {
@@ -509,7 +673,7 @@ export default function AddressModal({
       phone: `+971${sanitizedPhone.replace("971", "")}`,
       city: formData.city,
       area: formData.area,
-      buildingNo: formData.buildingNo,
+      buildingNo: "",
       streetAddress: "",
       pinLocation: formData.pinLocation,
       isDefault: formData.isDefault,
@@ -527,7 +691,7 @@ export default function AddressModal({
       pinLocation: "",
       isDefault: false,
     });
-    setEmirateManuallySet(false);
+    setEmirateManual(false);
   };
 
   if (!isOpen) return null;
@@ -555,9 +719,15 @@ export default function AddressModal({
       </div>
     );
 
+  const currentAreas = formData.city
+    ? AREAS_BY_EMIRATE[formData.city] || []
+    : [];
+  const currentEmirates = EMIRATES;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
+        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold">{t("title")}</h2>
           <button
@@ -583,14 +753,9 @@ export default function AddressModal({
               ref={searchInputRef}
               type="text"
               placeholder={t("searchPlaceholder")}
-              onFocus={() => {
-                // Clear emirate so auto‑fill works freely on new search
-                setFormData((prev) => ({ ...prev, city: "" }));
-                setEmirateManuallySet(false);
-              }}
               className="w-full bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#338A43]"
             />
-            <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+            <span className="absolute start-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
               <Image
                 src="/icons/search.svg"
                 alt="search"
@@ -606,7 +771,7 @@ export default function AddressModal({
               ref={mapRef}
               className="w-full h-64 rounded-xl overflow-hidden border border-gray-200"
             />
-            <div className="absolute bottom-2 inset-s-2 inset-e-2 flex gap-2 z-10">
+            <div className="absolute bottom-2 start-2 end-2 flex gap-2 z-10">
               <button
                 type="button"
                 onClick={() =>
@@ -668,43 +833,29 @@ export default function AddressModal({
             />
           </div>
 
-          {/* Emirate dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {t("emirate")}
-            </label>
-            <select
-              value={formData.city}
-              onChange={(e) => {
-                const selected = e.target.value;
-                setFormData((prev) => ({ ...prev, city: selected, area: "" }));
-                setEmirateManuallySet(!!selected);
-              }}
-              required
-              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
-            >
-              <option value="">{t("selectEmirate")}</option>
-              {EMIRATES.map((emirate) => (
-                <option key={emirate} value={emirate}>
-                  {emirate}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Emirate – searchable dropdown */}
+          <SearchableSelect
+            label={t("emirate")}
+            value={formData.city}
+            options={currentEmirates}
+            onChange={(selected) => {
+              setFormData((prev) => ({ ...prev, city: selected, area: "" }));
+              setEmirateManual(!!selected);
+            }}
+            placeholder={t("selectEmirate")}
+            required
+          />
 
-          {/* Area (read‑only) */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {t("area")}
-            </label>
-            <input
-              type="text"
-              value={formData.area}
-              readOnly
-              placeholder={t("selectArea")}
-              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 text-gray-600 cursor-not-allowed"
-            />
-          </div>
+          {/* Area – searchable dropdown */}
+          <SearchableSelect
+            label={t("area") || "المنطقة"}
+            value={formData.area}
+            options={currentAreas}
+            onChange={(val) => setFormData((prev) => ({ ...prev, area: val }))}
+            placeholder={formData.city ? t("selectArea") : t("selectCityFirst")}
+            disabled={!formData.city}
+            required
+          />
 
           {/* Phone */}
           <div className={`flex gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -739,20 +890,6 @@ export default function AddressModal({
                 })}
               </p>
             </div>
-          </div>
-
-          {/* Building number */}
-          <div>
-            <label>{t("buildingNo")}</label>
-            <input
-              type="text"
-              name="buildingNo"
-              value={formData.buildingNo}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, buildingNo: e.target.value }))
-              }
-              className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
-            />
           </div>
 
           {/* Default address checkbox */}

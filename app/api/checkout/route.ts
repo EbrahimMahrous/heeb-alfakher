@@ -1,5 +1,36 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
+// ---------- Retry wrapper for fetch ----------
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 2,
+  baseDelay = 1000,
+): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timeout);
+      return res;
+    } catch (err: any) {
+      if (attempt < retries) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.warn(
+          `⚠️ Attempt ${attempt + 1} failed, retrying in ${delay}ms...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error("All retry attempts failed");
+}
+
 // ---------- Ziina Payment Helper ----------
 const ZIINA_API =
   process.env.ZIINA_API_BASE_URL || "https://api-v2.ziina.com/api";
@@ -15,50 +46,41 @@ async function createZiinaPayment(
   host: string,
   locale: string,
 ) {
-  // Ensure API key is set
-  if (!ZIINA_KEY) {
-    throw new Error("ZIINA_SECRET_KEY is not set in environment variables");
-  }
+  if (!ZIINA_KEY) throw new Error("ZIINA_SECRET_KEY is not set");
 
   const amountFils = Math.round(order.total_amount * 100);
-  if (isNaN(amountFils) || amountFils <= 0) {
-    throw new Error(`Invalid total_amount: ${order.total_amount}`);
-  }
+  if (isNaN(amountFils) || amountFils <= 0)
+    throw new Error(`Invalid total_amount`);
 
-  // Ziina will replace {id} with actual payment_intent ID
   const successUrl = `${host}/${locale}/order-success?session_id={id}`;
   const cancelUrl = `${host}/${locale}/checkout`;
 
-  console.log("🔹 Creating Ziina payment:", {
-    amountFils,
-    successUrl,
-    cancelUrl,
-  });
-
-  const response = await fetch(`${ZIINA_API}/payment_intent`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${ZIINA_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      amount: amountFils,
-      currency_code: "AED",
-      message: `طلب توصيل لـ ${order.customer_name}`,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      test: process.env.NODE_ENV !== "production", // test mode in development
-      metadata: {
-        order_id: String(order.id || ""),
-        customer_name: order.customer_name,
-        phone: order.mobile_number,
+  const response = await fetchWithRetry(
+    `${ZIINA_API}/payment_intent`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${ZIINA_KEY}`,
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        amount: amountFils,
+        currency_code: "AED",
+        message: `طلب توصيل لـ ${order.customer_name}`,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        test: process.env.NODE_ENV !== "production",
+        metadata: {
+          order_id: String(order.id || ""),
+          customer_name: order.customer_name,
+          phone: order.mobile_number,
+        },
+      }),
+    },
+    2,
+  );
 
   const paymentIntent = await response.json();
-  console.log("🔸 Ziina response:", JSON.stringify(paymentIntent, null, 2));
-
   if (!response.ok) {
     const errorMsg =
       paymentIntent.latest_error?.message ||
@@ -66,12 +88,8 @@ async function createZiinaPayment(
       "Failed to create payment";
     throw new Error(errorMsg);
   }
-
   const paymentUrl = paymentIntent.redirect_url || paymentIntent.embedded_url;
-  if (!paymentUrl) {
-    throw new Error("Ziina returned success but no payment URL");
-  }
-
+  if (!paymentUrl) throw new Error("Ziina returned success but no payment URL");
   return { paymentUrl, paymentIntentId: paymentIntent.id };
 }
 
@@ -79,7 +97,13 @@ async function createZiinaPayment(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log("📥 Checkout request body:", body);
+    console.log("📥 Checkout request:", {
+      customer_name: body.customer_name,
+      emirate_name: body.emirate_name,
+      area_name: body.area_name,
+      payment_type: body.payment_type,
+      total_amount: body.total_amount,
+    });
 
     // Basic validation
     if (
@@ -94,9 +118,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build form data for external order API (app.heebshop.ae)
     const base = process.env.API_BASE_URL || "https://app.heebshop.ae/api";
     const token = process.env.API_SECRET_TOKEN;
+    if (!token) {
+      console.error("❌ API_SECRET_TOKEN is not set!");
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 },
+      );
+    }
+
+    // ✅ Build address string (was missing – now sent)
+    const addressStr = `${body.area_name}, ${body.emirate_name}`;
 
     const formData = new URLSearchParams();
     formData.append("customer_name", body.customer_name);
@@ -104,7 +137,21 @@ export async function POST(request: Request) {
     formData.append("emirate_name", body.emirate_name);
     formData.append("area_name", body.area_name);
     formData.append("payment_type", body.payment_type);
-    formData.append("delivery_date", body.delivery_date);
+    formData.append("delivery_date", body.delivery_date || "");
+    // ✅ Address field (was missing)
+    formData.append("address", addressStr);
+    // ✅ Financial fields
+    formData.append("sub_total", String(body.total_amount || 0));
+    formData.append("total", String(body.total_amount || 0));
+    formData.append(
+      "paid_amount",
+      body.payment_type === "COD" ? "0" : String(body.total_amount || 0),
+    );
+    formData.append("delivery_fee", "0");
+    // ✅ Confirmation flag – if the API supports it
+    formData.append("is_confirmed", "1");
+    formData.append("is_from_website", "1");
+
     if (body.pin_location) formData.append("pin_location", body.pin_location);
     if (body.gift_message) formData.append("gift_message", body.gift_message);
     if (body.instruction) formData.append("instruction", body.instruction);
@@ -115,60 +162,63 @@ export async function POST(request: Request) {
       });
     }
 
-    // 1. Create order on external dashboard
-    const url = `${base}/checkout/order`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept-Language": "ar",
+    console.log("📤 Sending to:", `${base}/checkout/order`);
+
+    const res = await fetchWithRetry(
+      `${base}/checkout/order`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept-Language": "ar",
+        },
+        body: formData.toString(),
       },
-      body: formData.toString(),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+      2,
+    );
 
     const orderData = await res.json();
+
     if (!res.ok || (orderData.statusCode && orderData.statusCode !== 200)) {
-      console.error("❌ External order creation failed:", orderData);
+      console.error(
+        "❌ External order creation failed:",
+        JSON.stringify(orderData),
+      );
       return NextResponse.json(
         { error: orderData.message || orderData.error || "فشل إنشاء الطلب" },
-        { status: res.status },
+        { status: res.status || 500 },
       );
     }
 
-    console.log("✅ Order created:", orderData);
+    console.log(
+      "✅ Order created:",
+      orderData?.data?.order_id || orderData?.order_id,
+    );
 
-    // -- Cash on Delivery --
+    // COD – return immediately
     if (body.payment_type === "COD") {
       return NextResponse.json(orderData);
     }
 
-    // -- Online payment (Paid) --
+    // Paid – create payment and return
     if (body.payment_type === "Paid") {
       const host =
         request.headers.get("origin") || process.env.NEXT_PUBLIC_BASE_URL || "";
       const locale = body.locale || "ar";
-
-      // Prepare the minimal order data for Ziina
       const paymentOrder = {
         total_amount: body.total_amount,
         customer_name: body.customer_name,
         mobile_number: body.mobile_number,
         id: orderData.id || orderData.order_id,
       };
-
       const { paymentUrl, paymentIntentId } = await createZiinaPayment(
         paymentOrder,
         host,
         locale,
       );
-
       return NextResponse.json({
-        ...orderData, // original order response from external API
+        ...orderData,
         payment_url: paymentUrl,
         payment_intent_id: paymentIntentId,
       });
@@ -179,9 +229,12 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   } catch (err: any) {
-    console.error("🔥 Checkout Error:", err);
+    console.error("🔥 Checkout Error:", err.message);
     if (err.name === "AbortError") {
-      return NextResponse.json({ error: "Request timeout" }, { status: 504 });
+      return NextResponse.json(
+        { error: "Request timeout after retries" },
+        { status: 504 },
+      );
     }
     return NextResponse.json(
       { error: err.message || "Internal server error" },

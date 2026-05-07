@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "app/api/checkout/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/create-payment/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/confirm-payment/route.ts": {
+      "maxDuration": 30
+    }
+  }
+}
