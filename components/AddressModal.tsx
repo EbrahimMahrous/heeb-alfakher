@@ -16,7 +16,7 @@ const EMIRATES = [
   "Fujairah",
 ];
 
-// ---------- Areas per emirate (for reference only – not used for validation) ----------
+// ---------- Areas per emirate (for reference only) ----------
 const AREAS_BY_EMIRATE: Record<string, string[]> = {
   Dubai: [
     "Jumeirah",
@@ -127,7 +127,7 @@ export interface Address {
   city?: string;
   area?: string;
   buildingNo?: string;
-  streetAddress?: string; // hidden
+  streetAddress?: string;
   isDefault?: boolean;
   pinLocation?: string;
 }
@@ -148,14 +148,13 @@ declare global {
 
 const ADDRESS_FORM_STORAGE_KEY = "address_modal_form_data";
 
-// ---------- Helper: match an address component to our emirates list ----------
+// ---------- Helpers ----------
 const findEmirate = (cityName: string): string => {
   return (
     EMIRATES.find((e) => e.toLowerCase() === cityName?.toLowerCase()) || ""
   );
 };
 
-// ---------- Helper: extract a well‑known sub‑area name ----------
 const extractArea = (components: any[]): string => {
   for (const comp of components) {
     if (comp.types.includes("sublocality_level_1")) return comp.long_name;
@@ -173,7 +172,6 @@ const extractArea = (components: any[]): string => {
   return "";
 };
 
-// ---------- Phone number sanitizer ----------
 const sanitizePhoneNumber = (rawPhone: string): string => {
   let digits = rawPhone.replace(/\D/g, "");
   if (digits.length >= 7 && digits.startsWith("0"))
@@ -219,7 +217,6 @@ export default function AddressModal({
   const [locationDenied, setLocationDenied] = useState(false);
   const [emirateManuallySet, setEmirateManuallySet] = useState(false);
 
-  // Refs to avoid stale closures inside map callbacks
   const cityRef = useRef(formData.city);
   const manualRef = useRef(emirateManuallySet);
 
@@ -230,7 +227,7 @@ export default function AddressModal({
     manualRef.current = emirateManuallySet;
   }, [emirateManuallySet]);
 
-  // ---------- Pre‑fill form ----------
+  // Pre‑fill
   useEffect(() => {
     if (!isOpen) return;
     if (existingAddress) {
@@ -247,7 +244,7 @@ export default function AddressModal({
         pinLocation: existingAddress.pinLocation || "",
         isDefault: existingAddress.isDefault || false,
       });
-      setEmirateManuallySet(!!existingAddress.city);
+      setEmirateManuallySet(true);
       return;
     }
 
@@ -255,8 +252,14 @@ export default function AddressModal({
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setFormData((prev) => ({ ...prev, ...parsed }));
-        setEmirateManuallySet(!!parsed.city);
+        setFormData((prev) => ({
+          ...prev,
+          fullName: parsed.fullName || "",
+          phone: parsed.phone || "",
+          buildingNo: parsed.buildingNo || "",
+          city: "",
+          area: "",
+        }));
       } catch (e) {
         console.error("Failed to parse saved address form data", e);
       }
@@ -264,17 +267,28 @@ export default function AddressModal({
     setIsInitialLoad(false);
   }, [isOpen, existingAddress]);
 
-  // ---------- Persist ----------
+  // Persist (excluding city/area)
   useEffect(() => {
     if (!isOpen || isInitialLoad || existingAddress) return;
-    localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(formData));
-  }, [formData, isOpen, isInitialLoad, existingAddress]);
+    const dataToSave = {
+      fullName: formData.fullName,
+      phone: formData.phone,
+      buildingNo: formData.buildingNo,
+    };
+    localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [
+    formData.fullName,
+    formData.phone,
+    formData.buildingNo,
+    isOpen,
+    isInitialLoad,
+    existingAddress,
+  ]);
 
-  const clearSavedFormData = () => {
+  const clearSavedFormData = () =>
     localStorage.removeItem(ADDRESS_FORM_STORAGE_KEY);
-  };
 
-  // ---------- Google Maps loading ----------
+  // Google Maps loading
   useEffect(() => {
     if (!isOpen) return;
     if (window.google && window.google.maps) {
@@ -303,7 +317,7 @@ export default function AddressModal({
     };
   }, [isOpen]);
 
-  // ---------- Map initialization ----------
+  // Map initialization
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
 
@@ -343,29 +357,28 @@ export default function AddressModal({
             }
             const matchedEmirate = findEmirate(city);
 
-            // If user manually selected an emirate, validate match
             if (manualRef.current && cityRef.current) {
               if (matchedEmirate !== cityRef.current) {
-                // Mismatch – clear area and warn
-                setFormData((prev) => ({ ...prev, area: "" }));
+                // Mismatch – reset emirate and manual flag
+                setFormData((prev) => ({ ...prev, area: "", city: "" }));
+                setEmirateManuallySet(false);
                 toast.warning(
                   t("areaMismatch", {
                     defaultValue:
-                      "هذا الموقع خارج الإمارة التي اخترتها. الرجاء اختيار إمارة مطابقة أو تكبير الخريطة.",
+                      "تم إعادة تعيين الإمارة المختارة لعدم تطابقها مع الموقع. يمكنك الآن تحديد الموقع مرة أخرى.",
                   }),
                 );
                 return;
               }
-              // Emirate matches – fill area with Google's value
+              // Match – fill area but keep manual emirate
               setFormData((prev) => ({
                 ...prev,
                 address: results[0].formatted_address,
                 area: area || prev.area,
-                // Do NOT override the manually selected emirate
                 city: prev.city,
               }));
             } else {
-              // No manual selection – auto‑fill both
+              // Auto-fill both emirate and area
               setFormData((prev) => ({
                 ...prev,
                 address: results[0].formatted_address,
@@ -425,14 +438,15 @@ export default function AddressModal({
 
             if (manualRef.current && cityRef.current) {
               if (matchedEmirate !== cityRef.current) {
-                setFormData((prev) => ({ ...prev, area: "" }));
+                setFormData((prev) => ({ ...prev, area: "", city: "" }));
+                setEmirateManuallySet(false);
                 toast.warning(t("areaMismatch"));
                 return;
               }
               setFormData((prev) => ({
                 ...prev,
                 area: area || prev.area,
-                city: prev.city, // keep manual selection
+                city: prev.city,
               }));
             } else {
               setFormData((prev) => ({
@@ -460,19 +474,16 @@ export default function AddressModal({
           updatePinLocation(loc.lat, loc.lng);
           setLocationDenied(false);
         },
-        () => {
-          setLocationDenied(true);
-        },
+        () => setLocationDenied(true),
       );
     } else {
       setLocationDenied(true);
     }
   }, [isLoaded]);
 
-  // ---------- Validation & Save ----------
+  // Submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (
       !formData.fullName ||
       !formData.phone ||
@@ -482,13 +493,11 @@ export default function AddressModal({
       toast.error(t("validationRequired"));
       return;
     }
-
     const sanitizedPhone = sanitizePhoneNumber(formData.phone);
     if (!sanitizedPhone) {
       toast.error(t("invalidPhone", { defaultValue: "رقم الهاتف غير صحيح" }));
       return;
     }
-
     const parts = [formData.area, formData.city];
     if (formData.buildingNo) parts.unshift(formData.buildingNo);
     const fullAddress = parts.join(", ");
@@ -549,7 +558,6 @@ export default function AddressModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-        {/* Header */}
         <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold">{t("title")}</h2>
           <button
@@ -575,6 +583,11 @@ export default function AddressModal({
               ref={searchInputRef}
               type="text"
               placeholder={t("searchPlaceholder")}
+              onFocus={() => {
+                // Clear emirate so auto‑fill works freely on new search
+                setFormData((prev) => ({ ...prev, city: "" }));
+                setEmirateManuallySet(false);
+              }}
               className="w-full bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#338A43]"
             />
             <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
@@ -596,12 +609,11 @@ export default function AddressModal({
             <div className="absolute bottom-2 inset-s-2 inset-e-2 flex gap-2 z-10">
               <button
                 type="button"
-                onClick={() => {
-                  if (selectedLocation) {
-                    mapInstanceRef.current?.setCenter(selectedLocation);
-                    mapInstanceRef.current?.setZoom(16);
-                  }
-                }}
+                onClick={() =>
+                  selectedLocation &&
+                  mapInstanceRef.current?.setCenter(selectedLocation) &&
+                  mapInstanceRef.current?.setZoom(16)
+                }
                 className="flex-1 bg-white text-gray-800 py-1.5 rounded-full text-sm shadow-md hover:bg-gray-100"
               >
                 {t("deliverHere")}
@@ -656,7 +668,7 @@ export default function AddressModal({
             />
           </div>
 
-          {/* Emirate – always dropdown */}
+          {/* Emirate dropdown */}
           <div>
             <label className="block text-sm font-medium mb-1">
               {t("emirate")}
@@ -665,13 +677,8 @@ export default function AddressModal({
               value={formData.city}
               onChange={(e) => {
                 const selected = e.target.value;
-                // Reset area when emirate changes manually
-                setFormData((prev) => ({
-                  ...prev,
-                  city: selected,
-                  area: "", // clear area so invalid ones disappear
-                }));
-                setEmirateManuallySet(true);
+                setFormData((prev) => ({ ...prev, city: selected, area: "" }));
+                setEmirateManuallySet(!!selected);
               }}
               required
               className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
@@ -685,7 +692,7 @@ export default function AddressModal({
             </select>
           </div>
 
-          {/* Area – read‑only, filled directly from Google Maps */}
+          {/* Area (read‑only) */}
           <div>
             <label className="block text-sm font-medium mb-1">
               {t("area")}
