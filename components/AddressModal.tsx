@@ -264,14 +264,14 @@ const SearchableSelect = ({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             tabIndex={-1}
           >
             ✕
           </button>
         )}
         {/* Chevron indicator */}
-        <span className="absolute end-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+        <span className="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
           <svg
             className="h-4 w-4"
             fill="none"

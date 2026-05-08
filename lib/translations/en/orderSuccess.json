@@ -5,5 +5,7 @@
   "backToHome": "Back to Home",
   "autoRedirect": "You will be redirected automatically in {seconds} seconds",
   "needHelp": "Need help?",
-  "whatsappContact": "Contact via WhatsApp"
+  "whatsappContact": "Contact via WhatsApp",
+  "orderPendingTitle": "Order Received!",
+  "orderPendingMessage": "Your order is being processed and will be confirmed shortly. We'll notify you once it's confirmed."
 }

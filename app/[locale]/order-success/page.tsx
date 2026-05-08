@@ -20,7 +20,6 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
   if (!visible) return null;
 
   return (
-    // Use logical start (switches side in RTL) and animate from start instead of left
     <div className="fixed bottom-4 inset-s-4 z-50 bg-white border border-green-400 rounded-2xl shadow-2xl p-4 max-w-sm animate-in slide-in-from-start">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -48,7 +47,6 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
       </div>
       <button
         onClick={() => setVisible(false)}
-        // Use logical end for the close button
         className="absolute top-2 inset-e-2 text-gray-400 hover:text-gray-600"
       >
         ✕
@@ -60,7 +58,6 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
 export default function OrderSuccessPage() {
   const { t, locale } = useTranslation("orderSuccess");
   const searchParams = useSearchParams();
-  // session_id is present only for online payments (Ziina replaces {id})
   const sessionId =
     searchParams.get("session_id") || searchParams.get("payment_intent");
   const clearCart = useCartStore((state) => state.clearCart);
@@ -71,15 +68,14 @@ export default function OrderSuccessPage() {
   );
   const [confirming, setConfirming] = useState(false);
 
-  // Determine flow: COD (no sessionId) vs online payment
   const isOnlinePayment = !!sessionId;
+  const isPending = searchParams.get("pending") === "true";
+  const orderId = searchParams.get("order_id") || sessionId;
 
-  // Localize the home URL to keep the language
   const homeHref = `/${locale}`;
 
   useEffect(() => {
     if (isOnlinePayment) {
-      // Online payment: must confirm via backend
       setConfirming(true);
       fetch("/api/confirm-payment", {
         method: "POST",
@@ -104,7 +100,7 @@ export default function OrderSuccessPage() {
         .catch(() => setPaymentConfirmed(false))
         .finally(() => setConfirming(false));
     } else {
-      // COD: order already placed, clean up and show success immediately
+      // COD: order already placed (or pending), clean up and show success
       setPaymentConfirmed(true);
       clearCart();
       localStorage.removeItem("heeb_checkout_data");
@@ -113,7 +109,6 @@ export default function OrderSuccessPage() {
     }
   }, [sessionId, isOnlinePayment, clearCart]);
 
-  // Countdown auto-redirect
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
@@ -126,7 +121,6 @@ export default function OrderSuccessPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      {/* Show floating banner only for online payment that was confirmed */}
       {isOnlinePayment && paymentConfirmed && sessionId && (
         <OrderSuccessBanner orderRef={sessionId} />
       )}
@@ -150,28 +144,38 @@ export default function OrderSuccessPage() {
           </div>
         </div>
 
-        {/* Show appropriate heading based on state */}
         {isOnlinePayment && confirming && (
           <h1 className="text-2xl font-bold text-gray-800 mb-3">
             {t("confirmingPayment")}
           </h1>
         )}
+
         {!confirming && paymentConfirmed === true && (
           <>
             <h1 className="text-2xl font-bold text-gray-800 mb-3">
-              {t("title")}
+              {isPending
+                ? t("orderPendingTitle", { defaultValue: "تم استلام طلبك!" })
+                : t("title")}
             </h1>
-            <p className="text-gray-600 mb-6">{t("message")}</p>
-            {sessionId && (
+            <p className="text-gray-600 mb-6">
+              {isPending
+                ? t("orderPendingMessage", {
+                    defaultValue:
+                      "طلبك قيد المعالجة وسيتم تأكيده خلال دقائق. سنرسل لك إشعاراً عند التأكيد.",
+                  })
+                : t("message")}
+            </p>
+            {orderId && (
               <div className="bg-gray-50 p-4 rounded-xl mb-6">
                 <p className="text-sm text-gray-500">{t("referenceNumber")}</p>
                 <p className="text-lg font-mono font-bold text-primary">
-                  {sessionId}
+                  {orderId}
                 </p>
               </div>
             )}
           </>
         )}
+
         {!confirming && paymentConfirmed === false && (
           <>
             <h1 className="text-2xl font-bold text-red-600 mb-3">

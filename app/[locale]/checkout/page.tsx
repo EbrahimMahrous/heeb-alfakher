@@ -147,7 +147,27 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Submit handler ----------
+  // ---------- Helper: poll until order is confirmed ----------
+  const pollOrderConfirmation = async (
+    orderId: string,
+    maxAttempts = 7,
+  ): Promise<boolean> => {
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 1500)); // wait 1.5s between attempts
+      try {
+        const res = await fetch(`/api/check-order?order_id=${orderId}`);
+        const data = await res.json();
+        if (data.found) {
+          return true;
+        }
+      } catch {
+        // ignore network errors during polling
+      }
+    }
+    return false;
+  };
+
+  // ---------- Main submit handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -159,14 +179,12 @@ export default function CheckoutPage() {
       );
       return;
     }
-
     if (!selectedDate) {
       toast.error(
         t("noDeliveryTimeAlert", { defaultValue: "الرجاء اختيار يوم التسليم" }),
       );
       return;
     }
-
     const area_name = selectedAddress.area?.trim() || "";
     if (!area_name) {
       toast.error(
@@ -214,7 +232,7 @@ export default function CheckoutPage() {
         locale,
       };
 
-      // COD flow
+      // ----- COD flow -----
       if (paymentMethod === "COD") {
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -225,17 +243,42 @@ export default function CheckoutPage() {
         if (!res.ok || (data.statusCode && data.statusCode !== 200)) {
           throw new Error(data.message || data.error || t("paymentError"));
         }
+
+        // ✅ Extract order_id from response
+        const orderId = data.data?.order_id || data.order_id;
+        if (!orderId) {
+          throw new Error("لم يتم استلام رقم الطلب");
+        }
+
+        // ✅ Poll to confirm order is in dashboard
+        const confirmed = await pollOrderConfirmation(orderId);
+        if (!confirmed) {
+          toast.info(
+            t("orderNotConfirmed", {
+              defaultValue:
+                "الطلب قيد المعالجة، سنقوم بتأكيده خلال دقائق. يمكنك متابعة التسوق.",
+            }),
+          );
+          // Still clear cart and go to success with a pending flag
+          clearCart();
+          router.push(
+            `/${locale}/order-success?pending=true&order_id=${orderId}`,
+          );
+          return;
+        }
+
+        // Confirmed – clear and redirect
         clearCart();
         toast.success(
           t("orderPlacedSuccessfully", {
             defaultValue: "تم تقديم الطلب بنجاح!",
           }),
         );
-        router.push(`/${locale}/order-success`);
+        router.push(`/${locale}/order-success?order_id=${orderId}`);
         return;
       }
 
-      // Paid flow
+      // ----- Paid flow -----
       const orderRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -251,8 +294,8 @@ export default function CheckoutPage() {
         );
       }
 
-      if (orderData.id || orderData.order_id) {
-        const orderId = orderData.id || orderData.order_id;
+      const orderId = orderData.data?.order_id || orderData.order_id;
+      if (orderId) {
         localStorage.setItem("pending_order_id", String(orderId));
       }
 
@@ -305,6 +348,7 @@ export default function CheckoutPage() {
       </h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
+        {/* Form column */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Delivery address */}

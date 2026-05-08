@@ -5,5 +5,7 @@
   "backToHome": "العودة للرئيسية",
   "autoRedirect": "سيتم تحويلك تلقائياً خلال {seconds} ثانية",
   "needHelp": "تحتاج مساعدة؟",
-  "whatsappContact": "تواصل عبر الواتس اب"
+  "whatsappContact": "تواصل عبر الواتس اب",
+  "orderPendingTitle": "تم استلام طلبك!",
+  "orderPendingMessage": "طلبك قيد المعالجة وسيتم تأكيده خلال دقائق. سنرسل لك إشعاراً عند التأكيد."
 }
