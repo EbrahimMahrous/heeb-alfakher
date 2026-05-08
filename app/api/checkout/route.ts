@@ -31,6 +31,17 @@ async function fetchWithRetry(
   throw new Error("All retry attempts failed");
 }
 
+// ---------- Helper: extract order_id from various response shapes ----------
+const extractOrderId = (orderData: any): string | null => {
+  return (
+    orderData?.data?.order_id ||
+    orderData?.data?.id ||
+    orderData?.order_id ||
+    orderData?.id ||
+    null
+  );
+};
+
 // ---------- Ziina Payment Helper ----------
 const ZIINA_API =
   process.env.ZIINA_API_BASE_URL || "https://api-v2.ziina.com/api";
@@ -128,7 +139,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ Build address string (was missing – now sent)
+    // Build address string
     const addressStr = `${body.area_name}, ${body.emirate_name}`;
 
     const formData = new URLSearchParams();
@@ -138,9 +149,7 @@ export async function POST(request: Request) {
     formData.append("area_name", body.area_name);
     formData.append("payment_type", body.payment_type);
     formData.append("delivery_date", body.delivery_date || "");
-    // ✅ Address field (was missing)
     formData.append("address", addressStr);
-    // ✅ Financial fields
     formData.append("sub_total", String(body.total_amount || 0));
     formData.append("total", String(body.total_amount || 0));
     formData.append(
@@ -148,7 +157,6 @@ export async function POST(request: Request) {
       body.payment_type === "COD" ? "0" : String(body.total_amount || 0),
     );
     formData.append("delivery_fee", "0");
-    // ✅ Confirmation flag – if the API supports it
     formData.append("is_confirmed", "1");
     formData.append("is_from_website", "1");
 
@@ -180,6 +188,11 @@ export async function POST(request: Request) {
 
     const orderData = await res.json();
 
+    console.log(
+      "📋 External API response (truncated):",
+      JSON.stringify(orderData).substring(0, 500),
+    );
+
     if (!res.ok || (orderData.statusCode && orderData.statusCode !== 200)) {
       console.error(
         "❌ External order creation failed:",
@@ -191,14 +204,26 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(
-      "✅ Order created:",
-      orderData?.data?.order_id || orderData?.order_id,
-    );
+    // Extract order_id safely
+    const orderId = extractOrderId(orderData);
+
+    if (!orderId) {
+      console.error("❌ No order_id in external response");
+      // Still return success but without orderId – frontend will handle gracefully
+      return NextResponse.json(orderData);
+    }
+
+    console.log("✅ Order created:", orderId);
+
+    // Always include order_id at top level for frontend reliability
+    const enrichedOrderData = {
+      ...orderData,
+      order_id: orderId,
+    };
 
     // COD – return immediately
     if (body.payment_type === "COD") {
-      return NextResponse.json(orderData);
+      return NextResponse.json(enrichedOrderData);
     }
 
     // Paid – create payment and return
@@ -210,7 +235,7 @@ export async function POST(request: Request) {
         total_amount: body.total_amount,
         customer_name: body.customer_name,
         mobile_number: body.mobile_number,
-        id: orderData.id || orderData.order_id,
+        id: orderId,
       };
       const { paymentUrl, paymentIntentId } = await createZiinaPayment(
         paymentOrder,
@@ -218,7 +243,7 @@ export async function POST(request: Request) {
         locale,
       );
       return NextResponse.json({
-        ...orderData,
+        ...enrichedOrderData,
         payment_url: paymentUrl,
         payment_intent_id: paymentIntentId,
       });
