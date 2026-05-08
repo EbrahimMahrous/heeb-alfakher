@@ -240,26 +240,14 @@ export default function CheckoutPage() {
           body: JSON.stringify(orderPayload),
         });
         const data = await res.json();
-
         if (!res.ok || (data.statusCode && data.statusCode !== 200)) {
           throw new Error(data.message || data.error || t("paymentError"));
         }
 
-        // ✅ Extract order_id from response – try all possible locations
-        const orderId =
-          data?.order_id || data?.data?.order_id || data?.data?.id || data?.id;
-
+        // ✅ Extract order_id from response
+        const orderId = data.data?.order_id || data.order_id;
         if (!orderId) {
-          // Order created but no ID returned – show a gentle message
-          toast.info(
-            t("orderDelayed", {
-              defaultValue:
-                "طلبك قيد المعالجة حاليًا، سيتم تأكيده خلال دقائق. شكرًا لصبرك! ⏳",
-            }),
-          );
-          clearCart();
-          router.push(`/${locale}/order-success`);
-          return;
+          throw new Error("لم يتم استلام رقم الطلب");
         }
 
         // ✅ Poll to confirm order is in dashboard
@@ -270,6 +258,7 @@ export default function CheckoutPage() {
               defaultValue: "🎉 تم استلام طلبك سيتم تأكيده خلال دقائق",
             }),
           );
+          // Still clear cart and go to success with a pending flag
           clearCart();
           router.push(
             `/${locale}/order-success?pending=true&order_id=${orderId}`,
@@ -304,12 +293,7 @@ export default function CheckoutPage() {
         );
       }
 
-      const orderId =
-        orderData?.order_id ||
-        orderData?.data?.order_id ||
-        orderData?.data?.id ||
-        orderData?.id;
-
+      const orderId = orderData.data?.order_id || orderData.order_id;
       if (orderId) {
         localStorage.setItem("pending_order_id", String(orderId));
       }

@@ -19,8 +19,7 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
   if (!visible) return null;
 
   return (
-    // Use logical start/end for RTL support
-    <div className="fixed bottom-4 start-4 z-50 bg-white border border-green-400 rounded-2xl shadow-2xl p-4 max-w-sm animate-in slide-in-from-start">
+    <div className="fixed bottom-4 inset-s-4 z-50 bg-white border border-green-400 rounded-2xl shadow-2xl p-4 max-w-sm animate-in slide-in-from-start">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
           <svg
@@ -47,7 +46,7 @@ function OrderSuccessBanner({ orderRef }: { orderRef: string }) {
       </div>
       <button
         onClick={() => setVisible(false)}
-        className="absolute top-2 end-2 text-gray-400 hover:text-gray-600"
+        className="absolute top-2 inset-e-2 text-gray-400 hover:text-gray-600"
       >
         ✕
       </button>
