@@ -755,7 +755,7 @@ export default function AddressModal({
               placeholder={t("searchPlaceholder")}
               className="w-full bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#338A43]"
             />
-            <span className="absolute start-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+            <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
               <Image
                 src="/icons/search.svg"
                 alt="search"
@@ -771,7 +771,7 @@ export default function AddressModal({
               ref={mapRef}
               className="w-full h-64 rounded-xl overflow-hidden border border-gray-200"
             />
-            <div className="absolute bottom-2 start-2 end-2 flex gap-2 z-10">
+            <div className="absolute bottom-2 inset-s-2 inset-e-2 flex gap-2 z-10">
               <button
                 type="button"
                 onClick={() =>

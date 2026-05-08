@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/store/cartStore";
@@ -10,29 +10,6 @@ import { useRouter } from "next/navigation";
 import AddressModal from "@/components/AddressModal";
 import { PhoneCall, DoorOpen, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
-
-// ---------- Local storage helpers ----------
-const CHECKOUT_STORAGE_KEY = "heeb_checkout_data";
-
-const saveCheckoutToLocalStorage = (data: any) => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(data));
-  }
-};
-
-const loadCheckoutFromLocalStorage = () => {
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem(CHECKOUT_STORAGE_KEY);
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error("Failed to parse checkout data from localStorage", e);
-      }
-    }
-  }
-  return null;
-};
 
 export interface Address {
   id: string;
@@ -61,7 +38,6 @@ const getDeliveryDays = () => {
     "السبت",
   ];
 
-  // Skip today by starting i=1
   for (let i = 1; i < 4; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
@@ -84,7 +60,7 @@ const getDeliveryDays = () => {
 };
 
 const timeSlots = ["01:00 PM - 06:00 PM", "06:00 PM - 09:00 PM"];
-const DEFAULT_TIME_SLOT = timeSlots[0]; // "01:00 PM - 06:00 PM"
+const DEFAULT_TIME_SLOT = timeSlots[0];
 
 const deliveryOptionsGrid = [
   { id: "call", labelKey: "callBeforeDelivery", icon: "/icons/call-ring.svg" },
@@ -98,6 +74,7 @@ export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
   const router = useRouter();
 
+  // All checkout fields start EMPTY – no localStorage loading
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -108,48 +85,11 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "Paid">("COD");
 
   const [deliveryDays] = useState(getDeliveryDays());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  // Localised routes
+  // Routes
   const homeHref = `/${locale}`;
   const cartHref = `/${locale}/cart`;
-
-  // Load saved checkout data on mount
-  useEffect(() => {
-    const savedData = loadCheckoutFromLocalStorage();
-    if (savedData) {
-      if (savedData.selectedAddress)
-        setSelectedAddress(savedData.selectedAddress);
-      if (savedData.selectedDate) setSelectedDate(savedData.selectedDate);
-      if (savedData.selectedInstruction)
-        setSelectedInstruction(savedData.selectedInstruction);
-      if (savedData.giftMessage !== undefined)
-        setGiftMessage(savedData.giftMessage);
-      if (savedData.paymentMethod) setPaymentMethod(savedData.paymentMethod);
-    }
-    setIsInitialLoad(false);
-  }, []);
-
-  // Persist checkout data to localStorage
-  useEffect(() => {
-    if (isInitialLoad) return;
-    const checkoutData = {
-      selectedAddress,
-      selectedDate,
-      selectedInstruction,
-      giftMessage,
-      paymentMethod,
-    };
-    saveCheckoutToLocalStorage(checkoutData);
-  }, [
-    selectedAddress,
-    selectedDate,
-    selectedInstruction,
-    giftMessage,
-    paymentMethod,
-    isInitialLoad,
-  ]);
 
   const shippingCost = 35;
   const freeShippingThreshold = 500;
@@ -207,7 +147,7 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Main submit handler (two-step for Paid) ----------
+  // ---------- Submit handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -237,7 +177,6 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
-      // Build phone number in international format
       let phoneDigits = selectedAddress.phone.replace(/\D/g, "");
       if (!phoneDigits.startsWith("971")) {
         if (phoneDigits.startsWith("0"))
@@ -275,7 +214,7 @@ export default function CheckoutPage() {
         locale,
       };
 
-      // ----- COD flow -----
+      // COD flow
       if (paymentMethod === "COD") {
         const res = await fetch("/api/checkout", {
           method: "POST",
@@ -286,10 +225,7 @@ export default function CheckoutPage() {
         if (!res.ok || (data.statusCode && data.statusCode !== 200)) {
           throw new Error(data.message || data.error || t("paymentError"));
         }
-        // Clear cart immediately for COD
         clearCart();
-        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-        localStorage.removeItem("pending_payment");
         toast.success(
           t("orderPlacedSuccessfully", {
             defaultValue: "تم تقديم الطلب بنجاح!",
@@ -299,8 +235,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // ----- Paid flow (two steps) -----
-      // 1. Create the order via /api/checkout
+      // Paid flow
       const orderRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -316,13 +251,11 @@ export default function CheckoutPage() {
         );
       }
 
-      // ✅ Save the order_id from the response for later confirmation
       if (orderData.id || orderData.order_id) {
         const orderId = orderData.id || orderData.order_id;
         localStorage.setItem("pending_order_id", String(orderId));
       }
 
-      // 2. Request payment URL from the dedicated payment endpoint
       const paymentPayload = {
         total,
         address: {
@@ -343,9 +276,6 @@ export default function CheckoutPage() {
         throw new Error(payData.error || t("noPaymentUrl"));
       }
 
-      // Save pending payment to clear cart later on success page
-      localStorage.setItem("pending_payment", JSON.stringify(orderPayload));
-      // Redirect to Ziina payment page
       window.location.href = payData.payment_url;
     } catch (err: any) {
       console.error("Checkout Error:", err);
@@ -357,7 +287,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb – all links now locale-prefixed */}
+      {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
         <Link href={homeHref} className="hover:text-primary transition-colors">
           {t("home")}
@@ -375,7 +305,6 @@ export default function CheckoutPage() {
       </h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Form column */}
         <div className="lg:col-span-2 order-2 lg:order-1">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Delivery address */}
@@ -519,7 +448,6 @@ export default function CheckoutPage() {
                         {t("addGiftMessage")}
                       </span>
                     </label>
-                    {/* Use logical margin-inline-end instead of physical mr-8 */}
                     {giftMessage !== "" && (
                       <div className="mt-3 ms-8 animate-fadeIn">
                         <textarea
@@ -646,7 +574,6 @@ export default function CheckoutPage() {
                   {total} {t("currency")}
                 </span>
               </div>
-              {/* Use text-end instead of text-right for RTL */}
               <div className="text-end text-xs text-neutral-500">
                 ({t("taxInclusive")})
               </div>
@@ -664,7 +591,6 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Address modal */}
       <AddressModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}

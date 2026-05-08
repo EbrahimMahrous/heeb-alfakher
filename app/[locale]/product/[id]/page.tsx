@@ -142,7 +142,7 @@ export default function ProductDetailPage() {
           />
           {product.discountPercent && (
             // Fixed: use end-4 instead of erroneous inset-e-4
-            <div className="absolute top-4 end-4 bg-orange text-white text-sm font-bold px-3 py-1 rounded-full z-10">
+            <div className="absolute top-4 inset-e-4 bg-orange text-white text-sm font-bold px-3 py-1 rounded-full z-10">
               {t("discount")}
             </div>
           )}
