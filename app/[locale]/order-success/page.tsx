@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,7 +60,7 @@ export default function OrderSuccessPage() {
   const sessionId =
     searchParams.get("session_id") || searchParams.get("payment_intent");
   const clearCart = useCartStore((state) => state.clearCart);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(30);
   const router = useRouter();
   const [paymentConfirmed, setPaymentConfirmed] = useState<boolean | null>(
     null,

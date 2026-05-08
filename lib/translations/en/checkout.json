@@ -38,5 +38,7 @@
   "paymentError": "Payment error occurred",
   "noPaymentUrl": "No payment URL received",
   "areaRequired": "Please enter the area name (e.g., Jumeirah, Deira)",
-  "orderPlacedSuccessfully": "The application has been successfully submitted!"
+  "orderPlacedSuccessfully": "The application has been successfully submitted!",
+  "addressSaved": "Address saved successfully",
+  "orderNotConfirmed": "Your order has been received 🎉"
 }

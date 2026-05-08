@@ -255,8 +255,7 @@ export default function CheckoutPage() {
         if (!confirmed) {
           toast.info(
             t("orderNotConfirmed", {
-              defaultValue:
-                "الطلب قيد المعالجة، سنقوم بتأكيده خلال دقائق. يمكنك متابعة التسوق.",
+              defaultValue: "🎉 تم استلام طلبك سيتم تأكيده خلال دقائق",
             }),
           );
           // Still clear cart and go to success with a pending flag
