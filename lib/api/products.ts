@@ -1,123 +1,93 @@
 import { apiFetch } from "../api";
 import { mapProduct } from "../mappers";
+import { toSlug } from "../slug";
 
-// Fetch all products from the API
-// Endpoint: /products
-// Returns: mapped list of products
+/**
+ * Fetch all products.
+ */
 export async function fetchAllProducts() {
   const json = await apiFetch("/products");
   return json.data.map(mapProduct);
 }
 
-// Fetch best-selling products
-// Endpoint: /best-seller/products
-// Returns: mapped list of best sellers
+/**
+ * Fetch best‑selling products.
+ */
 export async function fetchBestSellers() {
   const json = await apiFetch("/best-seller/products");
   return json.data.map(mapProduct);
 }
 
 /**
- * Build a full image URL for a product, handling the detail response structure.
- * The detail endpoint may return an `images` array (first item is cover),
- * or a `cover_image` object.
- *
- * @param item - The raw product data object from the API
- * @returns Full image URL string
+ * Build full image URL from detail response.
  */
 function buildImageUrl(item: any): string {
-  // Check for 'images' array (detail endpoint)
   if (item.images && item.images.length > 0) {
     const firstImage = item.images[0];
     const base =
       firstImage.image_path || "https://app.heebshop.ae/uploads/products/";
     return `${base}${firstImage.image}`;
   }
-  // Check for 'cover_image' object (list endpoint)
   if (item.cover_image) {
     const base =
       item.cover_image.image_path ||
       "https://app.heebshop.ae/uploads/products/";
     return `${base}${item.cover_image.image}`;
   }
-  // Fallback to default image
   return "/default-product.jpeg";
 }
 
 /**
- * Map a product detail response into the same shape as mapProduct,
- * but with the correct image extracted from the detail structure.
- *
- * @param apiItem - The raw product data object from the detail endpoint
- * @returns Mapped product object with correct image
+ * Map a product detail response.
  */
 function mapProductDetail(apiItem: any) {
   const product = mapProduct(apiItem);
-  // Override the image with the correctly extracted one
   product.image = buildImageUrl(apiItem);
-  // Ensure ID is present (may be missing from the data object)
-  if (!product.id && apiItem.id) {
-    product.id = apiItem.id;
-  }
+  if (!product.id && apiItem.id) product.id = apiItem.id;
   return product;
 }
 
-// Fetch a single product by ID
-// Endpoint: /product/details?id={id}
-// Note: The API expects the product ID as a query parameter.
-// The response contains `data` which may not include an `id`, so we attach it.
+/**
+ * Fetch a single product by ID.
+ */
 export async function fetchProductById(id: number) {
   const json = await apiFetch(`/product/details?id=${id}`);
-  // The API response wraps the product in `data`; we pass the whole data object
-  // but ensure it has the id.
   return mapProductDetail({ ...json.data, id: json.data.id ?? id });
 }
 
 /**
- * Fetch all products with guaranteed `categorySlug`.
- *
- * Many products returned by /products have `category` = null
- * even though they carry a valid `product_category_id`.
- * This function fetches the category list, builds a map
- * `categoryId -> slug`, and attaches the correct slug to every product.
- *
- * Endpoints used:
- *   - /products             → raw product data
- *   - /product-categories   → category list (to build slug map)
+ * Fetch all products with guaranteed categorySlug using the category map.
  */
 export async function fetchAllProductsWithCategorySlug() {
-  // Request both endpoints in parallel
   const [productsRes, categoriesRes] = await Promise.all([
     apiFetch("/products"),
     apiFetch("/product-categories"),
   ]);
 
-  // Build a lookup table: category ID → safe URL slug
   const categoryMap: Record<number, string | null> = {};
   if (categoriesRes?.data) {
     for (const cat of categoriesRes.data) {
       if (cat.status == 1 && cat.name_en) {
-        const slug = cat.name_en
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-") // replace any non-alphanumeric char with a hyphen
-          .replace(/^-+|-+$/g, ""); // trim leading/trailing hyphens
-        categoryMap[cat.id] = slug;
+        categoryMap[cat.id] = toSlug(cat.name_en);
       }
     }
   }
 
-  // Transform every product and set its categorySlug
   const products = productsRes.data.map((item: any) => {
     const product = mapProduct(item);
     const catId = item.product_category_id;
-    product.categorySlug = catId ? categoryMap[catId] || null : null;
+    if (!product.categorySlug && catId) {
+      product.categorySlug = categoryMap[catId] || null;
+    }
     return product;
   });
 
   return products;
 }
 
-// Search products by query string (uses the correct parameter name: search_query)
+/**
+ * Search products by query string.
+ */
 export async function searchProducts(query: string) {
   const json = await apiFetch(`/search/products?search_query=${query}`);
   if (!json.data || !Array.isArray(json.data)) {

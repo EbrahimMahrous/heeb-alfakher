@@ -64,8 +64,12 @@ export default function ProductCard({
 
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:shadow-lg transition flex flex-col h-full">
-      {/* Product Image */}
-      <Link href={productLink} className="block relative h-48 bg-neutral-100">
+      {/* Product Image – now uses square aspect ratio */}
+      <Link
+        href={productLink}
+        className="block relative bg-neutral-100"
+        style={{ aspectRatio: "1 / 1" }}
+      >
         <Image
           src={imageSrc}
           alt={productName}
@@ -75,7 +79,7 @@ export default function ProductCard({
           unoptimized={isExternal}
         />
 
-        {/* Discount badge – uses logical start instead of physical right */}
+        {/* Discount badge – fixed RTL class */}
         {product.discountPercent && (
           <div className="absolute top-2 inset-s-2 bg-orange text-white text-xs font-bold px-2 py-1 rounded-full">
             {t("discount")}

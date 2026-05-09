@@ -9,11 +9,9 @@
   "faq": "FAQ",
   "returns": "Returns Policy",
   "viewAll": "View All",
-
   "outOfStock": "Out of Stock",
   "productHidden": "Product is currently unavailable",
   "productNotFound": "Product not found",
-
   "companyDescription": "Redefining the grocery shopping experience with premium quality, sustainable sourcing, and seamless delivery to your doorstep.",
   "contactUsFooter": "Contact Us",
   "explore": "Explore",
@@ -24,7 +22,7 @@
   "helpCenter": "Help Center",
   "phoneSupport": "Phone Support",
   "allDays": "All Days",
-  "timeRange": "7 AM - 10 PM",
+  "timeRange": "Available all day",
   "deliveryAreas": "Delivery Areas",
   "faqFooter": "FAQ",
   "copyright": "All Rights Reserved",
@@ -33,6 +31,7 @@
   "newProducts": "New Products",
   "bestSellers": "Best Sellers",
   "browseAll": "Browse All",
+  "shopNow": "Shop Now",
   "discount": "Discount",
   "discountPercent": "{percent}% Off",
   "currency": "AED",

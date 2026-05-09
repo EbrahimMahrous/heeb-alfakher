@@ -1,6 +1,6 @@
 "use client";
 import { useRef } from "react";
-import Link from "next/link"; // use Next.js Link for locale persistence
+import Link from "next/link";
 import { useTranslation } from "@/lib/useTranslation";
 import ProductCard from "./ProductCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -57,7 +57,7 @@ export default function ProductCarousel({
       )}
 
       <div className="relative group">
-        {/* Previous button – placed at logical start (flips with RTL) */}
+        {/* Previous button */}
         <button
           onClick={() => scroll(isRtl ? "right" : "left")}
           className="absolute inset-s-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"
@@ -79,6 +79,7 @@ export default function ProductCarousel({
           ))}
         </div>
 
+        {/* Next button */}
         <button
           onClick={() => scroll(isRtl ? "left" : "right")}
           className="absolute inset-e-2 top-1/2 -translate-y-1/2 z-10 bg-black rounded-full p-2 shadow-md hover:bg-gray-800 transition opacity-0 group-hover:opacity-100 focus:opacity-100"

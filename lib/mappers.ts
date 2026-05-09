@@ -1,3 +1,5 @@
+import { toSlug } from "./slug";
+
 export function mapProduct(apiProduct: any) {
   const imageBase =
     apiProduct.cover_image?.image_path ||
@@ -35,14 +37,12 @@ export function mapProduct(apiProduct: any) {
     }
   }
 
-  // Convert numeric status from API to "on"/"off"
-  // API returns status: 1 (active) or 0 (inactive)
   const status =
     apiProduct.status !== undefined
       ? apiProduct.status === 1
         ? "on"
         : "off"
-      : "on"; // fallback to "on" if missing
+      : "on";
 
   return {
     id: apiProduct.id,
@@ -58,8 +58,10 @@ export function mapProduct(apiProduct: any) {
     originEn: apiProduct.country?.name_en || "",
     flagUrl,
     description: apiProduct.description_translated || "",
-    categorySlug:
-      apiProduct.category?.name_en?.toLowerCase().replace(/\s+/g, "-") || null,
-    status, // dynamic: "on" for 1, "off" for 0
+    // Use shared toSlug to handle characters like '&'
+    categorySlug: apiProduct.category?.name_en
+      ? toSlug(apiProduct.category.name_en)
+      : null,
+    status,
   };
 }

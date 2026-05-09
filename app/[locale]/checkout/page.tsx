@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCartStore } from "@/store/cartStore";
@@ -8,7 +8,6 @@ import { useTranslation } from "@/lib/useTranslation";
 import Button from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import AddressModal from "@/components/AddressModal";
-import { PhoneCall, DoorOpen, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export interface Address {
@@ -24,30 +23,20 @@ export interface Address {
   pinLocation?: string;
 }
 
-// ---------- Generate delivery day options (Arabic) ----------
-const getDeliveryDays = () => {
+// ---------- Generate delivery day options (locale‑aware) ----------
+const getDeliveryDays = (locale: string, t: (key: string) => string) => {
   const days = [];
   const today = new Date();
-  const weekdaysAr = [
-    "الأحد",
-    "الإثنين",
-    "الثلاثاء",
-    "الأربعاء",
-    "الخميس",
-    "الجمعة",
-    "السبت",
-  ];
 
   for (let i = 1; i < 4; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
-    const dayName = weekdaysAr[date.getDay()];
-    const dayNum = date.getDate();
-    const monthName = date.toLocaleDateString("ar-EG", { month: "short" });
 
-    let label = "";
-    if (i === 1) label = "غداً";
-    else label = `${dayName} ${dayNum} ${monthName}`;
+    const dayName = date.toLocaleDateString(locale, { weekday: "long" });
+    const monthName = date.toLocaleDateString(locale, { month: "short" });
+    const dayNum = date.getDate();
+
+    const label = i === 1 ? t("tomorrow") : `${dayName} ${dayNum} ${monthName}`;
 
     days.push({
       label,
@@ -62,32 +51,22 @@ const getDeliveryDays = () => {
 const timeSlots = ["01:00 PM - 06:00 PM", "06:00 PM - 09:00 PM"];
 const DEFAULT_TIME_SLOT = timeSlots[0];
 
-const deliveryOptionsGrid = [
-  { id: "call", labelKey: "callBeforeDelivery", icon: "/icons/call-ring.svg" },
-  { id: "door", labelKey: "leaveAtDoor", icon: "/icons/door.svg" },
-  { id: "boxes", labelKey: "returnHibBoxes", icon: "/icons/box.svg" },
-];
-
 export default function CheckoutPage() {
   const { t, locale } = useTranslation("checkout");
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const { items, totalPrice, clearCart } = useCartStore();
   const router = useRouter();
 
-  // All checkout fields start EMPTY – no localStorage loading
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedInstruction, setSelectedInstruction] = useState<string | null>(
-    null,
-  );
-  const [giftMessage, setGiftMessage] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "Paid">("COD");
-
-  const [deliveryDays] = useState(getDeliveryDays());
+  const [promoCode, setPromoCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isGift, setIsGift] = useState(false);
 
-  // Routes
+  const deliveryDays = useMemo(() => getDeliveryDays(locale, t), [locale, t]);
+
   const homeHref = `/${locale}`;
   const cartHref = `/${locale}/cart`;
 
@@ -96,14 +75,6 @@ export default function CheckoutPage() {
   const subtotal = totalPrice;
   const shipping = subtotal >= freeShippingThreshold ? 0 : shippingCost;
   const total = subtotal + shipping;
-
-  const handleInstructionSelect = (id: string) => {
-    setSelectedInstruction((prev) => (prev === id ? null : id));
-  };
-
-  const handleGiftToggle = () => {
-    setGiftMessage((prev) => (prev === "" ? " " : ""));
-  };
 
   const handleSaveAddress = (address: Address) => {
     setSelectedAddress(address);
@@ -130,7 +101,6 @@ export default function CheckoutPage() {
     if (!timeMatch) return null;
     let hour = parseInt(timeMatch[1], 10);
     const minute = parseInt(timeMatch[2], 10);
-
     const deliveryDate = new Date(dayObj.fullDate);
     deliveryDate.setHours(hour, minute, 0, 0);
 
@@ -147,21 +117,19 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Helper: poll until order is confirmed ----------
+  // ---------- Poll for order confirmation ----------
   const pollOrderConfirmation = async (
     orderId: string,
     maxAttempts = 7,
   ): Promise<boolean> => {
     for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((r) => setTimeout(r, 1500)); // wait 1.5s between attempts
+      await new Promise((r) => setTimeout(r, 1500));
       try {
         const res = await fetch(`/api/check-order?order_id=${orderId}`);
         const data = await res.json();
-        if (data.found) {
-          return true;
-        }
+        if (data.found) return true;
       } catch {
-        // ignore network errors during polling
+        // ignore network errors
       }
     }
     return false;
@@ -171,25 +139,44 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // silently do nothing if no address is selected (no error toast)
     if (!selectedAddress) {
-      toast.error(
-        t("noAddressAlert", {
-          defaultValue: "الرجاء إضافة عنوان التسليم أولاً",
-        }),
-      );
       return;
     }
+
     if (!selectedDate) {
       toast.error(
         t("noDeliveryTimeAlert", { defaultValue: "الرجاء اختيار يوم التسليم" }),
       );
       return;
     }
+
     const area_name = selectedAddress.area?.trim() || "";
     if (!area_name) {
       toast.error(
         t("areaRequired", { defaultValue: "الرجاء اختيار المنطقة الفرعية" }),
       );
+      return;
+    }
+
+    if (promoCode.trim()) {
+      toast.warning(
+        t("promoUnappliedWarning", {
+          defaultValue:
+            "لديك رمز ترويجي غير مطبق. الرجاء تطبيقه أولاً أو مسحه.",
+        }),
+      );
+      return;
+    }
+
+    if (isGift && paymentMethod !== "Paid") {
+      toast.warning(
+        t("giftOnlineOnly", {
+          defaultValue:
+            "الهدايا تتطلب الدفع عبر الإنترنت. تم تحويل طريقة الدفع تلقائياً.",
+        }),
+      );
+      setPaymentMethod("Paid");
       return;
     }
 
@@ -226,8 +213,9 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
         total_amount: total,
-        gift_message: giftMessage.trim() || null,
-        instruction: selectedInstruction,
+        gift_message: null,
+        is_gift: isGift || undefined,
+        instruction: null,
         pin_location: selectedAddress.pinLocation || undefined,
         locale,
       };
@@ -244,13 +232,9 @@ export default function CheckoutPage() {
           throw new Error(data.message || data.error || t("paymentError"));
         }
 
-        // ✅ Extract order_id from response
         const orderId = data.data?.order_id || data.order_id;
-        if (!orderId) {
-          throw new Error("لم يتم استلام رقم الطلب");
-        }
+        if (!orderId) throw new Error("لم يتم استلام رقم الطلب");
 
-        // ✅ Poll to confirm order is in dashboard
         const confirmed = await pollOrderConfirmation(orderId);
         if (!confirmed) {
           toast.info(
@@ -258,7 +242,6 @@ export default function CheckoutPage() {
               defaultValue: "🎉 تم استلام طلبك سيتم تأكيده خلال دقائق",
             }),
           );
-          // Still clear cart and go to success with a pending flag
           clearCart();
           router.push(
             `/${locale}/order-success?pending=true&order_id=${orderId}`,
@@ -266,7 +249,6 @@ export default function CheckoutPage() {
           return;
         }
 
-        // Confirmed – clear and redirect
         clearCart();
         toast.success(
           t("orderPlacedSuccessfully", {
@@ -294,9 +276,7 @@ export default function CheckoutPage() {
       }
 
       const orderId = orderData.data?.order_id || orderData.order_id;
-      if (orderId) {
-        localStorage.setItem("pending_order_id", String(orderId));
-      }
+      if (orderId) localStorage.setItem("pending_order_id", String(orderId));
 
       const paymentPayload = {
         total,
@@ -314,9 +294,8 @@ export default function CheckoutPage() {
         body: JSON.stringify(paymentPayload),
       });
       const payData = await payRes.json();
-      if (!payRes.ok || !payData.payment_url) {
+      if (!payRes.ok || !payData.payment_url)
         throw new Error(payData.error || t("noPaymentUrl"));
-      }
 
       window.location.href = payData.payment_url;
     } catch (err: any) {
@@ -325,6 +304,11 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGiftChange = (checked: boolean) => {
+    setIsGift(checked);
+    if (checked) setPaymentMethod("Paid");
   };
 
   return (
@@ -417,92 +401,30 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Delivery Instructions */}
+                {/* Gift option */}
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {t("deliveryInstructions")}
-                  </h2>
-                  <div className="grid grid-cols-3 gap-3 mb-6">
-                    {deliveryOptionsGrid.map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => handleInstructionSelect(opt.id)}
-                        className={`group flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                          selectedInstruction === opt.id
-                            ? "border-[#338A43] bg-[#338A43]/5 shadow-md scale-105"
-                            : "border-neutral-200 bg-white hover:border-[#338A43] hover:shadow-md hover:scale-105"
-                        }`}
-                      >
-                        <div className="w-12 h-12 flex items-center justify-center mb-2">
-                          {opt.id === "call" && (
-                            <PhoneCall
-                              size={28}
-                              className={
-                                selectedInstruction === opt.id
-                                  ? "text-[#338A43]"
-                                  : "text-neutral-500"
-                              }
-                            />
-                          )}
-                          {opt.id === "door" && (
-                            <DoorOpen
-                              size={28}
-                              className={
-                                selectedInstruction === opt.id
-                                  ? "text-[#338A43]"
-                                  : "text-neutral-500"
-                              }
-                            />
-                          )}
-                          {opt.id === "boxes" && (
-                            <PackageCheck
-                              size={28}
-                              className={
-                                selectedInstruction === opt.id
-                                  ? "text-[#338A43]"
-                                  : "text-neutral-500"
-                              }
-                            />
-                          )}
-                        </div>
-                        <span className="text-sm text-center font-medium">
-                          {t(opt.labelKey)}
-                        </span>
-                        {selectedInstruction === opt.id && (
-                          <div className="mt-1 text-[#338A43] text-xs font-bold">
-                            ✓
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Gift Message */}
-                  <div className="border-t pt-4">
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={giftMessage !== ""}
-                        onChange={handleGiftToggle}
-                        className="w-5 h-5 accent-[#338A43]"
-                      />
-                      <span className="text-base font-medium">
-                        {t("addGiftMessage")}
-                      </span>
-                    </label>
-                    {giftMessage !== "" && (
-                      <div className="mt-3 ms-8 animate-fadeIn">
-                        <textarea
-                          placeholder={t("giftMessagePlaceholder")}
-                          value={giftMessage === " " ? "" : giftMessage}
-                          onChange={(e) => setGiftMessage(e.target.value)}
-                          rows={3}
-                          className="w-full border border-neutral-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#338A43]"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <h2 className="text-xl font-semibold mb-4">{t("isGift")}</h2>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={isGift}
+                      onChange={(e) => handleGiftChange(e.target.checked)}
+                      className="w-5 h-5 accent-[#338A43]"
+                    />
+                    <span className="text-base font-medium">
+                      {t("sendAsGift")}
+                    </span>
+                  </label>
+                  {isGift && (
+                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                      <p>
+                        {t("giftPaymentNote", {
+                          defaultValue:
+                            "الدفع أونلاين مطلوب للهدايا لضمان إتمام الطلب",
+                        })}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Payment methods */}
@@ -527,15 +449,20 @@ export default function CheckoutPage() {
                           paymentMethod === method.value
                             ? "bg-primary/5"
                             : "hover:bg-gray-50"
-                        }`}
+                        } ${isGift && method.value === "COD" ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <input
                           type="radio"
                           value={method.value}
                           checked={paymentMethod === method.value}
                           onChange={(e) =>
-                            setPaymentMethod(e.target.value as "COD" | "Paid")
+                            !isGift || method.value !== "COD"
+                              ? setPaymentMethod(
+                                  e.target.value as "COD" | "Paid",
+                                )
+                              : null
                           }
+                          disabled={isGift && method.value === "COD"}
                           className="w-4 h-4 accent-primary"
                         />
                         <Image

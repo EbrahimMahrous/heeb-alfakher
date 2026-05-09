@@ -126,7 +126,7 @@ export interface Address {
   phone: string;
   city?: string;
   area?: string;
-  buildingNo?: string; // still included in interface but not filled
+  buildingNo?: string;
   streetAddress?: string;
   isDefault?: boolean;
   pinLocation?: string;
@@ -172,6 +172,19 @@ const extractArea = (components: any[]): string => {
   return "";
 };
 
+const extractStreetAddress = (components: any[]): string => {
+  for (const comp of components) {
+    if (comp.types.includes("route")) return comp.long_name;
+  }
+  for (const comp of components) {
+    if (comp.types.includes("premise")) return comp.long_name;
+  }
+  for (const comp of components) {
+    if (comp.types.includes("neighborhood")) return comp.long_name;
+  }
+  return "";
+};
+
 const sanitizePhoneNumber = (rawPhone: string): string => {
   let digits = rawPhone.replace(/\D/g, "");
   if (digits.length >= 7 && digits.startsWith("0"))
@@ -181,7 +194,7 @@ const sanitizePhoneNumber = (rawPhone: string): string => {
   return digits;
 };
 
-// ---------- Reusable Searchable Select (used for both Emirate and Area) ----------
+// ---------- Reusable Searchable Select ----------
 const SearchableSelect = ({
   label,
   value,
@@ -190,6 +203,7 @@ const SearchableSelect = ({
   placeholder,
   disabled,
   required = false,
+  t,
 }: {
   label: string;
   value: string;
@@ -198,6 +212,7 @@ const SearchableSelect = ({
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
+  t?: (key: string, defaultValue?: any) => string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value);
@@ -207,12 +222,10 @@ const SearchableSelect = ({
     opt.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // Sync external value changes (e.g. map auto‑fill)
   useEffect(() => {
     setSearchTerm(value);
   }, [value]);
 
-  // Close dropdown on outside click & notify if unrecognized area is left
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -220,18 +233,23 @@ const SearchableSelect = ({
         !wrapperRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
-        // If the typed text is not a valid option, revert and warn
         if (searchTerm && !options.includes(searchTerm)) {
           setSearchTerm(value);
           if (searchTerm !== value) {
-            toast.error("يرجى اختيار منطقة من القائمة");
+            toast.error(
+              t
+                ? t("invalidSelection", {
+                    defaultValue: "يرجى اختيار قيمة من القائمة",
+                  })
+                : "يرجى اختيار قيمة من القائمة",
+            );
           }
         }
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [searchTerm, value, options]);
+  }, [searchTerm, value, options, t]);
 
   const handleClear = () => {
     onChange("");
@@ -249,7 +267,6 @@ const SearchableSelect = ({
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setIsOpen(true);
-            // Do NOT update actual value until selection
           }}
           onFocus={() => !disabled && setIsOpen(true)}
           placeholder={placeholder}
@@ -259,7 +276,6 @@ const SearchableSelect = ({
             disabled ? "opacity-60 cursor-not-allowed" : ""
           }`}
         />
-        {/* Clear button */}
         {value && !disabled && (
           <button
             type="button"
@@ -270,7 +286,6 @@ const SearchableSelect = ({
             ✕
           </button>
         )}
-        {/* Chevron indicator */}
         <span className="absolute inset-e-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
           <svg
             className="h-4 w-4"
@@ -287,7 +302,6 @@ const SearchableSelect = ({
           </svg>
         </span>
       </div>
-      {/* Dropdown list */}
       {isOpen && !disabled && filtered.length > 0 && (
         <ul className="absolute z-30 mt-1 max-h-48 w-full overflow-auto bg-white border border-gray-200 rounded-lg shadow-lg">
           {filtered.map((opt) => (
@@ -308,7 +322,6 @@ const SearchableSelect = ({
           ))}
         </ul>
       )}
-      {/* If no results and search term is non‑empty */}
       {isOpen && !disabled && searchTerm && filtered.length === 0 && (
         <div className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm text-gray-500 text-center">
           لا توجد نتائج
@@ -334,7 +347,7 @@ export default function AddressModal({
     phone: "",
     city: "",
     area: "",
-    buildingNo: "", // hidden, always empty
+    buildingNo: "",
     streetAddress: "",
     pinLocation: "",
     isDefault: false,
@@ -398,13 +411,10 @@ export default function AddressModal({
     setIsInitialLoad(false);
   }, [isOpen, existingAddress]);
 
-  // Persist (excluding city/area)
+  // Persist only fullName and phone
   useEffect(() => {
     if (!isOpen || isInitialLoad || existingAddress) return;
-    const dataToSave = {
-      fullName: formData.fullName,
-      phone: formData.phone,
-    };
+    const dataToSave = { fullName: formData.fullName, phone: formData.phone };
     localStorage.setItem(ADDRESS_FORM_STORAGE_KEY, JSON.stringify(dataToSave));
   }, [
     formData.fullName,
@@ -490,6 +500,7 @@ export default function AddressModal({
             const components = results[0].address_components;
             let city = "";
             const area = extractArea(components);
+            const street = extractStreetAddress(components);
             for (const comp of components) {
               if (comp.types.includes("locality")) city = comp.long_name;
             }
@@ -501,11 +512,11 @@ export default function AddressModal({
                   ...prev,
                   area: "",
                   address: results[0].formatted_address,
+                  streetAddress: street || prev.streetAddress,
                 }));
                 toast.warning(
                   t("areaMismatch", {
-                    defaultValue:
-                      "هذه المنطقة لا تتبع الإمارة المختارة. الرجاء ادخال المنطقة يدويًا أو تغيير الإمارة.",
+                    defaultValue: "هذه المنطقة لا تتبع الإمارة المختارة.",
                   }),
                 );
               } else {
@@ -514,6 +525,7 @@ export default function AddressModal({
                   ...prev,
                   address: results[0].formatted_address,
                   area: matchedArea || prev.area,
+                  streetAddress: street || prev.streetAddress,
                 }));
               }
             } else {
@@ -526,6 +538,7 @@ export default function AddressModal({
                 address: results[0].formatted_address,
                 city: targetCity || prev.city,
                 area: matchedArea || prev.area,
+                streetAddress: street || prev.streetAddress,
               }));
             }
           }
@@ -577,9 +590,11 @@ export default function AddressModal({
           updatePinLocation(loc.lat(), loc.lng());
 
           let city = "",
-            area = "";
+            area = "",
+            street = "";
           if (place.address_components) {
             area = extractArea(place.address_components);
+            street = extractStreetAddress(place.address_components);
             for (const comp of place.address_components) {
               if (comp.types.includes("locality")) city = comp.long_name;
             }
@@ -592,6 +607,7 @@ export default function AddressModal({
                 ...prev,
                 area: "",
                 address: place.formatted_address || "",
+                streetAddress: street || prev.streetAddress,
               }));
               toast.warning(t("areaMismatch"));
             } else {
@@ -600,6 +616,7 @@ export default function AddressModal({
                 ...prev,
                 area: matchedArea || prev.area,
                 address: place.formatted_address || "",
+                streetAddress: street || prev.streetAddress,
               }));
             }
           } else {
@@ -612,6 +629,7 @@ export default function AddressModal({
               city: targetCity || prev.city,
               area: matchedArea || prev.area,
               address: place.formatted_address || "",
+              streetAddress: street || prev.streetAddress,
             }));
           }
         });
@@ -638,13 +656,35 @@ export default function AddressModal({
           geocodeAndFill(loc.lat, loc.lng);
           updatePinLocation(loc.lat, loc.lng);
           setLocationDenied(false);
+          toast.info(
+            t("locationDetected", { defaultValue: "تم تحديد موقعك بنجاح 📍" }),
+          );
         },
-        () => setLocationDenied(true),
+        () => {
+          setLocationDenied(true);
+          toast.info(
+            t("geolocationDenied", {
+              defaultValue: "يمكنك البحث عن عنوانك يدويًا.",
+            }),
+          );
+        },
       );
     } else {
       setLocationDenied(true);
     }
   }, [isLoaded]);
+
+  // Show a one‑time friendly hint when map loads
+  useEffect(() => {
+    if (isLoaded && !formData.city && !emirateManual) {
+      toast.info(
+        t("locationHint", {
+          defaultValue:
+            "📍 يمكنك النقر على الخريطة أو استخدام البحث لملء الإمارة والمنطقة تلقائياً.",
+        }),
+      );
+    }
+  }, [isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Submit
   const handleSubmit = (e: React.FormEvent) => {
@@ -663,7 +703,11 @@ export default function AddressModal({
       toast.error(t("invalidPhone", { defaultValue: "رقم الهاتف غير صحيح" }));
       return;
     }
-    const parts = [formData.area, formData.city];
+
+    const parts = [];
+    if (formData.streetAddress) parts.push(formData.streetAddress);
+    if (formData.buildingNo) parts.push(formData.buildingNo);
+    parts.push(formData.area, formData.city);
     const fullAddress = parts.join(", ");
 
     const newAddress: Address = {
@@ -673,8 +717,8 @@ export default function AddressModal({
       phone: `+971${sanitizedPhone.replace("971", "")}`,
       city: formData.city,
       area: formData.area,
-      buildingNo: "",
-      streetAddress: "",
+      buildingNo: formData.buildingNo,
+      streetAddress: formData.streetAddress,
       pinLocation: formData.pinLocation,
       isDefault: formData.isDefault,
     };
@@ -739,38 +783,27 @@ export default function AddressModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Location denied warning */}
-          {locationDenied && !formData.city && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-2 text-sm text-amber-800 flex items-center gap-2">
-              <span>📍</span>
-              <span>{t("geolocationDenied")}</span>
-            </div>
-          )}
-
-          {/* Search bar */}
-          <div className="relative">
-            <input
-              ref={searchInputRef}
-              type="text"
-              placeholder={t("searchPlaceholder")}
-              className="w-full bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#338A43]"
-            />
-            <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-              <Image
-                src="/icons/search.svg"
-                alt="search"
-                width={18}
-                height={18}
+          {/* Map with integrated search bar */}
+          <div className="relative rounded-xl overflow-hidden border border-gray-200">
+            {/* Search bar placed at the top of the map */}
+            <div className="absolute top-2 inset-s-2 inset-e-2 z-10 flex gap-2">
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder={t("searchPlaceholder")}
+                className="flex-1 bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-[#338A43]"
               />
-            </span>
-          </div>
-
-          {/* Map */}
-          <div className="relative">
-            <div
-              ref={mapRef}
-              className="w-full h-64 rounded-xl overflow-hidden border border-gray-200"
-            />
+              <span className="absolute inset-s-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                <Image
+                  src="/icons/search.svg"
+                  alt="search"
+                  width={18}
+                  height={18}
+                />
+              </span>
+            </div>
+            <div ref={mapRef} className="w-full h-64" />
+            {/* Bottom map buttons */}
             <div className="absolute bottom-2 inset-s-2 inset-e-2 flex gap-2 z-10">
               <button
                 type="button"
@@ -797,10 +830,10 @@ export default function AddressModal({
                         markerRef.current?.setPosition(loc);
                         setSelectedLocation(loc);
                       },
-                      () => toast.error(t("geolocationFailed")),
+                      () => toast.info(t("geolocationFailed")),
                     );
                   } else {
-                    toast.error(t("geolocationNotSupported"));
+                    toast.info(t("geolocationNotSupported"));
                   }
                 }}
                 className="flex-1 bg-white text-gray-800 py-1.5 rounded-full text-sm shadow-md flex items-center justify-center gap-1 hover:bg-gray-100"
@@ -844,6 +877,7 @@ export default function AddressModal({
             }}
             placeholder={t("selectEmirate")}
             required
+            t={t}
           />
 
           {/* Area – searchable dropdown */}
@@ -855,6 +889,7 @@ export default function AddressModal({
             placeholder={formData.city ? t("selectArea") : t("selectCityFirst")}
             disabled={!formData.city}
             required
+            t={t}
           />
 
           {/* Phone */}
@@ -889,6 +924,44 @@ export default function AddressModal({
                     "أدخل رقم الهاتف بدون صفر إضافي (مثال: 501234567)",
                 })}
               </p>
+            </div>
+          </div>
+
+          {/* Building number & Street address – same row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("buildingNo")}
+              </label>
+              <input
+                type="text"
+                name="buildingNo"
+                value={formData.buildingNo}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    buildingNo: e.target.value,
+                  }))
+                }
+                className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t("streetAddress")}
+              </label>
+              <input
+                type="text"
+                name="streetAddress"
+                value={formData.streetAddress}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    streetAddress: e.target.value,
+                  }))
+                }
+                className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
+              />
             </div>
           </div>
 

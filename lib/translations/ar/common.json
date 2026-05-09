@@ -9,11 +9,9 @@
   "faq": "الأسئلة الشائعة",
   "returns": "سياسة الاسترجاع",
   "viewAll": "عرض الكل",
-
   "outOfStock": "غير متوفر",
   "productHidden": "المنتج غير متاح حالياً",
   "productNotFound": "المنتج غير موجود",
-
   "companyDescription": "إعادة تعريف تجربة التسوق للمواد الغذائية مع جودة ممتازة، توريد مستدام، وتوصيل سلس إلى باب منزلك.",
   "contactUsFooter": "تواصل معنا",
   "explore": "استكشف",
@@ -24,7 +22,7 @@
   "helpCenter": "مركز المساعدة",
   "phoneSupport": "دعم الهاتف",
   "allDays": "كل الأيام",
-  "timeRange": "7 صباحاً - 10 مساءً",
+  "timeRange": "متاحين طوال اليوم",
   "deliveryAreas": "مناطق التوصيل",
   "faqFooter": "الأسئلة الشائعة",
   "copyright": "جميع الحقوق محفوظة",
@@ -33,6 +31,7 @@
   "newProducts": "منتجاتنا جديدة",
   "bestSellers": "الأكثر مبيعاً",
   "browseAll": "تصفح الكل",
+  "shopNow": "تسوق الآن",
   "discount": "تخفيض",
   "discountPercent": "خصم {percent}%",
   "currency": "د.إ",

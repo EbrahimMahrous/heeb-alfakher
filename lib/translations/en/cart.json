@@ -18,5 +18,9 @@
   "currency": "AED",
   "updated": "Quantity updated",
   "removed": "Item removed",
-  "home": "Home"
+  "home": "Home",
+  "emptyPromo": "Please enter a promo code",
+  "promoFeatureSoon": "Promo code feature coming soon ✨",
+  "promoHint": "Click 'Apply' to use the promo code",
+  "free": "Free"
 }

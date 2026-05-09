@@ -11,6 +11,7 @@ import { fetchAllProducts } from "@/lib/api/products";
 import ProductSkeleton from "@/components/ui/ProductSkeleton";
 import CartSkeleton from "@/components/ui/CartSkeleton";
 import { Trash2 } from "lucide-react";
+import ProductMeta from "@/components/ProductMeta";
 
 const CART_STORAGE_KEY = "heeb_cart";
 
@@ -18,24 +19,6 @@ const saveCartToLocalStorage = (items: any[]) => {
   if (typeof window !== "undefined") {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }
-};
-
-const ProductMeta = ({ weight }: { weight?: string }) => {
-  if (!weight) return null;
-  return (
-    <div className="inline-flex items-center gap-1 bg-neutral-100 border border-neutral-200 rounded-full px-2 py-0.5 w-fit">
-      <Image
-        src="/uae.svg"
-        alt="UAE"
-        width={16}
-        height={16}
-        className="h-4 w-4"
-      />
-      <span className="text-xs text-neutral-700">UAE</span>
-      <span className="text-neutral-400 text-xs">•</span>
-      <span className="text-xs text-neutral-700">{weight}</span>
-    </div>
-  );
 };
 
 export default function CartPage() {
@@ -71,7 +54,6 @@ export default function CartPage() {
   }, [items]);
 
   useEffect(() => {
-    // fetchCart is now synchronous – no .finally needed
     fetchCart();
     setIsLoading(false);
   }, [fetchCart]);
@@ -102,12 +84,18 @@ export default function CartPage() {
   };
 
   const handleApplyPromo = () => {
-    if (promoCode.trim()) {
-      toast.info("رمز ترويجي غير مفعل حالياً");
+    if (!promoCode.trim()) {
+      toast.info(t("emptyPromo", { defaultValue: "الرجاء إدخال رمز ترويجي" }));
+      return;
     }
+    // في المستقبل هنا سيكون الاتصال بـ API للتحقق من الرمز
+    toast.info(
+      t("promoFeatureSoon", {
+        defaultValue: "ميزة الرمز الترويجي ستتوفر قريباً ✨",
+      }),
+    );
   };
 
-  // Localised routes
   const homeHref = `/${locale}`;
   const checkoutHref = `/${locale}/checkout`;
 
@@ -128,7 +116,7 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Breadcrumb – locale aware */}
+      {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-sm text-gray-500 mb-6">
         <Link href={homeHref} className="hover:text-primary transition">
           {t("home")}
@@ -174,7 +162,11 @@ export default function CartPage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg">{item.name}</h3>
                   <div className="mt-1">
-                    <ProductMeta weight={item.weight} />
+                    <ProductMeta
+                      flagUrl={item.flagUrl}
+                      origin={item.origin}
+                      weight={item.weight}
+                    />
                   </div>
                   <div className="mt-2 flex items-center flex-wrap gap-2">
                     {hasDiscount ? (
@@ -249,7 +241,7 @@ export default function CartPage() {
               <span>{t("shipping")}</span>
               <span>
                 {subtotal >= freeShippingThreshold
-                  ? "مجاني"
+                  ? t("free")
                   : `${shippingCost} ${t("currency")}`}
               </span>
             </div>
@@ -301,6 +293,7 @@ export default function CartPage() {
               </div>
             )}
 
+            {/* Promo Code Section – simple with hint */}
             <div className="pt-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -326,6 +319,15 @@ export default function CartPage() {
                   {t("apply")}
                 </Button>
               </div>
+
+              {/* تلميح بسيط يظهر عند كتابة أي كود */}
+              {promoCode.trim() !== "" && (
+                <p className="text-xs text-amber-600 mt-1 text-center">
+                  {t("promoHint", {
+                    defaultValue: "اضغط على 'تطبيق' لاستخدام الرمز الترويجي",
+                  })}
+                </p>
+              )}
             </div>
 
             <Link href={checkoutHref} className="block mt-4">
