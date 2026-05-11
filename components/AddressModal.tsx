@@ -442,7 +442,7 @@ export default function AddressModal({
       return;
     }
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback&loading=async&v=3.55`;
     script.async = true;
     script.defer = true;
     script.onerror = () => {
@@ -482,21 +482,14 @@ export default function AddressModal({
       setFormData((prev) => ({ ...prev, pinLocation: link }));
     };
 
-    /**
-     * Tries to match an area name to the official list.
-     * Uses exact match first, then partial inclusion (e.g., "Jumeirah 3" matches "Jumeirah").
-     * Returns the canonical name if found, otherwise returns the raw name.
-     */
     const matchAreaToList = (areaName: string, emirate: string): string => {
       if (!emirate || !areaName) return areaName || "";
       const allowed = AREAS_BY_EMIRATE[emirate] || [];
       if (allowed.length === 0) return areaName;
 
       const lowerArea = areaName.toLowerCase();
-      // Exact match
       const exact = allowed.find((a) => a.toLowerCase() === lowerArea);
       if (exact) return exact;
-      // Partial match: area name contains a list item or list item contains area name
       for (const candidate of allowed) {
         const lowerCandidate = candidate.toLowerCase();
         if (
@@ -506,14 +499,9 @@ export default function AddressModal({
           return candidate;
         }
       }
-      // No match – return the raw area name so it at least shows something
       return areaName;
     };
 
-    /**
-     * Main geocoding callback – fills emirate, area, and street automatically.
-     * Always sets area even if it doesn't perfectly match the list.
-     */
     const geocodeAndFill = (lat: number, lng: number) => {
       const geocoder = new window.google.maps.Geocoder();
       geocoder.geocode(
@@ -528,20 +516,16 @@ export default function AddressModal({
               if (comp.types.includes("locality")) city = comp.long_name;
             }
             const matchedEmirate = findEmirate(city);
-
-            // Determine the emirate to use for area matching
             const effectiveEmirate = emirateManualRef.current
               ? formData.city
               : matchedEmirate || formData.city;
             const finalArea = matchAreaToList(rawArea, effectiveEmirate);
 
             if (emirateManualRef.current) {
-              // User manually chose an emirate – never change it
               if (matchedEmirate && matchedEmirate !== formData.city) {
-                // Mismatch – still fill street and suggest area, but clear canonical area
                 setFormData((prev) => ({
                   ...prev,
-                  area: "", // mismatch = clear area
+                  area: "",
                   address: results[0].formatted_address,
                   streetAddress: street || prev.streetAddress,
                 }));
@@ -559,7 +543,6 @@ export default function AddressModal({
                 }));
               }
             } else {
-              // Fully automatic – fill city, area, street
               setFormData((prev) => ({
                 ...prev,
                 address: results[0].formatted_address,
@@ -589,7 +572,7 @@ export default function AddressModal({
       updatePinLocation(lat, lng);
     });
 
-    // Autocomplete (Google Places search)
+    // Autocomplete
     if (searchInputRef.current) {
       try {
         const autocomplete = new window.google.maps.places.Autocomplete(
@@ -671,7 +654,7 @@ export default function AddressModal({
       }
     }
 
-    // Geolocate – auto‑fill when location is granted
+    // Geolocate
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -817,7 +800,6 @@ export default function AddressModal({
                 ref={searchInputRef}
                 type="text"
                 placeholder={t("searchPlaceholder")}
-                // Disable manual mode so the place selection always fills all fields
                 onFocus={() => setEmirateManual(false)}
                 className="flex-1 bg-white border border-gray-300 rounded-full py-2.5 pe-10 ps-10 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-[#338A43]"
               />
@@ -908,7 +890,7 @@ export default function AddressModal({
             t={t}
           />
 
-          {/* Area – now accepts any value, but suggests from the list */}
+          {/* Area – searchable dropdown */}
           <SearchableSelect
             label={t("area") || "المنطقة"}
             value={formData.area}

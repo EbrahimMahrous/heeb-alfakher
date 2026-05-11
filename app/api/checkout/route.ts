@@ -103,6 +103,7 @@ export async function POST(request: Request) {
       area_name: body.area_name,
       payment_type: body.payment_type,
       total_amount: body.total_amount,
+      address: body.address, // street / building info only
     });
 
     // Basic validation
@@ -128,9 +129,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ Build address string (was missing – now sent)
-    const addressStr = `${body.area_name}, ${body.emirate_name}`;
-
+    // ---------- Use the client's "address" directly (street / building) ----------
     const formData = new URLSearchParams();
     formData.append("customer_name", body.customer_name);
     formData.append("mobile_number", body.mobile_number);
@@ -138,9 +137,9 @@ export async function POST(request: Request) {
     formData.append("area_name", body.area_name);
     formData.append("payment_type", body.payment_type);
     formData.append("delivery_date", body.delivery_date || "");
-    // ✅ Address field (was missing)
-    formData.append("address", addressStr);
-    // ✅ Financial fields
+    // Send only the street/building part (no area/emirate appended)
+    formData.append("address", body.address || "");
+    // Financial fields
     formData.append("sub_total", String(body.total_amount || 0));
     formData.append("total", String(body.total_amount || 0));
     formData.append(
@@ -148,7 +147,6 @@ export async function POST(request: Request) {
       body.payment_type === "COD" ? "0" : String(body.total_amount || 0),
     );
     formData.append("delivery_fee", "0");
-    // ✅ Confirmation flag – if the API supports it
     formData.append("is_confirmed", "1");
     formData.append("is_from_website", "1");
 

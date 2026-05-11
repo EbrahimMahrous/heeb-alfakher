@@ -120,7 +120,7 @@ export default function CheckoutPage() {
   // ---------- Quick single check for order presence ----------
   const quickCheck = async (orderId: string): Promise<boolean> => {
     try {
-      await new Promise((r) => setTimeout(r, 1000)); // tiny delay to let the backend persist
+      await new Promise((r) => setTimeout(r, 1000));
       const res = await fetch(`/api/check-order?order_id=${orderId}`);
       const data = await res.json();
       return !!data.found;
@@ -194,11 +194,22 @@ export default function CheckoutPage() {
       let emirate_name = selectedAddress.city?.trim() || "";
       if (!validEmirates.includes(emirate_name)) emirate_name = "Dubai";
 
+      // Build the combined street address from streetAddress and buildingNo
+      const street = selectedAddress.streetAddress?.trim() || "";
+      const building = selectedAddress.buildingNo?.trim() || "";
+      let combinedStreet = street;
+      if (street && building) {
+        combinedStreet = `${street} / ${building}`;
+      } else if (!street && building) {
+        combinedStreet = building;
+      }
+
       const orderPayload = {
         customer_name: selectedAddress.fullName,
         mobile_number: phoneDigits,
         emirate_name,
         area_name,
+        address: combinedStreet || undefined,
         payment_type: paymentMethod,
         delivery_date: buildDeliveryDate(),
         items: items.map((item) => ({
@@ -228,9 +239,8 @@ export default function CheckoutPage() {
         const orderId = data.data?.order_id || data.order_id;
         if (!orderId) throw new Error("لم يتم استلام رقم الطلب");
 
-        clearCart(); // clear cart immediately so the user can continue shopping
+        clearCart();
 
-        // Quick single check – if it passes we show the order ID directly
         const found = await quickCheck(orderId);
         if (found) {
           toast.success(
