@@ -7,5 +7,9 @@
   "needHelp": "تحتاج مساعدة؟",
   "whatsappContact": "تواصل عبر الواتس اب",
   "orderPendingTitle": "تم استلام طلبك!",
-  "orderPendingMessage": "يرجى الاحتفاظ بصورة للطلب."
+  "orderPendingMessage": "يرجى الاحتفاظ بصورة للطلب.",
+  "orderPlaced": "تم تقديم الطلب",
+  "confirmingPayment": "جارٍ تأكيد الدفع...",
+  "paymentFailed": "فشلت عملية الدفع",
+  "paymentFailedDesc": "حدث خطأ أثناء معالجة الدفع. يرجى المحاولة مرة أخرى أو اختيار طريقة دفع أخرى."
 }

@@ -31,5 +31,7 @@
   "selectEmirate": "Select emirate",
   "phoneHint": "Enter phone number without extra leading zero (e.g. 501234567)",
   "invalidPhone": "Invalid phone number. Please enter 9-10 digits without additional zeros",
-  "locationHint": "📍 Allow location access or search your address on the map – we'll automatically fill your emirate and area!"
+  "locationHint": "📍 Allow location access or search your address on the map – we'll automatically fill your emirate and area!",
+  "invalidSelection": "Please select an item from the list",
+  "locationDetected": "Location detected successfully 📍"
 }

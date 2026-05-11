@@ -117,18 +117,6 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Quick single check for order presence ----------
-  const quickCheck = async (orderId: string): Promise<boolean> => {
-    try {
-      await new Promise((r) => setTimeout(r, 1000));
-      const res = await fetch(`/api/check-order?order_id=${orderId}`);
-      const data = await res.json();
-      return !!data.found;
-    } catch {
-      return false;
-    }
-  };
-
   // ---------- Main submit handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,23 +227,17 @@ export default function CheckoutPage() {
         const orderId = data.data?.order_id || data.order_id;
         if (!orderId) throw new Error("لم يتم استلام رقم الطلب");
 
+        // Clear cart immediately for a smooth experience
         clearCart();
 
-        const found = await quickCheck(orderId);
-        if (found) {
-          toast.success(
-            t("orderPlacedSuccessfully", {
-              defaultValue: "تم تقديم الطلب بنجاح!",
-            }),
-          );
-        } else {
-          toast.info(
-            t("orderReceived", { defaultValue: "تم استلام طلبك! رقم الطلب:" }) +
-              " " +
-              orderId,
-          );
-        }
+        // Show success toast
+        toast.success(
+          t("orderPlacedSuccessfully", {
+            defaultValue: "تم تقديم الطلب بنجاح!",
+          }),
+        );
 
+        // Navigate instantly to the success page with the order ID
         router.push(`/${locale}/order-success?order_id=${orderId}`);
         return;
       }
