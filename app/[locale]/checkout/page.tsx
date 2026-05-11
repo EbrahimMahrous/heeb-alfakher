@@ -117,29 +117,22 @@ export default function CheckoutPage() {
     return `${year}-${month}-${day} ${formattedHours}:${formattedMinutes} ${amPmLetter}`;
   };
 
-  // ---------- Poll for order confirmation ----------
-  const pollOrderConfirmation = async (
-    orderId: string,
-    maxAttempts = 7,
-  ): Promise<boolean> => {
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((r) => setTimeout(r, 1500));
-      try {
-        const res = await fetch(`/api/check-order?order_id=${orderId}`);
-        const data = await res.json();
-        if (data.found) return true;
-      } catch {
-        // ignore network errors
-      }
+  // ---------- Quick single check for order presence ----------
+  const quickCheck = async (orderId: string): Promise<boolean> => {
+    try {
+      await new Promise((r) => setTimeout(r, 1000)); // tiny delay to let the backend persist
+      const res = await fetch(`/api/check-order?order_id=${orderId}`);
+      const data = await res.json();
+      return !!data.found;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   // ---------- Main submit handler ----------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // silently do nothing if no address is selected (no error toast)
     if (!selectedAddress) {
       return;
     }
@@ -235,31 +228,29 @@ export default function CheckoutPage() {
         const orderId = data.data?.order_id || data.order_id;
         if (!orderId) throw new Error("لم يتم استلام رقم الطلب");
 
-        const confirmed = await pollOrderConfirmation(orderId);
-        if (!confirmed) {
-          toast.info(
-            t("orderNotConfirmed", {
-              defaultValue: "🎉 تم استلام طلبك سيتم تأكيده خلال دقائق",
+        clearCart(); // clear cart immediately so the user can continue shopping
+
+        // Quick single check – if it passes we show the order ID directly
+        const found = await quickCheck(orderId);
+        if (found) {
+          toast.success(
+            t("orderPlacedSuccessfully", {
+              defaultValue: "تم تقديم الطلب بنجاح!",
             }),
           );
-          clearCart();
-          router.push(
-            `/${locale}/order-success?pending=true&order_id=${orderId}`,
+        } else {
+          toast.info(
+            t("orderReceived", { defaultValue: "تم استلام طلبك! رقم الطلب:" }) +
+              " " +
+              orderId,
           );
-          return;
         }
 
-        clearCart();
-        toast.success(
-          t("orderPlacedSuccessfully", {
-            defaultValue: "تم تقديم الطلب بنجاح!",
-          }),
-        );
         router.push(`/${locale}/order-success?order_id=${orderId}`);
         return;
       }
 
-      // ----- Paid flow -----
+      // ----- Paid flow (unchanged) -----
       const orderRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
