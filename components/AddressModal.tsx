@@ -222,38 +222,59 @@ const SearchableSelect = ({
     opt.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  // Sync external value changes (e.g. map auto‑fill)
   useEffect(() => {
     setSearchTerm(value);
   }, [value]);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-        if (searchTerm && !options.includes(searchTerm)) {
-          setSearchTerm(value);
-          if (searchTerm !== value) {
-            toast.error(
-              t
-                ? t("invalidSelection", {
-                    defaultValue: "يرجى اختيار قيمة من القائمة",
-                  })
-                : "يرجى اختيار قيمة من القائمة",
-            );
-          }
+  // Handle click/touch outside – accepts both mouse and touch events
+  const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    if (
+      wrapperRef.current &&
+      !wrapperRef.current.contains(event.target as Node)
+    ) {
+      setIsOpen(false);
+      if (searchTerm && !options.includes(searchTerm)) {
+        setSearchTerm(value);
+        if (searchTerm !== value) {
+          toast.error(
+            t
+              ? t("invalidSelection", {
+                  defaultValue: "يرجى اختيار قيمة من القائمة",
+                })
+              : "يرجى اختيار قيمة من القائمة",
+          );
         }
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+  };
+
+  useEffect(() => {
+    // Cast as EventListener to satisfy both mouse and touch event types
+    document.addEventListener("mousedown", handleClickOutside as EventListener);
+    document.addEventListener("touchend", handleClickOutside as EventListener);
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside as EventListener,
+      );
+      document.removeEventListener(
+        "touchend",
+        handleClickOutside as EventListener,
+      );
+    };
   }, [searchTerm, value, options, t]);
 
   const handleClear = () => {
     onChange("");
     setSearchTerm("");
+    setIsOpen(false);
+  };
+
+  // Handle both mouse and touch selection from dropdown
+  const handleOptionSelect = (opt: string) => {
+    onChange(opt);
+    setSearchTerm(opt);
     setIsOpen(false);
   };
 
@@ -312,9 +333,11 @@ const SearchableSelect = ({
               }`}
               onMouseDown={(e) => {
                 e.preventDefault();
-                onChange(opt);
-                setSearchTerm(opt);
-                setIsOpen(false);
+                handleOptionSelect(opt);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                handleOptionSelect(opt);
               }}
             >
               {opt}
@@ -556,21 +579,30 @@ export default function AddressModal({
       );
     };
 
+    // Marker drag – works on both desktop and Android
     marker.addListener("dragend", () => {
       const pos = marker.getPosition();
-      setSelectedLocation({ lat: pos.lat(), lng: pos.lng() });
-      geocodeAndFill(pos.lat(), pos.lng());
-      updatePinLocation(pos.lat(), pos.lng());
+      if (pos) {
+        const lat = pos.lat();
+        const lng = pos.lng();
+        setSelectedLocation({ lat, lng });
+        geocodeAndFill(lat, lng);
+        updatePinLocation(lat, lng);
+      }
     });
 
-    map.addListener("click", (e: any) => {
+    // Map click / touch handler
+    const handleMapInteraction = (e: any) => {
       const lat = e.latLng.lat();
       const lng = e.latLng.lng();
       marker.setPosition({ lat, lng });
       setSelectedLocation({ lat, lng });
       geocodeAndFill(lat, lng);
       updatePinLocation(lat, lng);
-    });
+    };
+
+    map.addListener("click", handleMapInteraction);
+    map.addListener("touchend", handleMapInteraction);
 
     // Autocomplete
     if (searchInputRef.current) {
@@ -584,7 +616,8 @@ export default function AddressModal({
         );
         autocomplete.addListener("place_changed", () => {
           const place = autocomplete.getPlace();
-          if (!place.geometry || !place.address_components) {
+          // Android may return incomplete data
+          if (!place.geometry) {
             toast.error(
               t("mapsErrorGeneral", {
                 defaultValue: "يرجى اختيار عنوان من القائمة",
@@ -594,6 +627,8 @@ export default function AddressModal({
           }
 
           const loc = place.geometry.location;
+          if (!loc) return;
+
           map.setCenter(loc);
           marker.setPosition(loc);
           setSelectedLocation({ lat: loc.lat(), lng: loc.lng() });
@@ -702,7 +737,8 @@ export default function AddressModal({
       !formData.fullName ||
       !formData.phone ||
       !formData.city ||
-      !formData.area
+      !formData.area ||
+      !formData.buildingNo
     ) {
       toast.error(t("validationRequired"));
       return;
@@ -715,7 +751,7 @@ export default function AddressModal({
 
     const parts = [];
     if (formData.streetAddress) parts.push(formData.streetAddress);
-    if (formData.buildingNo) parts.push(formData.buildingNo);
+    parts.push(formData.buildingNo); // always include required buildingNo
     parts.push(formData.area, formData.city);
     const fullAddress = parts.join(", ");
 
@@ -937,7 +973,7 @@ export default function AddressModal({
             </div>
           </div>
 
-          {/* Building number & Street address – same row */}
+          {/* Building number (required) & Street address */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -953,6 +989,7 @@ export default function AddressModal({
                     buildingNo: e.target.value,
                   }))
                 }
+                required
                 className="w-full bg-[#E2E8F0] rounded-lg p-2 border-0 focus:ring-2 focus:ring-[#338A43]"
               />
             </div>
